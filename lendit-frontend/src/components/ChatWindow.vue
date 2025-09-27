@@ -31,7 +31,7 @@ onMounted(scrollToBottom);
     <div class="card-header d-flex align-items-center gap-2">
       <img :src="chat.activeConv?.peer?.avatar" class="rounded-circle" width="32" height="32" />
       <strong>{{ chat.activeConv?.title || chat.activeConv?.peer?.name || 'Chat' }}</strong>
-      <span v-if="chat.typing[chat.activeId]" class="small text-secondary ms-2">typing…</span>
+      <span v-if="chat.typing[chat.activeId]" class="small text-secondary ms-2">{{ $t('messages.typing') }}</span>
     </div>
 
     <div class="card-body overflow-auto" style="height: 60vh">
@@ -59,7 +59,7 @@ onMounted(scrollToBottom);
 
     <div class="card-footer">
       <div class="input-group">
-        <input v-model="input" class="form-control" placeholder="Write a message…" @keyup.enter="send" />
+        <input v-model="input" class="form-control" :placeholder="$t('messages.typeMessage')" @keyup.enter="send" />
         <button class="btn btn-primary" @click="send">
           <i class="bi bi-send"></i>
         </button>

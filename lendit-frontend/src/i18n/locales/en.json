@@ -1,0 +1,115 @@
+{
+  "app": {
+    "title": "LendIt",
+    "tagline": "Rent anything, anywhere"
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "messages": "Messages",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "profile": "Profile"
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Login",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up here"
+    },
+    "register": {
+      "title": "Register",
+      "name": "Full Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Register",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in here"
+    },
+    "logout": "Logout",
+    "welcome": "Welcome back, {name}!"
+  },
+  "search": {
+    "title": "Search Items",
+    "placeholder": "What are you looking for?",
+    "filters": "Filters",
+    "category": "Category",
+    "location": "Location",
+    "priceRange": "Price Range",
+    "dateFrom": "From Date",
+    "dateTo": "To Date",
+    "sortBy": "Sort By",
+    "results": "Results",
+    "noResults": "No items found",
+    "loadMore": "Load More"
+  },
+  "item": {
+    "title": "Item Details",
+    "price": "Price",
+    "perDay": "per day",
+    "description": "Description",
+    "location": "Location",
+    "category": "Category",
+    "availability": "Availability",
+    "bookNow": "Book Now",
+    "contactOwner": "Contact Owner",
+    "share": "Share",
+    "report": "Report",
+    "relatedItems": "Related Items"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "profile": "Profile",
+    "myListings": "My Listings",
+    "myRentals": "My Rentals",
+    "editProfile": "Edit Profile",
+    "uploadAvatar": "Upload Avatar",
+    "createListing": "Create Listing",
+    "editListing": "Edit Listing",
+    "deleteListing": "Delete Listing"
+  },
+  "messages": {
+    "title": "Messages",
+    "search": "Search conversations...",
+    "noConversations": "No conversations",
+    "typeMessage": "Write a message...",
+    "send": "Send",
+    "typing": "typing...",
+    "selectConversation": "Select a conversation"
+  },
+  "forms": {
+    "required": "This field is required",
+    "email": "Please enter a valid email",
+    "password": "Password must be at least 6 characters",
+    "confirmPassword": "Passwords must match",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK"
+  },
+  "languages": {
+    "en": "English",
+    "he": "עברית",
+    "ar": "العربية",
+    "ru": "Русский"
+  }
+}

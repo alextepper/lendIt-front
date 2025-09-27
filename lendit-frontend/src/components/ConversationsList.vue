@@ -19,7 +19,7 @@ watch(() => chat.activeId, (v) => chat.markRead(v));
 <template>
   <div class="card p-2">
     <div class="mb-2">
-      <input v-model="q" class="form-control form-control-sm" placeholder="Search…" />
+      <input v-model="q" class="form-control form-control-sm" :placeholder="$t('messages.search')" />
     </div>
     <div class="list-group overflow-auto" style="max-height: 70vh">
       <button
@@ -45,7 +45,7 @@ watch(() => chat.activeId, (v) => chat.markRead(v));
         <span v-if="c.unread" class="badge text-bg-danger ms-auto">{{ c.unread }}</span>
       </button>
       <div v-if="filtered.length === 0" class="text-center small text-secondary py-3">
-        No conversations
+        {{ $t('messages.noConversations') }}
       </div>
     </div>
   </div>

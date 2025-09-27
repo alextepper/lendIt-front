@@ -1,0 +1,115 @@
+{
+  "app": {
+    "title": "LendIt",
+    "tagline": "השכר כל דבר, בכל מקום"
+  },
+  "nav": {
+    "home": "בית",
+    "search": "חיפוש",
+    "messages": "הודעות",
+    "dashboard": "לוח בקרה",
+    "login": "התחברות",
+    "register": "הרשמה",
+    "logout": "התנתקות",
+    "profile": "פרופיל"
+  },
+  "auth": {
+    "login": {
+      "title": "התחברות",
+      "email": "אימייל",
+      "password": "סיסמה",
+      "submit": "התחבר",
+      "noAccount": "אין לך חשבון?",
+      "signUp": "הירשם כאן"
+    },
+    "register": {
+      "title": "הרשמה",
+      "name": "שם מלא",
+      "email": "אימייל",
+      "password": "סיסמה",
+      "confirmPassword": "אשר סיסמה",
+      "submit": "הירשם",
+      "hasAccount": "יש לך כבר חשבון?",
+      "signIn": "התחבר כאן"
+    },
+    "logout": "התנתקות",
+    "welcome": "ברוך הבא, {name}!"
+  },
+  "search": {
+    "title": "חיפוש פריטים",
+    "placeholder": "מה אתם מחפשים?",
+    "filters": "מסננים",
+    "category": "קטגוריה",
+    "location": "מיקום",
+    "priceRange": "טווח מחירים",
+    "dateFrom": "תאריך התחלה",
+    "dateTo": "תאריך סיום",
+    "sortBy": "מיון לפי",
+    "results": "תוצאות",
+    "noResults": "לא נמצאו פריטים",
+    "loadMore": "טען עוד"
+  },
+  "item": {
+    "title": "פרטי הפריט",
+    "price": "מחיר",
+    "perDay": "ליום",
+    "description": "תיאור",
+    "location": "מיקום",
+    "category": "קטגוריה",
+    "availability": "זמינות",
+    "bookNow": "הזמן עכשיו",
+    "contactOwner": "צור קשר עם הבעלים",
+    "share": "שתף",
+    "report": "דווח",
+    "relatedItems": "פריטים קשורים"
+  },
+  "dashboard": {
+    "title": "לוח בקרה",
+    "profile": "פרופיל",
+    "myListings": "המודעות שלי",
+    "myRentals": "ההשכרות שלי",
+    "editProfile": "ערוך פרופיל",
+    "uploadAvatar": "העלה תמונת פרופיל",
+    "createListing": "צור מודעה",
+    "editListing": "ערוך מודעה",
+    "deleteListing": "מחק מודעה"
+  },
+  "messages": {
+    "title": "הודעות",
+    "search": "חפש שיחות...",
+    "noConversations": "אין שיחות",
+    "typeMessage": "כתוב הודעה...",
+    "send": "שלח",
+    "typing": "כותב...",
+    "selectConversation": "בחר שיחה"
+  },
+  "forms": {
+    "required": "שדה זה נדרש",
+    "email": "אנא הכנס אימייל תקין",
+    "password": "סיסמה חייבת להיות לפחות 6 תווים",
+    "confirmPassword": "סיסמאות חייבות להתאים",
+    "submit": "שלח",
+    "cancel": "בטל",
+    "save": "שמור",
+    "edit": "ערוך",
+    "delete": "מחק"
+  },
+  "common": {
+    "loading": "טוען...",
+    "error": "שגיאה",
+    "success": "הצלחה",
+    "close": "סגור",
+    "back": "חזור",
+    "next": "הבא",
+    "previous": "הקודם",
+    "yes": "כן",
+    "no": "לא",
+    "ok": "אישור"
+  },
+  "languages": {
+    "en": "English",
+    "he": "עברית",
+    "ar": "العربية",
+    "ru": "Русский"
+  }
+}

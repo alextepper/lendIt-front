@@ -1,5 +1,6 @@
 <script setup>
 import { useUiStore } from '../stores/ui'
+import LanguageTest from '../components/LanguageTest.vue'
 const ui = useUiStore()
 
 async function fakeAction() {
@@ -12,11 +13,13 @@ async function fakeAction() {
 
 <template>
   <div class="py-4">
-    <h1 class="h3 mb-3">Welcome to LendIt</h1>
-    <p class="text-secondary">Rent and lend tools, consoles, and more.</p>
+    <LanguageTest />
+    
+    <h1 class="h3 mb-3">{{ $t('app.title') }}</h1>
+    <p class="text-secondary">{{ $t('app.tagline') }}</p>
     <div class="d-flex gap-2">
       <router-link class="btn btn-primary" :to="{ name: 'search', query: { q: 'drill' } }">
-        <i class="bi bi-search"></i> Start searching
+        <i class="bi bi-search"></i> {{ $t('nav.search') }}
       </router-link>
       <button class="btn btn-outline-secondary" @click="fakeAction">
         Try demo loader & toast

@@ -17,14 +17,14 @@ function selectConv(id) {
 </script>
 
 <template>
-  <h1 class="h4 mb-3">Messages</h1>
+  <h1 class="h4 mb-3">{{ $t('messages.title') }}</h1>
   <div class="row g-3">
     <div class="col-12 col-md-4 col-lg-3">
       <ConversationsList @select="selectConv" />
     </div>
     <div class="col-12 col-md-8 col-lg-9">
       <ChatWindow v-if="chat.activeId" />
-      <div v-else class="card p-4 text-center text-secondary">Select a conversation</div>
+      <div v-else class="card p-4 text-center text-secondary">{{ $t('messages.selectConversation') }}</div>
     </div>
   </div>
 </template>
