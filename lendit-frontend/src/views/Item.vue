@@ -7,6 +7,7 @@ import ImageGallery from '../components/ImageGallery.vue';
 import PriceBox from '../components/PriceBox.vue';
 import OwnerPanel from '../components/OwnerPanel.vue';
 import RelatedItems from '../components/RelatedItems.vue';
+import ReviewsSection from '../components/ReviewsSection.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -35,8 +36,17 @@ onMounted(load);
 function onRequestBooking(payload) {
   // payload: { date_from, date_to, days, total }
   ui.showToast(`Request sent: ${payload.days} days · $${payload.total}`, 'success');
-  // Navigate to checkout with prefilled query (you'll finalize flow in Prompt #8)
-  router.push({ name: 'checkout', query: { id: item.value.id, ...payload } });
+  // Navigate to checkout with prefilled query
+  router.push({ 
+    name: 'checkout', 
+    query: { 
+      id: item.value.id,
+      title: item.value.title,
+      location: item.value.location,
+      date_from: payload.date_from,
+      date_to: payload.date_to
+    } 
+  });
 }
 </script>
 
@@ -103,6 +113,10 @@ function onRequestBooking(payload) {
       </div>
     </div>
 
+    <div class="col-12 mt-2">
+      <ReviewsSection :item-id="item.id" />
+    </div>
+    
     <div class="col-12 mt-2">
       <RelatedItems :items="related" />
     </div>

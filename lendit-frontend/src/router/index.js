@@ -10,6 +10,8 @@ const Item = () => import("../views/Item.vue");
 const Dashboard = () => import("../views/Dashboard.vue");
 const Messages = () => import("../views/Messages.vue");
 const Checkout = () => import("../views/Checkout.vue");
+const CheckoutSuccess = () => import("../views/CheckoutSuccess.vue");
+const CheckoutFailure = () => import("../views/CheckoutFailure.vue");
 const NotFound = () => import("../views/NotFound.vue");
 
 const router = createRouter({
@@ -46,6 +48,18 @@ const router = createRouter({
       path: "/checkout",
       name: "checkout",
       component: Checkout,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/checkout/success",
+      name: "checkout-success",
+      component: CheckoutSuccess,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/checkout/failure",
+      name: "checkout-failure",
+      component: CheckoutFailure,
       meta: { requiresAuth: true },
     },
     { path: "/:pathMatch(.*)*", name: "not-found", component: NotFound },

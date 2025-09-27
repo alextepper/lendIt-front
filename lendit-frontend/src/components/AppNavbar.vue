@@ -15,8 +15,11 @@
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item">
-            <router-link class="nav-link" to="/messages">
+            <router-link class="nav-link position-relative" to="/messages">
               <i class="bi bi-chat-dots"></i> Messages
+              <span v-if="chat.unreadTotal" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {{ chat.unreadTotal }}
+              </span>
             </router-link>
           </li>
         </ul>
@@ -57,6 +60,8 @@
 <script setup>
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
+import { useChatStore } from '../stores/chat'
 const auth = useAuthStore()
 const theme = useThemeStore()
+const chat = useChatStore()
 </script>

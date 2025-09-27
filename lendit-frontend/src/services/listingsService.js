@@ -26,3 +26,23 @@ export async function fetchLocations() {
   const { data } = await http.get("/meta/locations");
   return data; // ["Haifa","Tel Aviv",...]
 }
+
+export async function createListing(payload) {
+  if (USE_MOCK) {
+    return { id: Math.floor(Math.random() * 100000), ...payload };
+  }
+  const { data } = await http.post("/listings", payload);
+  return data;
+}
+
+export async function updateListing(id, payload) {
+  if (USE_MOCK) return { id, ...payload };
+  const { data } = await http.put(`/listings/${id}`, payload);
+  return data;
+}
+
+export async function deleteListing(id) {
+  if (USE_MOCK) return { ok: true };
+  const { data } = await http.delete(`/listings/${id}`);
+  return data;
+}
