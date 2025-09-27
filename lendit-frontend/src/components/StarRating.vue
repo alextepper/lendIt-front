@@ -2,30 +2,30 @@
 import { computed } from 'vue';
 
 const props = defineProps({
-  modelValue: { type: Number, default: 0 }, // for interactive mode
-  value: { type: Number, default: null },   // for read-only avg
+  modelValue: { type: Number, default: 0 },
   readonly: { type: Boolean, default: false },
-  size: { type: String, default: '1rem' },
 });
 
 const emit = defineEmits(['update:modelValue']);
 
-const stars = computed(() => {
-  const v = props.readonly ? (props.value ?? 0) : (props.modelValue ?? 0);
-  return Array.from({ length: 5 }).map((_, i) => i < Math.round(v));
-});
+const stars = computed(() => Array.from({ length: 5 }, (_, i) => i + 1));
 
-function set(n) { 
-  if (!props.readonly) emit('update:modelValue', n); 
+function handleClick(rating) {
+  if (!props.readonly) {
+    emit('update:modelValue', rating);
+  }
 }
 </script>
 
 <template>
-  <div class="d-inline-flex align-items-center" :style="{ fontSize: size, gap: '2px' }">
-    <i v-for="(on, i) in stars" :key="i"
-       class="bi"
-       :class="on ? 'bi-star-fill text-warning' : 'bi-star text-warning'"
-       role="button"
-       @click="set(i + 1)"></i>
+  <div class="star-rating">
+    <i
+      v-for="star in stars"
+      :key="star"
+      class="bi"
+      :class="star <= modelValue ? 'bi-star-fill text-warning' : 'bi-star'"
+      @click="handleClick(star)"
+      :style="{ cursor: readonly ? 'default' : 'pointer' }"
+    ></i>
   </div>
 </template>
