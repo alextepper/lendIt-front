@@ -83,8 +83,9 @@ export const useChatStore = defineStore("chat", {
     },
     connectSocket() {
       const auth = useAuthStore();
+      if (!auth.isAuthed) return; // Only connect if authenticated
       try {
-        this.socket = openSocket(auth.token);
+        this.socket = openSocket();
       } catch {
         this.socket = null;
       }

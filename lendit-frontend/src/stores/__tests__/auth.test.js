@@ -22,11 +22,13 @@ vi.mock("../router", () => ({
 }));
 
 // Mock http
+const mockHttp = {
+  post: vi.fn(),
+  get: vi.fn(),
+};
+
 vi.mock("../lib/http", () => ({
-  default: {
-    post: vi.fn(),
-    get: vi.fn(),
-  },
+  default: mockHttp,
 }));
 
 describe("auth store", () => {
@@ -41,51 +43,45 @@ describe("auth store", () => {
     expect(s.user).toBe(null);
   });
 
-  it("stores token on _afterAuth", async () => {
+  it("sets user state correctly", () => {
     const s = useAuthStore();
-    const authData = {
-      access_token: "abc123",
-      refresh_token: "refresh123",
-      user: { id: 1, name: "Test User", email: "test@example.com" },
+    const userData = {
+      id: 1,
+      email: "test@example.com",
+      username: "Test User",
+      role: "user",
+      createdAt: "2025-01-01",
+      updatedAt: "2025-01-01",
     };
 
-    await s._afterAuth(authData);
+    s.user = userData;
 
     expect(s.isAuthed).toBe(true);
-    expect(s.token).toBe("abc123");
-    expect(s.refreshToken).toBe("refresh123");
-    expect(s.user?.name).toBe("Test User");
-    expect(localStorageMock.setItem).toHaveBeenCalledWith("token", "abc123");
-    expect(localStorageMock.setItem).toHaveBeenCalledWith(
-      "refresh_token",
-      "refresh123"
-    );
+    expect(s.user).toEqual(userData);
   });
 
-  it("loads token from localStorage on init", () => {
-    localStorageMock.getItem.mockImplementation((key) => {
-      if (key === "token") return "stored-token";
-      if (key === "refresh_token") return "stored-refresh";
-      return null;
-    });
-
+  it("handles fetchMe failure gracefully", async () => {
     const s = useAuthStore();
-    expect(s.token).toBe("stored-token");
-    expect(s.refreshToken).toBe("stored-refresh");
-  });
 
-  it("clears state on logout", () => {
-    const s = useAuthStore();
-    s.token = "some-token";
-    s.user = { name: "Test" };
-    s.isAuthed = true;
+    // Mock failed fetchMe call
+    mockHttp.get.mockRejectedValueOnce(new Error("Network error"));
 
-    s.logout();
-
-    expect(s.token).toBe(null);
+    await expect(s.fetchMe()).rejects.toThrow("Network Error");
     expect(s.user).toBe(null);
     expect(s.isAuthed).toBe(false);
-    expect(localStorageMock.removeItem).toHaveBeenCalledWith("token");
-    expect(localStorageMock.removeItem).toHaveBeenCalledWith("refresh_token");
+  });
+
+  it("clears state on logout", async () => {
+    const s = useAuthStore();
+    s.user = { name: "Test" };
+
+    // Mock successful logout call
+    mockHttp.post.mockResolvedValueOnce({ data: {} });
+
+    await s.logout();
+
+    expect(s.user).toBe(null);
+    expect(s.isAuthed).toBe(false);
+    expect(localStorageMock.removeItem).not.toHaveBeenCalled(); // No localStorage with cookies
   });
 });

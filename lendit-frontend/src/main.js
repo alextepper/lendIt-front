@@ -19,12 +19,30 @@ app.use(router);
 
 const theme = useThemeStore();
 theme.init();
-// existing auth init:
-const auth = useAuthStore();
-if (auth.token) auth.fetchMe().finally(() => {});
 
-// initialize chat store
-const chat = useChatStore();
-chat.loadConversations().finally(() => chat.connectSocket());
+// Initialize auth store - try to fetch user profile (cookies will be sent automatically)
+const auth = useAuthStore();
+// Add a small delay to ensure the app is fully initialized
+setTimeout(() => {
+  auth
+    .fetchMe()
+    .then(() => {
+      // If user is authenticated, initialize chat
+      const chat = useChatStore();
+      chat
+        .loadConversations()
+        .catch(() => {
+          // Ignore chat loading errors
+        })
+        .finally(() => chat.connectSocket());
+    })
+    .catch((error) => {
+      // Ignore errors - user is just not logged in or backend is not available
+      console.log(
+        "User not authenticated or backend not available:",
+        error.message
+      );
+    });
+}, 100); // 100ms delay
 
 app.mount("#app");
