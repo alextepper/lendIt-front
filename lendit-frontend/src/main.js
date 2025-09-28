@@ -31,27 +31,18 @@ language.init();
 
 // Initialize auth store - try to fetch user profile (cookies will be sent automatically)
 const auth = useAuthStore();
-// Add a small delay to ensure the app is fully initialized
-setTimeout(() => {
-  auth
-    .fetchMe()
-    .then(() => {
-      // If user is authenticated, initialize chat
-      const chat = useChatStore();
-      chat
-        .loadConversations()
-        .catch(() => {
-          // Ignore chat loading errors
-        })
-        .finally(() => chat.connectSocket());
-    })
-    .catch((error) => {
-      // Ignore errors - user is just not logged in or backend is not available
-      console.log(
-        "User not authenticated or backend not available:",
-        error.message
-      );
-    });
-}, 100); // 100ms delay
+// Initialize auth and chat in the background
+auth.initialize().then(() => {
+  // If user is authenticated, initialize chat
+  if (auth.isAuthed) {
+    const chat = useChatStore();
+    chat
+      .loadConversations()
+      .catch(() => {
+        // Ignore chat loading errors
+      })
+      .finally(() => chat.connectSocket());
+  }
+});
 
 app.mount("#app");

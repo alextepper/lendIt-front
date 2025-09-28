@@ -26,7 +26,7 @@ const input = reactive({
   date_to: route.query.date_to || ''
 })
 const details = ref({ name:'', phone:'', method:'pickup', address:'' })
-const quote = ref({ days:0, subtotal:0, fee:0, discount:0, total:0, price_per_day: undefined })
+const quote = ref({ days:0, subtotal:0, fee:0, discount:0, total:0, pricePerDay: undefined })
 const orderId = ref(null)
 
 // Re-quote whenever dates/coupon change
@@ -139,7 +139,7 @@ async function onPay(payload) {
       <OrderSummary
         :title="input.title"
         :location="input.location"
-        :price-per-day="quote.price_per_day"
+        :price-per-day="quote.pricePerDay"
         :quote="quote"
       />
       <div v-if="busy" class="small text-secondary mt-2">Updating…</div>

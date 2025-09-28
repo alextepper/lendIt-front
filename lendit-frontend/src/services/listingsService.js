@@ -11,8 +11,31 @@ export async function fetchListings(params = {}) {
   if (USE_MOCK) return mockFetchListings(params);
   // expected backend params: q, category, location, price_min, price_max, date_from, date_to, sort, page, per_page
   const { data } = await http.get("/items", { params });
-  // expected data shape: { items: [...], page, per_page, total, total_pages }
-  return data;
+
+  // Transform backend response to expected frontend format
+  // Backend returns: { data: [...], pagination: { page, per_page, total, total_pages } }
+  // Frontend expects: { items: [...], page, per_page, total, total_pages }
+  const transformedData = {
+    items: data.data || [],
+    page: data.pagination?.page || 1,
+    per_page: data.pagination?.per_page || 12,
+    total: data.pagination?.total || 0,
+    total_pages: data.pagination?.total_pages || 1,
+  };
+
+  // Map backend field names to frontend expected names
+  transformedData.items = transformedData.items.map((item) => ({
+    ...item,
+    // Map backend fields to frontend expected fields
+    price_per_day: item.pricePerDay, // Keep both for backward compatibility
+    rating: item.ratingAvg || 0,
+    reviews_count: item.ratingCount || 0,
+    thumbnail:
+      item.photos && item.photos.length > 0 ? item.photos[0].url : null,
+    location: item.address || item.location, // Use address if available, fallback to location
+  }));
+
+  return transformedData;
 }
 
 export async function fetchCategories() {

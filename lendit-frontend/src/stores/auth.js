@@ -5,8 +5,9 @@ import router from "../router";
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: null,
-    status: "idle", // 'idle' | 'loading' | 'error'
+    status: "idle", // 'idle' | 'loading' | 'error' | 'initializing'
     error: null,
+    initialized: false, // Track if we've attempted to fetch user on app start
   }),
   getters: {
     isAuthed: (s) => !!s.user,
@@ -59,14 +60,33 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async fetchMe() {
+      this.status = "loading";
       try {
         const { data } = await http.get("/auth/me");
         this.user = data;
+        this.status = "idle";
         return data;
       } catch (e) {
         console.warn("Failed to fetch user:", e);
         this.user = null;
+        this.status = "error";
         throw e;
+      }
+    },
+    async initialize() {
+      if (this.initialized) return;
+      this.status = "initializing";
+      try {
+        await this.fetchMe();
+      } catch (e) {
+        // User is not authenticated or backend is not available
+        console.log(
+          "User not authenticated or backend not available:",
+          e.message
+        );
+        this.status = "idle";
+      } finally {
+        this.initialized = true;
       }
     },
     async refresh() {

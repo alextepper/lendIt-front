@@ -12,7 +12,8 @@ const form = reactive({
   title: '',
   category: '',
   location: '',
-  price_per_day: 0,
+  pricePerDay: 0,
+  currency: 'USD',
   description: '',
 });
 const cats = reactive({ list: [] });
@@ -21,7 +22,7 @@ const locs = reactive({ list: [] });
 watch(
   () => props.listing,
   (v) => {
-    Object.assign(form, v ? { ...v } : { title: '', category: '', location: '', price_per_day: 0, description: '' });
+    Object.assign(form, v ? { ...v } : { title: '', category: '', location: '', pricePerDay: 0, currency: 'USD', description: '' });
   },
   { immediate: true }
 );
@@ -35,7 +36,7 @@ function close() {
   emit('update:modelValue', false);
 }
 function submit() {
-  if (!form.title || !form.category || !form.location || !form.price_per_day) return;
+  if (!form.title || !form.category || !form.location || !form.pricePerDay) return;
   emit('submit', { ...form });
   close();
 }
@@ -76,9 +77,20 @@ function submit() {
               </select>
             </div>
           </div>
-          <div class="mt-2">
-            <label class="form-label">Price per day ($)</label>
-            <input v-model.number="form.price_per_day" type="number" min="1" class="form-control" />
+          <div class="row g-2 mt-2">
+            <div class="col-8">
+              <label class="form-label">Price per day</label>
+              <input v-model.number="form.pricePerDay" type="number" min="0" step="1" class="form-control" />
+            </div>
+            <div class="col-4">
+              <label class="form-label">Currency</label>
+              <select v-model="form.currency" class="form-select">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="ILS">ILS</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
           </div>
           <div class="mt-2">
             <label class="form-label">Description</label>

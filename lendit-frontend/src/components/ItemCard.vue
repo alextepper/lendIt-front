@@ -21,7 +21,7 @@ defineProps({
         <span>{{ item.category }}</span>
       </div>
       <div class="d-flex align-items-center justify-content-between mt-2">
-        <span class="fw-semibold">${{ item.price_per_day }}/day</span>
+        <span class="fw-semibold">${{ item.pricePerDay || item.price_per_day }}/day</span>
         <span class="small">
           <i class="bi bi-star-fill me-1"></i>{{ item.rating ?? '—' }}
           <span class="text-secondary">({{ item.reviews_count ?? 0 }})</span>

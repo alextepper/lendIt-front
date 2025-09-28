@@ -107,7 +107,7 @@ function onRequestBooking(payload) {
         </div>
       </div>
 
-      <PriceBox :price-per-day="item.price_per_day" @request="onRequestBooking" />
+      <PriceBox :price-per-day="item.pricePerDay || item.price_per_day" @request="onRequestBooking" />
       <div class="mt-3">
         <OwnerPanel :owner="item.owner" />
       </div>

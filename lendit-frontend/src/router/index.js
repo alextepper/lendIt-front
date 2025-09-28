@@ -70,8 +70,14 @@ const router = createRouter({
 });
 
 // Auth guards using Pinia store
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
+
+  // Wait for auth initialization if not yet done
+  if (!auth.initialized) {
+    await auth.initialize();
+  }
+
   if (to.meta.requiresAuth && !auth.isAuthed) {
     return next({ name: "login", query: { redirect: to.fullPath } });
   }

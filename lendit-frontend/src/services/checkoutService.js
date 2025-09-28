@@ -42,7 +42,7 @@ async function mockQuote(p) {
   const fee = Math.round(subtotal * 0.08);
   const discount = p.coupon === "SAVE10" ? Math.min(10, subtotal) : 0;
   const total = subtotal + fee - discount;
-  return { days, subtotal, fee, discount, total, price_per_day: pricePerDay };
+  return { days, subtotal, fee, discount, total, pricePerDay: pricePerDay };
 }
 
 async function mockCreate(p) {
