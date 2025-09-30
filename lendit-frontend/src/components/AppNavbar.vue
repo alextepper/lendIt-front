@@ -15,6 +15,11 @@
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item">
+            <router-link class="nav-link" to="/my/bookings">
+              <i class="bi bi-calendar-check"></i> My Bookings
+            </router-link>
+          </li>
+          <li v-if="auth.isAuthed" class="nav-item">
             <router-link class="nav-link position-relative" to="/messages">
               <i class="bi bi-chat-dots"></i> {{ $t('nav.messages') }}
               <span v-if="chat.unreadTotal" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -68,9 +73,62 @@
             <router-link class="btn btn-primary" to="/register">{{ $t('nav.register') }}</router-link>
           </template>
           <template v-else>
-            <span class="text-secondary small">{{ $t('auth.welcome', { name: auth.user?.name || 'User' }) }}</span>
-            <router-link class="btn btn-outline-primary" to="/dashboard"><i class="bi bi-person"></i></router-link>
-            <button class="btn btn-outline-danger" @click="auth.logout"><i class="bi bi-box-arrow-right"></i></button>
+            <!-- User Profile Dropdown -->
+            <div class="dropdown">
+              <button 
+                class="btn btn-link p-0 dropdown-toggle" 
+                data-bs-toggle="dropdown" 
+                aria-expanded="false"
+                type="button"
+              >
+                <img 
+                  :src="auth.user?.avatar || 'https://placehold.co/40x40?text=' + (auth.user?.name?.[0] || 'U')" 
+                  :alt="auth.user?.name || 'User'"
+                  class="rounded-circle border border-2 border-primary profile-img"
+                  width="40" 
+                  height="40"
+                />
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li class="dropdown-header">
+                  <div class="d-flex align-items-center">
+                    <img 
+                      :src="auth.user?.avatar || 'https://placehold.co/32x32?text=' + (auth.user?.name?.[0] || 'U')" 
+                      :alt="auth.user?.name || 'User'"
+                      class="rounded-circle me-2 profile-img"
+                      width="32" 
+                      height="32"
+                    />
+                    <div>
+                      <div class="fw-semibold">{{ auth.user?.name || 'User' }}</div>
+                      <small class="text-muted">{{ auth.user?.email || '' }}</small>
+                    </div>
+                  </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <router-link class="dropdown-item" to="/dashboard">
+                    <i class="bi bi-person me-2"></i>Profile
+                  </router-link>
+                </li>
+                <li>
+                  <router-link class="dropdown-item" to="/dashboard?tab=listings">
+                    <i class="bi bi-box-seam me-2"></i>My Listings
+                  </router-link>
+                </li>
+                <li>
+                  <router-link class="dropdown-item" to="/dashboard?tab=profile">
+                    <i class="bi bi-gear me-2"></i>Settings
+                  </router-link>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <button class="dropdown-item text-danger" @click="auth.logout">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                  </button>
+                </li>
+              </ul>
+            </div>
           </template>
         </div>
       </div>
@@ -95,3 +153,50 @@ watch(() => language.currentLocale, (newLocale) => {
   console.log('Language changed in navbar:', newLocale)
 })
 </script>
+
+<style scoped>
+/* Profile dropdown styling */
+.dropdown-toggle::after {
+  display: none; /* Hide the default dropdown arrow */
+}
+
+.profile-img {
+  transition: transform 0.2s ease;
+}
+
+.profile-img:hover {
+  transform: scale(1.05);
+}
+
+.dropdown-menu {
+  min-width: 200px;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-header {
+  padding: 0.75rem 1rem;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-item.text-danger:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545 !important;
+}
+
+/* Ensure profile image is properly cropped */
+.profile-img {
+  object-fit: cover;
+  object-position: center;
+}
+</style>

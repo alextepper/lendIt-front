@@ -53,7 +53,21 @@ async function runSearch() {
   error.value = null;
   ui.setLoading(true);
   try {
-    data.value = await fetchListings({ ...state.value });
+    // Filter out empty parameters and zero price values before sending to API
+    const params = Object.fromEntries(
+      Object.entries(state.value).filter(([key, value]) => {
+        // Filter out empty strings, null, undefined
+        if (value === '' || value === null || value === undefined) {
+          return false;
+        }
+        // Filter out zero price values (they would exclude all items)
+        if ((key === 'price_min' || key === 'price_max') && value === 0) {
+          return false;
+        }
+        return true;
+      })
+    );
+    data.value = await fetchListings(params);
   } catch (e) {
     error.value = e?.response?.data?.message || e.message || 'Failed to load';
   } finally {

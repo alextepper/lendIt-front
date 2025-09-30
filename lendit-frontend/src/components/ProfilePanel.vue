@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue';
 import { getProfile, updateProfile, uploadAvatar } from '../services/userService';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
+import UserHistory from './UserHistory.vue';
+import UserItems from './UserItems.vue';
 
 const ui = useUiStore();
 const auth = useAuthStore();
@@ -107,6 +109,16 @@ async function onAvatarChange(ev) {
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- User Items Section -->
+    <div class="mt-4">
+      <UserItems />
+    </div>
+
+    <!-- User History Section -->
+    <div class="mt-4">
+      <UserHistory />
     </div>
   </div>
 </template>

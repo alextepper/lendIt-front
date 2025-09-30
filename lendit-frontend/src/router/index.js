@@ -8,8 +8,10 @@ const Register = () => import("../views/auth/Register.vue");
 const Search = () => import("../views/Search.vue");
 const Item = () => import("../views/Item.vue");
 const Dashboard = () => import("../views/Dashboard.vue");
+const MyBookings = () => import("../views/MyBookings.vue");
 const Messages = () => import("../views/Messages.vue");
 const Checkout = () => import("../views/Checkout.vue");
+const BookingCheckout = () => import("../views/BookingCheckout.vue");
 const CheckoutSuccess = () => import("../views/CheckoutSuccess.vue");
 const CheckoutFailure = () => import("../views/CheckoutFailure.vue");
 const NotFound = () => import("../views/NotFound.vue");
@@ -39,6 +41,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: "/my/bookings",
+      name: "my-bookings",
+      component: MyBookings,
+      meta: { requiresAuth: true },
+    },
+    {
       path: "/messages",
       name: "messages",
       component: Messages,
@@ -48,6 +56,12 @@ const router = createRouter({
       path: "/checkout",
       name: "checkout",
       component: Checkout,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/checkout/:bookingId",
+      name: "booking-checkout",
+      component: BookingCheckout,
       meta: { requiresAuth: true },
     },
     {

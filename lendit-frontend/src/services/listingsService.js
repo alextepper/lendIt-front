@@ -9,18 +9,33 @@ const USE_MOCK = false; // <- set true to use the mock for local demo
 
 export async function fetchListings(params = {}) {
   if (USE_MOCK) return mockFetchListings(params);
-  // expected backend params: q, category, location, price_min, price_max, date_from, date_to, sort, page, per_page
-  const { data } = await http.get("/items", { params });
+
+  // Use different endpoints based on whether we want user's own listings
+  const endpoint = params.mine ? "/items/my-listings" : "/items";
+
+  // Transform params for the API
+  const apiParams = { ...params };
+  if (apiParams.per_page) {
+    apiParams.pageSize = apiParams.per_page;
+    delete apiParams.per_page;
+  }
+
+  // Transform category to uppercase for backend compatibility
+  if (apiParams.category) {
+    apiParams.category = apiParams.category.toUpperCase();
+  }
+
+  const { data } = await http.get(endpoint, { params: apiParams });
 
   // Transform backend response to expected frontend format
-  // Backend returns: { data: [...], pagination: { page, per_page, total, total_pages } }
+  // Backend returns: { data: [...], page, pageSize, total }
   // Frontend expects: { items: [...], page, per_page, total, total_pages }
   const transformedData = {
     items: data.data || [],
-    page: data.pagination?.page || 1,
-    per_page: data.pagination?.per_page || 12,
-    total: data.pagination?.total || 0,
-    total_pages: data.pagination?.total_pages || 1,
+    page: data.page || 1,
+    per_page: data.pageSize || 12,
+    total: data.total || 0,
+    total_pages: Math.ceil((data.total || 0) / (data.pageSize || 12)),
   };
 
   // Map backend field names to frontend expected names
@@ -54,13 +69,27 @@ export async function createListing(payload) {
   if (USE_MOCK) {
     return { id: Math.floor(Math.random() * 100000), ...payload };
   }
-  const { data } = await http.post("/items", payload);
+
+  // Transform category to uppercase for backend compatibility
+  const transformedPayload = { ...payload };
+  if (transformedPayload.category) {
+    transformedPayload.category = transformedPayload.category.toUpperCase();
+  }
+
+  const { data } = await http.post("/items", transformedPayload);
   return data;
 }
 
 export async function updateListing(id, payload) {
   if (USE_MOCK) return { id, ...payload };
-  const { data } = await http.patch(`/items/${id}`, payload);
+
+  // Transform category to uppercase for backend compatibility
+  const transformedPayload = { ...payload };
+  if (transformedPayload.category) {
+    transformedPayload.category = transformedPayload.category.toUpperCase();
+  }
+
+  const { data } = await http.patch(`/items/${id}`, transformedPayload);
   return data;
 }
 

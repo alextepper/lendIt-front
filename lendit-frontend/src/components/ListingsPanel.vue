@@ -17,7 +17,7 @@ async function load() {
   const { items: rows, total_pages } = await fetchListings({
     mine: true,
     page: page.value,
-    per_page: per,
+    pageSize: per,
   });
   items.value = rows;
   totalPages.value = total_pages;

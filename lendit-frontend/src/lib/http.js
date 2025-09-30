@@ -18,15 +18,40 @@ http.interceptors.response.use(
 
     // Prevent infinite loops by checking retry count
     const retryCount = original._retryCount || 0;
-    if (retryCount >= 3) {
+    if (retryCount >= 2) {
       console.warn("Max retry attempts reached, stopping retry loop");
       return Promise.reject(error);
     }
 
-    // If 401 and not retried yet, try to refresh (only for non-auth endpoints)
-    // Don't try to refresh if the request is to auth endpoints or if we don't have a user
-    const isAuthEndpoint = original.url?.includes("/auth/");
-    const shouldTryRefresh = !isAuthEndpoint && auth.user;
+    // If 401 and not retried yet, try to refresh
+    // Skip refresh for login/register, refresh endpoint, and logout endpoint
+    const isLoginOrRegister =
+      original.url?.includes("/auth/login") ||
+      original.url?.includes("/auth/register");
+    const isRefreshEndpoint = original.url?.includes("/auth/refresh");
+    const isLogoutEndpoint = original.url?.includes("/auth/logout");
+
+    // Special handling for refresh endpoint - if it fails, logout immediately
+    if (error?.response?.status === 401 && isRefreshEndpoint) {
+      console.warn("Refresh token endpoint returned 401 - logging out user");
+      auth.logout();
+      return Promise.reject(error);
+    }
+
+    // Skip interceptor logic for logout endpoint to prevent loops
+    if (isLogoutEndpoint) {
+      return Promise.reject(error);
+    }
+
+    // Allow refresh even if auth.user is currently null (e.g. initial load),
+    // as long as we haven't marked the refresh token invalid yet and not already refreshing
+    const shouldTryRefresh =
+      !isLoginOrRegister &&
+      !isRefreshEndpoint &&
+      !isLogoutEndpoint &&
+      auth.refreshTokenValid &&
+      !auth.isRefreshing &&
+      !auth.isLoggingOut;
 
     if (
       error?.response?.status === 401 &&
@@ -42,7 +67,9 @@ http.interceptors.response.use(
         await refreshing;
         original._retryCount = retryCount + 1;
         return http(original);
-      } catch {
+      } catch (refreshError) {
+        console.warn("Token refresh failed:", refreshError);
+        // Always logout when refresh fails - this means the refresh token is invalid
         auth.logout();
         return Promise.reject(error);
       }
@@ -50,9 +77,11 @@ http.interceptors.response.use(
 
     // If unauthorised after retry attempts, kick to login with redirect
     if (error?.response?.status === 401) {
-      const to = router.currentRoute.value.fullPath;
-      if (!to.includes("/login"))
+      const currentRoute = router.currentRoute.value;
+      if (!currentRoute.path.includes("/login")) {
+        const to = currentRoute.fullPath;
         router.replace({ name: "login", query: { redirect: to } });
+      }
     }
 
     return Promise.reject(error);

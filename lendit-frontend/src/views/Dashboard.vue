@@ -1,11 +1,27 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import DashboardTabs from '../components/DashboardTabs.vue';
 import ProfilePanel from '../components/ProfilePanel.vue';
 import ListingsPanel from '../components/ListingsPanel.vue';
 import RentalsPanel from '../components/RentalsPanel.vue';
 
-const tab = ref('listings'); // default; change to 'profile' if you prefer
+const route = useRoute();
+const tab = ref('profile'); // default to profile
+
+// Handle URL query parameters
+onMounted(() => {
+  if (route.query.tab) {
+    tab.value = route.query.tab;
+  }
+});
+
+// Watch for URL changes
+watch(() => route.query.tab, (newTab) => {
+  if (newTab) {
+    tab.value = newTab;
+  }
+});
 </script>
 
 <template>
