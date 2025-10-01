@@ -76,11 +76,19 @@ http.interceptors.response.use(
     }
 
     // If unauthorised after retry attempts, kick to login with redirect
+    // But only if we've already tried to refresh or shouldn't refresh
     if (error?.response?.status === 401) {
-      const currentRoute = router.currentRoute.value;
-      if (!currentRoute.path.includes("/login")) {
-        const to = currentRoute.fullPath;
-        router.replace({ name: "login", query: { redirect: to } });
+      // Only redirect if:
+      // 1. We've already retried (retryCount > 0), OR
+      // 2. We shouldn't try to refresh (e.g., login/register endpoints)
+      const shouldRedirect = retryCount > 0 || !shouldTryRefresh;
+
+      if (shouldRedirect) {
+        const currentRoute = router.currentRoute.value;
+        if (!currentRoute.path.includes("/login")) {
+          const to = currentRoute.fullPath;
+          router.replace({ name: "login", query: { redirect: to } });
+        }
       }
     }
 

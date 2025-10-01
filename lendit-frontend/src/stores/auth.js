@@ -108,7 +108,14 @@ export const useAuthStore = defineStore("auth", {
         // Backend handles refresh via httpOnly cookies
         const { data } = await http.post("/auth/refresh");
         // Cookies are set automatically by backend
-        console.log("Token refreshed successfully");
+        console.log("Token refreshed successfully", data);
+
+        // Update user data from the refresh response
+        if (data.user) {
+          this.user = data.user;
+          this.status = "idle";
+        }
+
         this.refreshTokenValid = true; // Reset flag on successful refresh
         return data;
       } catch (error) {
