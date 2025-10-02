@@ -23,47 +23,214 @@ async function send() {
   }
 }
 
+function formatMessageTime(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
 onMounted(scrollToBottom);
 </script>
 
 <template>
-  <div class="card h-100">
-    <div class="card-header d-flex align-items-center gap-2">
-      <img :src="chat.activeConv?.peer?.avatar" class="rounded-circle" width="32" height="32" />
-      <strong>{{ chat.activeConv?.title || chat.activeConv?.peer?.name || 'Chat' }}</strong>
-      <span v-if="chat.typing[chat.activeId]" class="small text-secondary ms-2">{{ $t('messages.typing') }}</span>
+  <div class="chat-window">
+    <!-- Chat Header (Sticky) -->
+    <div class="chat-header">
+      <img 
+        :src="chat.activeConv?.avatar || chat.activeConv?.otherUser?.avatar || 'https://placehold.co/48x48'" 
+        class="rounded-circle" 
+        width="48" 
+        height="48"
+        style="object-fit: cover;"
+      />
+      <div class="flex-grow-1">
+        <h6 class="mb-0">{{ chat.activeConv?.name || chat.activeConv?.otherUser?.username || 'Chat' }}</h6>
+        <div v-if="chat.activeConv?.item" class="small text-muted d-flex align-items-center">
+          <i class="bi bi-box-seam me-1"></i>
+          {{ chat.activeConv.item.title }}
+        </div>
+      </div>
+      <button class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-three-dots-vertical"></i>
+      </button>
     </div>
 
-    <div class="card-body overflow-auto" style="height: 60vh">
+    <!-- Messages Area (Scrollable) -->
+    <div class="chat-messages">
       <div
         v-for="m in chat.activeMessages"
         :key="m.id"
-        class="mb-2 d-flex"
-        :class="{ 'justify-content-end': m.from_self }"
+        class="message-wrapper mb-3"
+        :class="{ 'message-self': m.from_self }"
       >
-        <div
-          class="px-3 py-2 rounded-3"
-          :class="m.from_self ? 'bg-primary text-white' : 'bg-body-secondary'"
-        >
-          <div class="small">{{ m.text }}</div>
-          <div
-            class="small text-opacity-75"
-            :class="m.from_self ? 'text-white-50' : 'text-secondary'"
-          >
-            {{ (m.created_at || '').slice(11, 16) }}
+        <div class="message-bubble">
+          <div class="message-text">{{ m.text }}</div>
+          <div class="message-time">
+            {{ formatMessageTime(m.created_at) }}
           </div>
         </div>
       </div>
       <div ref="messagesEnd"></div>
     </div>
 
-    <div class="card-footer">
+    <!-- Message Input (Sticky) -->
+    <div class="chat-input">
       <div class="input-group">
-        <input v-model="input" class="form-control" :placeholder="$t('messages.typeMessage')" @keyup.enter="send" />
-        <button class="btn btn-primary" @click="send">
-          <i class="bi bi-send"></i>
+        <input 
+          v-model="input" 
+          class="form-control" 
+          :placeholder="$t('messages.typeMessage')" 
+          @keyup.enter="send" 
+        />
+        <button class="btn btn-primary px-4" @click="send" :disabled="!input.trim()">
+          <i class="bi bi-send-fill"></i>
         </button>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.chat-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  background-color: var(--bs-body-bg);
+}
+
+/* Chat Header - Sticky at top */
+.chat-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--bs-body-bg);
+  border-bottom: 1px solid #dee2e6;
+  min-height: 80px;
+  flex-shrink: 0;
+}
+
+/* Messages Area - Scrollable */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+  background-color: var(--bs-light);
+  background-image: 
+    linear-gradient(45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.02) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.02) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Custom scrollbar for messages */
+.chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Message bubbles */
+.message-wrapper {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.message-wrapper.message-self {
+  justify-content: flex-end;
+}
+
+.message-bubble {
+  max-width: 70%;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  background-color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.message-wrapper.message-self .message-bubble {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+.message-text {
+  word-wrap: break-word;
+  margin-bottom: 0.25rem;
+}
+
+.message-time {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* Chat Input - Sticky at bottom */
+.chat-input {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  padding: 1rem;
+  background-color: var(--bs-body-bg);
+  border-top: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+.input-group {
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.input-group .form-control {
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+}
+
+.input-group .form-control:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.input-group .btn {
+  border: none;
+  padding: 0.75rem 1.5rem;
+}
+
+.input-group .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .chat-header {
+    min-height: 70px;
+    padding: 0.75rem;
+  }
+  
+  .message-bubble {
+    max-width: 85%;
+  }
+  
+  .chat-input {
+    padding: 0.75rem;
+  }
+}
+</style>

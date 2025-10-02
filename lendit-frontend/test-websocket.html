@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket Connection Test</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2196F3;
+      margin-top: 0;
+    }
+    .log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin: 20px 0;
+    }
+    .log-entry {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #4CAF50;
+      padding-left: 10px;
+    }
+    .log-error {
+      border-left-color: #f44336;
+    }
+    .log-warning {
+      border-left-color: #ff9800;
+    }
+    .log-success {
+      border-left-color: #4CAF50;
+    }
+    .log-info {
+      border-left-color: #2196F3;
+    }
+    button {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #1976D2;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      margin: 10px 0;
+    }
+    .status {
+      display: inline-block;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .status.connected {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .status.disconnected {
+      background: #ffebee;
+      color: #c62828;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔌 WebSocket Connection Test</h1>
+    <p>This tool helps you test your WebSocket connection to the backend.</p>
+
+    <div>
+      <label for="tokenInput"><strong>JWT Token:</strong></label>
+      <input 
+        type="text" 
+        id="tokenInput" 
+        placeholder="Paste your JWT token here (with or without 'Bearer ' prefix)"
+      />
+      <small style="color: #666;">
+        Tip: Open browser DevTools → Application → Local Storage → access_token
+      </small>
+    </div>
+
+    <div style="margin: 20px 0;">
+      <button id="testBtn" onclick="testConnection()">🧪 Test Connection</button>
+      <button id="autoFillBtn" onclick="autoFillToken()">📋 Auto-fill from localStorage</button>
+      <button onclick="clearLog()">🗑️ Clear Log</button>
+      <span id="status" class="status disconnected">Disconnected</span>
+    </div>
+
+    <div id="log" class="log"></div>
+  </div>
+
+  <script>
+    let socket = null;
+    let logEntries = [];
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = { timestamp, message, type };
+      logEntries.push(entry);
+
+      const logDiv = document.getElementById('log');
+      const entryDiv = document.createElement('div');
+      entryDiv.className = `log-entry log-${type}`;
+      
+      let icon = '📝';
+      if (type === 'error') icon = '❌';
+      if (type === 'success') icon = '✅';
+      if (type === 'warning') icon = '⚠️';
+      if (type === 'info') icon = 'ℹ️';
+
+      entryDiv.innerHTML = `<span style="color: #888;">[${timestamp}]</span> ${icon} ${message}`;
+      logDiv.appendChild(entryDiv);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+      logEntries = [];
+      log('Log cleared', 'info');
+    }
+
+    function setStatus(connected) {
+      const statusEl = document.getElementById('status');
+      statusEl.className = `status ${connected ? 'connected' : 'disconnected'}`;
+      statusEl.textContent = connected ? '🟢 Connected' : '🔴 Disconnected';
+    }
+
+    function autoFillToken() {
+      log('Checking for token...', 'info');
+      
+      // Try localStorage first
+      try {
+        const lsToken = localStorage.getItem('access_token');
+        if (lsToken) {
+          document.getElementById('tokenInput').value = lsToken;
+          log('Token loaded from localStorage', 'success');
+          return;
+        }
+      } catch (e) {
+        log('Could not access localStorage: ' + e.message, 'warning');
+      }
+
+      // Check cookies
+      const cookies = document.cookie.split(';');
+      const accessTokenCookie = cookies.find(c => c.trim().startsWith('access_token='));
+      
+      if (accessTokenCookie) {
+        const token = accessTokenCookie.split('=')[1];
+        document.getElementById('tokenInput').value = token;
+        log('Token loaded from cookies', 'success');
+        return;
+      }
+
+      // No token found
+      log('❌ No token found', 'error');
+      log('💡 Token storage options checked:', 'info');
+      log('  1. localStorage.access_token - Not found', 'info');
+      log('  2. document.cookie.access_token - Not found', 'info');
+      log('', 'info');
+      log('💡 Your app uses httpOnly cookies!', 'warning');
+      log('httpOnly cookies cannot be accessed by JavaScript', 'warning');
+      log('', 'info');
+      log('✅ SOLUTION: The WebSocket will work automatically!', 'success');
+      log('When you connect, the browser will send cookies automatically', 'info');
+      log('Just click "Test Connection" without entering a token', 'info');
+    }
+
+    function cleanToken(token) {
+      if (!token) return token;
+      
+      // Remove "Bearer " prefix if present (case insensitive)
+      if (token.toLowerCase().startsWith('bearer ')) {
+        const cleaned = token.substring(7).trim();
+        log('Removed "Bearer " prefix from token', 'info');
+        return cleaned;
+      }
+      
+      return token.trim();
+    }
+
+    function validateToken(token) {
+      if (!token) {
+        log('Token is empty', 'error');
+        return false;
+      }
+
+      const parts = token.split('.');
+      log(`Token has ${parts.length} parts (expected 3)`, parts.length === 3 ? 'success' : 'error');
+
+      if (parts.length === 3) {
+        log(`Token preview: ${token.substring(0, 50)}...`, 'info');
+        return true;
+      }
+
+      return false;
+    }
+
+    async function testConnection() {
+      log('=== Starting WebSocket Connection Test ===', 'info');
+      
+      // Disconnect existing connection
+      if (socket) {
+        log('Disconnecting existing socket...', 'info');
+        socket.disconnect();
+        socket = null;
+      }
+
+      // Get token from input
+      let rawToken = document.getElementById('tokenInput').value.trim();
+      
+      // Check if token is provided or if we're using cookies
+      let connectionConfig = {
+        transports: ['websocket', 'polling'],
+        reconnection: false, // Disable auto-reconnect for testing
+        withCredentials: true, // IMPORTANT: Send cookies with request
+      };
+
+      if (rawToken) {
+        log('Using provided token', 'info');
+        log(`Raw token length: ${rawToken.length} characters`, 'info');
+
+        // Clean token
+        const token = cleanToken(rawToken);
+        log(`Cleaned token length: ${token.length} characters`, 'info');
+
+        // Validate token
+        if (!validateToken(token)) {
+          log('Token validation failed. Cannot proceed.', 'error');
+          return;
+        }
+
+        // Add token to connection config
+        connectionConfig.auth = { token: token };
+        connectionConfig.query = { token: token };
+      } else {
+        log('No token provided - will use httpOnly cookies', 'info');
+        log('Browser will automatically send cookies with request', 'success');
+      }
+
+      // Disable button
+      document.getElementById('testBtn').disabled = true;
+
+      // Connect
+      log('Attempting to connect to http://localhost:4000...', 'info');
+      log('Connection mode: ' + (rawToken ? 'Token-based' : 'Cookie-based'), 'info');
+      
+      socket = io('http://localhost:4000', connectionConfig);
+
+      // Success handlers
+      socket.on('connect', () => {
+        log('🎉 SUCCESS! WebSocket connected', 'success');
+        log(`Socket ID: ${socket.id}`, 'success');
+        setStatus(true);
+        
+        // Test sending a ping
+        setTimeout(() => {
+          log('Connection test complete!', 'success');
+          log('You can now disconnect or test more.', 'info');
+        }, 1000);
+      });
+
+      socket.on('connected', (data) => {
+        log('Received server confirmation', 'success');
+        log(`Server data: ${JSON.stringify(data)}`, 'info');
+      });
+
+      socket.on('disconnect', (reason) => {
+        log(`Disconnected: ${reason}`, 'warning');
+        setStatus(false);
+        document.getElementById('testBtn').disabled = false;
+      });
+
+      // Error handlers
+      socket.on('connect_error', (error) => {
+        log(`❌ Connection FAILED: ${error.message}`, 'error');
+        
+        if (error.message.includes('xhr poll error')) {
+          log('Backend server is not responding', 'error');
+          log('Make sure the backend is running on http://localhost:4000', 'warning');
+        } else if (error.message.includes('websocket error')) {
+          log('WebSocket connection rejected', 'error');
+          log('Possible causes:', 'info');
+          log('1. Invalid JWT token', 'info');
+          log('2. Token expired', 'info');
+          log('3. Backend JWT validation failed', 'info');
+          log('4. CORS configuration issue', 'info');
+        }
+        
+        setStatus(false);
+        document.getElementById('testBtn').disabled = false;
+      });
+
+      socket.on('error', (error) => {
+        log(`Socket error: ${error}`, 'error');
+      });
+
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        if (socket && !socket.connected) {
+          log('Connection timeout (10s)', 'error');
+          socket.disconnect();
+          document.getElementById('testBtn').disabled = false;
+        }
+      }, 10000);
+    }
+
+    // Auto-fill token on page load if available
+    window.addEventListener('load', () => {
+      log('WebSocket Connection Test Tool loaded', 'success');
+      log('Enter your JWT token and click "Test Connection"', 'info');
+      
+      // Try to auto-fill
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        log('Found token in localStorage (use Auto-fill button to load it)', 'info');
+      }
+    });
+  </script>
+</body>
+</html>
+

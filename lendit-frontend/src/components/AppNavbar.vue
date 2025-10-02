@@ -22,7 +22,7 @@
           <li v-if="auth.isAuthed" class="nav-item">
             <router-link class="nav-link position-relative" to="/messages">
               <i class="bi bi-chat-dots"></i> {{ $t('nav.messages') }}
-              <span v-if="chat.unreadTotal" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              <span v-if="chat.unreadTotal" class="position-absolute top-10 start-100 translate-middle badge rounded-pill bg-danger">
                 {{ chat.unreadTotal }}
               </span>
             </router-link>
@@ -117,7 +117,7 @@
                   </router-link>
                 </li>
                 <li>
-                  <router-link class="dropdown-item" to="/dashboard?tab=profile">
+                  <router-link class="dropdown-item" to="/settings">
                     <i class="bi bi-gear me-2"></i>Settings
                   </router-link>
                 </li>

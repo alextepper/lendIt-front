@@ -16,6 +16,25 @@ http.interceptors.response.use(
     const auth = useAuthStore();
     const original = error.config;
 
+    // Wait for auth initialization to complete before processing errors
+    // This prevents race conditions on page refresh
+    if (!auth.initialized && auth.status === "initializing") {
+      // Wait a bit for initialization to complete
+      await new Promise((resolve) => {
+        const checkInit = setInterval(() => {
+          if (auth.initialized) {
+            clearInterval(checkInit);
+            resolve();
+          }
+        }, 50);
+        // Timeout after 3 seconds
+        setTimeout(() => {
+          clearInterval(checkInit);
+          resolve();
+        }, 3000);
+      });
+    }
+
     // Prevent infinite loops by checking retry count
     const retryCount = original._retryCount || 0;
     if (retryCount >= 2) {
@@ -24,12 +43,13 @@ http.interceptors.response.use(
     }
 
     // If 401 and not retried yet, try to refresh
-    // Skip refresh for login/register, refresh endpoint, and logout endpoint
+    // Skip refresh for login/register, refresh endpoint, logout endpoint, and /me endpoint
     const isLoginOrRegister =
       original.url?.includes("/auth/login") ||
       original.url?.includes("/auth/register");
     const isRefreshEndpoint = original.url?.includes("/auth/refresh");
     const isLogoutEndpoint = original.url?.includes("/auth/logout");
+    const isMeEndpoint = original.url?.includes("/auth/me");
 
     // Special handling for refresh endpoint - if it fails, logout immediately
     if (error?.response?.status === 401 && isRefreshEndpoint) {
@@ -38,8 +58,14 @@ http.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Skip interceptor logic for logout endpoint to prevent loops
+    // Skip interceptor logic for logout endpoint and /me endpoint to prevent loops
     if (isLogoutEndpoint) {
+      return Promise.reject(error);
+    }
+
+    // Special handling for /me endpoint - don't redirect to login, just fail silently
+    if (error?.response?.status === 401 && isMeEndpoint) {
+      console.log("/auth/me returned 401 - user not authenticated");
       return Promise.reject(error);
     }
 
@@ -49,6 +75,7 @@ http.interceptors.response.use(
       !isLoginOrRegister &&
       !isRefreshEndpoint &&
       !isLogoutEndpoint &&
+      !isMeEndpoint &&
       auth.refreshTokenValid &&
       !auth.isRefreshing &&
       !auth.isLoggingOut;

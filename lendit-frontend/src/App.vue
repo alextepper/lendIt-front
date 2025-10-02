@@ -30,11 +30,37 @@
 </template>
 
 <script setup>
+import { watch, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from './stores/auth'
+import { useChatStore } from './stores/chat'
 import AppNavbar from './components/AppNavbar.vue'
 import GlobalToast from './components/GlobalToast.vue'
 import GlobalLoader from './components/GlobalLoader.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
 
 const auth = useAuthStore()
+const chat = useChatStore()
+
+// Initialize WebSocket when user is authenticated
+watch(() => auth.isAuthed, (isAuthed) => {
+  if (isAuthed) {
+    console.log('User authenticated, connecting WebSocket...')
+    chat.connectWebSocket()
+  } else {
+    console.log('User not authenticated, disconnecting WebSocket...')
+    chat.disconnectWebSocket()
+  }
+}, { immediate: true })
+
+// Connect WebSocket on mount if already authenticated
+onMounted(() => {
+  if (auth.isAuthed) {
+    chat.connectWebSocket()
+  }
+})
+
+// Disconnect WebSocket on unmount
+onBeforeUnmount(() => {
+  chat.disconnectWebSocket()
+})
 </script>

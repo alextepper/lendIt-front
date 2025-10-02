@@ -1,21 +1,54 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUiStore } from '../stores/ui';
-import { fetchItem, fetchRelated } from '../services/itemService';
+import { useAuthStore } from '../stores/auth';
+import { fetchItem, fetchUnavailableDates, updateAvailability } from '../services/itemService';
+import { updateListing, fetchCategories, fetchLocations } from '../services/listingsService';
 import ImageGallery from '../components/ImageGallery.vue';
 import BookingCard from '../components/BookingCard.vue';
 import OwnerPanel from '../components/OwnerPanel.vue';
-import RelatedItems from '../components/RelatedItems.vue';
 import ReviewsSection from '../components/ReviewsSection.vue';
+import AvailabilityCalendar from '../components/AvailabilityCalendar.vue';
+import { Modal } from 'bootstrap';
 
 const route = useRoute();
 const router = useRouter();
 const ui = useUiStore();
+const auth = useAuthStore();
 const item = ref(null);
-const related = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const bookingModal = ref(null);
+const ownerModal = ref(null);
+const editMode = ref(false);
+const saving = ref(false);
+const unavailableDates = ref([]);
+const updatingAvailability = ref(false);
+
+// Categories and locations for dropdown
+const categories = ref([]);
+const locations = ref([]);
+
+// Edit form
+const editForm = reactive({
+  title: '',
+  category: '',
+  location: '',
+  pricePerDay: 0,
+  initialPrice: 0,
+  deposit: 0,
+  currency: 'ILS',
+  description: '',
+});
+
+// Store original values for cancel
+const originalItem = ref(null);
+
+// Check if current user is the owner
+const isOwner = computed(() => {
+  return auth.user && item.value && auth.user.id === item.value.owner?.id;
+});
 
 async function load() {
   loading.value = true;
@@ -23,7 +56,24 @@ async function load() {
   try {
     const id = route.params.id;
     item.value = await fetchItem(id);
-    related.value = await fetchRelated(id, 6);
+    
+    // Initialize edit form with current values
+    editForm.title = item.value.title || '';
+    editForm.category = item.value.category || '';
+    editForm.location = item.value.address || item.value.location || '';
+    editForm.pricePerDay = item.value.pricePerDay || item.value.price_per_day || 0;
+    editForm.initialPrice = item.value.initialPrice || 0;
+    editForm.deposit = item.value.deposit || 0;
+    editForm.currency = item.value.currency || 'ILS';
+    editForm.description = item.value.description || '';
+    
+    // Store original for cancel
+    originalItem.value = JSON.parse(JSON.stringify(item.value));
+    
+    // Load unavailable dates if user is owner
+    if (isOwner.value) {
+      unavailableDates.value = await fetchUnavailableDates(id);
+    }
   } catch (e) {
     error.value = e?.response?.data?.message || e.message || 'Failed to load item';
   } finally {
@@ -31,19 +81,147 @@ async function load() {
   }
 }
 
-onMounted(load);
+onMounted(async () => {
+  await load();
+  
+  // Load categories and locations for edit mode
+  try {
+    categories.value = await fetchCategories();
+    locations.value = await fetchLocations();
+  } catch (e) {
+    console.error('Failed to load categories/locations:', e);
+  }
+});
+
+function showBookingModal() {
+  const modalEl = document.getElementById('bookingModal');
+  if (modalEl) {
+    const modal = new Modal(modalEl);
+    modal.show();
+  }
+}
+
+function showOwnerModal() {
+  const modalEl = document.getElementById('ownerModal');
+  if (modalEl) {
+    const modal = new Modal(modalEl);
+    modal.show();
+  }
+}
 
 function onBookingConfirmed(bookingData) {
-  // Booking is now handled directly in BookingCard component
-  // This function is kept for backward compatibility
+  // Close modal on successful booking
+  const modalEl = document.getElementById('bookingModal');
+  if (modalEl) {
+    const modal = Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+  }
   console.log('Booking confirmed:', bookingData);
+}
+
+function toggleEditMode() {
+  if (editMode.value) {
+    // If currently in edit mode, save changes
+    saveChanges();
+  } else {
+    // Enable edit mode
+    editMode.value = true;
+    ui.showToast('Edit mode enabled', 'info');
+  }
+}
+
+function cancelEdit() {
+  // Restore original values
+  editForm.title = originalItem.value.title || '';
+  editForm.category = originalItem.value.category || '';
+  editForm.location = originalItem.value.address || originalItem.value.location || '';
+  editForm.pricePerDay = originalItem.value.pricePerDay || originalItem.value.price_per_day || 0;
+  editForm.initialPrice = originalItem.value.initialPrice || 0;
+  editForm.deposit = originalItem.value.deposit || 0;
+  editForm.currency = originalItem.value.currency || 'ILS';
+  editForm.description = originalItem.value.description || '';
+  
+  editMode.value = false;
+  ui.showToast('Changes discarded', 'info');
+}
+
+async function saveChanges() {
+  // Validate
+  if (!editForm.title?.trim()) {
+    ui.showToast('Title is required', 'warning');
+    return;
+  }
+  if (!editForm.category) {
+    ui.showToast('Category is required', 'warning');
+    return;
+  }
+  if (!editForm.location) {
+    ui.showToast('Location is required', 'warning');
+    return;
+  }
+  if (!editForm.pricePerDay || editForm.pricePerDay < 0) {
+    ui.showToast('Valid price is required', 'warning');
+    return;
+  }
+  
+  saving.value = true;
+  try {
+    const payload = {
+      title: editForm.title,
+      category: editForm.category,
+      address: editForm.location,
+      pricePerDay: editForm.pricePerDay,
+      initialPrice: editForm.initialPrice,
+      deposit: editForm.deposit,
+      currency: editForm.currency,
+      description: editForm.description,
+    };
+    
+    const updated = await updateListing(item.value.id, payload);
+    
+    // Update local item with new values
+    item.value = { ...item.value, ...updated };
+    originalItem.value = JSON.parse(JSON.stringify(item.value));
+    
+    editMode.value = false;
+    ui.showToast('Listing updated successfully!', 'success');
+  } catch (e) {
+    console.error('Failed to update listing:', e);
+    ui.showToast(e?.response?.data?.message || 'Failed to update listing', 'danger');
+  } finally {
+    saving.value = false;
+  }
+}
+
+async function handleAvailabilityUpdate(payload) {
+  updatingAvailability.value = true;
+  try {
+    await updateAvailability(item.value.id, payload);
+    
+    // Update local unavailable dates
+    if (payload.action === 'block') {
+      // Add new blocked dates
+      unavailableDates.value = [...new Set([...unavailableDates.value, ...payload.dates])];
+      ui.showToast(`Blocked ${payload.dates.length} date(s)`, 'success');
+    } else {
+      // Remove unblocked dates
+      unavailableDates.value = unavailableDates.value.filter(d => !payload.dates.includes(d));
+      ui.showToast(`Unblocked ${payload.dates.length} date(s)`, 'success');
+    }
+  } catch (e) {
+    console.error('Failed to update availability:', e);
+    ui.showToast(e?.response?.data?.message || 'Failed to update availability', 'danger');
+  } finally {
+    updatingAvailability.value = false;
+  }
 }
 </script>
 
 <template>
-  <div class="mb-2">
-    <nav aria-label="breadcrumb">
-      <ol class="breadcrumb small">
+  <div class="item-page">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb small mb-0">
         <li class="breadcrumb-item"><router-link to="/">Home</router-link></li>
         <li class="breadcrumb-item">
           <router-link :to="{ name: 'search', query: { category: item?.category } }">{{
@@ -53,75 +231,398 @@ function onBookingConfirmed(bookingData) {
         <li class="breadcrumb-item active" aria-current="page">{{ item?.title || 'Item' }}</li>
       </ol>
     </nav>
-  </div>
 
-  <div v-if="error" class="alert alert-danger">{{ error }}</div>
+    <!-- Error State -->
+    <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-  <div v-if="loading" class="text-center py-5">
-    <div class="spinner-border" role="status"></div>
-    <div class="small text-secondary mt-2">Loading item…</div>
-  </div>
-
-  <div v-else-if="item" class="row g-4">
-    <!-- Main Content -->
-    <div class="col-lg-8">
-      <ImageGallery :photos="item.photos" />
-
-      <div class="card p-3 mt-3">
-        <h2 class="h6 mb-2">About this item</h2>
-        <p class="mb-0">{{ item.description }}</p>
-      </div>
-
-      <div class="mt-4">
-        <ReviewsSection :item-id="item.id" />
-      </div>
-      
-      <div class="mt-4">
-        <RelatedItems :items="related" />
-      </div>
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border" role="status"></div>
+      <div class="small text-secondary mt-2">Loading item…</div>
     </div>
 
-    <!-- Sticky Sidebar -->
-    <div class="col-lg-4">
-      <div class="sticky-top" style="top: 1rem;">
-        <!-- Item Header -->
-        <div class="card p-3 mb-3">
-          <div class="d-flex align-items-start justify-content-between">
-            <div>
-              <h1 class="h5 mb-1">{{ item.title }}</h1>
-              <div class="small text-secondary d-flex gap-2 align-items-center">
-                <span><i class="bi bi-geo-alt"></i> {{ item.location }}</span>
+    <!-- Item Content -->
+    <div v-else-if="item">
+      <!-- Item Header - Always at top -->
+      <div class="item-header mb-4" :class="{ 'edit-mode': editMode }">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+          <div class="flex-grow-1">
+            <!-- Title: View or Edit Mode -->
+            <h1 v-if="!editMode" class="item-title mb-2">{{ item.title }}</h1>
+            <div v-else class="mb-3">
+              <label class="form-label small fw-bold">Title</label>
+              <input 
+                v-model="editForm.title" 
+                type="text" 
+                class="form-control form-control-lg" 
+                placeholder="Item title"
+                :disabled="saving"
+              />
+            </div>
+
+            <!-- Meta: View or Edit Mode -->
+            <div v-if="!editMode" class="item-meta d-flex flex-wrap gap-3 align-items-center text-muted">
+              <span class="d-flex align-items-center gap-1">
+                <i class="bi bi-geo-alt"></i> {{ item.location || item.address }}
+              </span>
+              <span>·</span>
+              <span class="d-flex align-items-center gap-1">
+                <i class="bi bi-star-fill text-warning"></i> 
+                {{ item.rating || '0.0' }} 
+                <span class="text-muted">({{ item.reviews_count || 0 }})</span>
+              </span>
+              <span>·</span>
+              <span class="badge bg-primary">{{ item.category }}</span>
+              <span>·</span>
+              <span class="fw-bold">{{ item.pricePerDay || item.price_per_day }} {{ item.currency || 'ILS' }}/day</span>
+              <template v-if="item.initialPrice">
                 <span>·</span>
-                <span><i class="bi bi-star-fill"></i> {{ item.rating }} ({{ item.reviews_count }})</span>
+                <span class="text-muted">Initial: {{ item.initialPrice }} {{ item.currency || 'ILS' }}</span>
+              </template>
+              <template v-if="item.deposit">
+                <span>·</span>
+                <span class="text-muted">Deposit: {{ item.deposit }} {{ item.currency || 'ILS' }}</span>
+              </template>
+            </div>
+            <div v-else class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Category</label>
+                <select v-model="editForm.category" class="form-select" :disabled="saving">
+                  <option value="">Choose...</option>
+                  <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Location</label>
+                <select v-model="editForm.location" class="form-select" :disabled="saving">
+                  <option value="">Choose...</option>
+                  <option v-for="loc in locations" :key="loc" :value="loc">{{ loc }}</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small fw-bold">Daily Price</label>
+                <input 
+                  v-model.number="editForm.pricePerDay" 
+                  type="number" 
+                  min="0" 
+                  step="1" 
+                  class="form-control"
+                  :disabled="saving"
+                />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small fw-bold">Initial Price</label>
+                <input 
+                  v-model.number="editForm.initialPrice" 
+                  type="number" 
+                  min="0" 
+                  step="1" 
+                  class="form-control"
+                  :disabled="saving"
+                  placeholder="0"
+                />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small fw-bold">Deposit</label>
+                <input 
+                  v-model.number="editForm.deposit" 
+                  type="number" 
+                  min="0" 
+                  step="1" 
+                  class="form-control"
+                  :disabled="saving"
+                  placeholder="0"
+                />
+              </div>
+              <div class="col-12 col-md-12">
+                <label class="form-label small fw-bold">Currency</label>
+                <select v-model="editForm.currency" class="form-select" :disabled="saving">
+                  <option value="ILS">ILS (₪)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                </select>
               </div>
             </div>
-            <div class="ms-auto d-flex gap-2">
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="d-flex gap-2 item-actions">
+            <!-- Owner Actions -->
+            <template v-if="isOwner">
               <button
-                class="btn btn-sm btn-outline-secondary"
-                @click="navigator.clipboard.writeText(location.href)"
+                class="btn"
+                :class="editMode ? 'btn-success' : 'btn-primary'"
+                @click="toggleEditMode"
+                title="Toggle edit mode"
+                :disabled="saving"
               >
-                <i class="bi bi-share"></i> Share
+                <span v-if="saving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <i v-else class="bi" :class="editMode ? 'bi-check-lg' : 'bi-pencil'"></i>
+                <span class="ms-1">{{ saving ? 'Saving...' : (editMode ? 'Save Changes' : 'Edit Listing') }}</span>
               </button>
-              <button class="btn btn-sm btn-outline-danger" type="button">
-                <i class="bi bi-flag"></i> Report
+              <button
+                v-if="editMode"
+                class="btn btn-outline-secondary"
+                @click="cancelEdit"
+                title="Cancel editing"
+                :disabled="saving"
+              >
+                <i class="bi bi-x-lg"></i>
+                <span class="d-none d-md-inline ms-1">Cancel</span>
               </button>
+            </template>
+            
+            <!-- Non-Owner Actions -->
+            <template v-else>
+              <!-- TODO: Booking functionality - Coming soon -->
+              <!-- <button
+                class="btn btn-primary"
+                @click="showBookingModal"
+                title="Book this item"
+              >
+                <i class="bi bi-calendar-check"></i>
+                <span class="ms-1">Book Now</span>
+              </button> -->
+              
+              <button
+                class="btn btn-primary"
+                @click="showOwnerModal"
+                title="Message owner"
+              >
+                <i class="bi bi-chat-dots"></i>
+                <span class="ms-1">Message Owner</span>
+              </button>
+              <button
+                class="btn btn-outline-danger"
+                type="button"
+                title="Report"
+              >
+                <i class="bi bi-flag"></i>
+                <span class="d-none d-md-inline ms-1">Report</span>
+              </button>
+            </template>
+            
+            <!-- Share button (always visible) -->
+            <button
+              class="btn btn-outline-secondary"
+              @click="navigator.clipboard.writeText(location.href)"
+              title="Share"
+            >
+              <i class="bi bi-share"></i>
+              <span class="d-none d-md-inline ms-1">Share</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Layout -->
+      <div class="row g-4">
+        <!-- Main Content Column -->
+        <div class="col-lg-8">
+          <!-- Image Gallery -->
+          <ImageGallery :photos="item.photos" />
+
+          <!-- Description Card -->
+          <div class="card p-3 p-md-4 mt-3 mt-md-4">
+            <h2 class="h5 mb-3">About this item</h2>
+            <p v-if="!editMode" class="mb-0 text-muted">{{ item.description }}</p>
+            <div v-else>
+              <label class="form-label small fw-bold">Description</label>
+              <textarea 
+                v-model="editForm.description" 
+                class="form-control" 
+                rows="6" 
+                placeholder="Describe your item..."
+                :disabled="saving"
+              ></textarea>
             </div>
+          </div>
+
+          <!-- Availability Calendar (Owner Only) -->
+          <div v-if="isOwner" class="mt-3 mt-md-4">
+            <AvailabilityCalendar
+              :item-id="item.id"
+              :unavailable-dates="unavailableDates"
+              :disabled="updatingAvailability"
+              @update="handleAvailabilityUpdate"
+            />
           </div>
         </div>
 
-        <!-- Booking Card -->
-        <BookingCard 
-          :item-id="item.id"
-          :price-per-day="item.pricePerDay || item.price_per_day"
-          :currency="item.currency || 'USD'"
-          @book="onBookingConfirmed"
-        />
+        <!-- Sidebar Column -->
+        <div class="col-lg-4">
+          <div class="sidebar-content">
+            <!-- Reviews Section -->
+            <ReviewsSection :item-id="item.id" :can-review="!isOwner" />
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <!-- Owner Panel -->
-        <!-- <div class="mt-3">
-          <OwnerPanel :owner="item.owner" />
-        </div> -->
+    <!-- TODO: Booking Modal - Coming soon -->
+    <!-- <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="bookingModalLabel">Book this item</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-0">
+            <BookingCard 
+              v-if="item"
+              :item-id="item.id"
+              :price-per-day="item.pricePerDay || item.price_per_day"
+              :currency="item.currency || 'USD'"
+              @book="onBookingConfirmed"
+            />
+          </div>
+        </div>
+      </div>
+    </div> -->
+
+    <!-- Owner Modal -->
+    <div class="modal fade" id="ownerModal" tabindex="-1" aria-labelledby="ownerModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="ownerModalLabel">Owner Information</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-0">
+            <OwnerPanel v-if="item?.owner" :owner="item.owner" :item-id="item.id" />
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.item-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.item-header {
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.item-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.item-meta {
+  font-size: 0.95rem;
+}
+
+.item-actions {
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.item-actions .btn {
+  white-space: nowrap;
+}
+
+/* Sticky sidebar on desktop */
+.sidebar-content {
+  position: sticky;
+  top: 1rem;
+}
+
+/* Modal body padding fix */
+.modal-body {
+  padding: 0 !important;
+}
+
+.modal-body .card {
+  border: none;
+  box-shadow: none;
+}
+
+/* Desktop optimizations */
+@media (min-width: 992px) {
+  .item-actions .btn {
+    min-width: 120px;
+  }
+}
+
+/* Tablet optimizations */
+@media (max-width: 991px) {
+  .item-title {
+    font-size: 1.75rem;
+  }
+  
+  .item-meta {
+    font-size: 0.875rem;
+  }
+  
+  .item-header {
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .sidebar-content {
+    position: static;
+  }
+}
+
+/* Edit mode styling */
+.item-header.edit-mode {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 2px dashed #0d6efd;
+}
+
+.form-label.small {
+  margin-bottom: 0.25rem;
+  color: #6c757d;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .item-title {
+    font-size: 1.5rem;
+  }
+  
+  .item-actions {
+    width: 100%;
+  }
+  
+  .item-actions .btn {
+    flex: 1;
+    min-width: auto;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .item-actions .btn span {
+    display: none !important;
+  }
+  
+  .item-actions .btn i {
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .item-title {
+    font-size: 1.25rem;
+  }
+  
+  .item-header {
+    margin-bottom: 1rem !important;
+  }
+  
+  .item-actions {
+    gap: 0.5rem !important;
+  }
+}
+</style>

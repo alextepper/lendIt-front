@@ -15,7 +15,7 @@ export async function getProfile() {
 
 export async function updateProfile(payload) {
   if (USE_MOCK) return mockUpdateProfile(payload);
-  const { data } = await http.patch("/auth/me", payload);
+  const { data } = await http.patch("/users/me", payload);
   return data;
 }
 

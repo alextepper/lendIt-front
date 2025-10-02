@@ -41,7 +41,7 @@ auth.initialize().then(() => {
       .catch(() => {
         // Ignore chat loading errors
       })
-      .finally(() => chat.connectSocket());
+      .finally(() => chat.connectWebSocket());
   }
 });
 

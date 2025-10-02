@@ -6,7 +6,10 @@ import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import ReviewModal from './ReviewModal.vue';
 
-const props = defineProps({ itemId: { type: [String, Number], required: true } });
+const props = defineProps({ 
+  itemId: { type: [String, Number], required: true },
+  canReview: { type: Boolean, default: true }
+});
 const ui = useUiStore();
 const auth = useAuthStore();
 
@@ -46,10 +49,10 @@ async function onSubmitReview(payload) {
   <div class="card p-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h2 class="h6 mb-0">Reviews ({{ agg.count }})</h2>
-      <button v-if="auth.isAuthed" class="btn btn-sm btn-outline-primary" @click="showModal = true">
+      <button v-if="auth.isAuthed && canReview" class="btn btn-sm btn-outline-primary" @click="showModal = true">
         <i class="bi bi-pencil-square me-1"></i>Write a review
       </button>
-      <router-link v-else class="btn btn-sm btn-outline-primary" :to="{ name: 'login', query: { redirect: `/item/${props.itemId}` } }">
+      <router-link v-else-if="!auth.isAuthed && canReview" class="btn btn-sm btn-outline-primary" :to="{ name: 'login', query: { redirect: `/item/${props.itemId}` } }">
         Sign in to review
       </router-link>
     </div>
@@ -58,9 +61,12 @@ async function onSubmitReview(payload) {
     <div class="row g-3">
       <div class="col-md-4">
         <div class="border rounded p-3 text-center">
-          <div class="display-6">{{ agg.avg?.toFixed?.(1) || '0.0' }}</div>
-          <div class="mb-1"><StarRating :value="agg.avg" readonly size="1.25rem" /></div>
-          <div class="small text-secondary">{{ agg.count }} total</div>
+          <div class="display-6 fw-bold">{{ agg.avg?.toFixed?.(1) || '0.0' }}</div>
+          <div class="mb-1 rating-star-container">
+            <i class="bi bi-star-fill rating-star-bg"></i>
+            <i class="bi bi-star-fill rating-star-fill" :style="{ width: ((agg.avg || 0) / 5) * 100 + '%' }"></i>
+          </div>
+          <div class="small text-secondary">{{ agg.count }} reviews</div>
         </div>
       </div>
       <div class="col-md-8">
@@ -99,3 +105,25 @@ async function onSubmitReview(payload) {
 
   <ReviewModal v-model="showModal" @submit="onSubmitReview" />
 </template>
+
+<style scoped>
+.rating-star-container {
+  position: relative;
+  display: inline-block;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.rating-star-bg {
+  color: #e0e0e0; /* Light gray background star */
+}
+
+.rating-star-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #ffc107; /* Yellow/gold color for filled portion */
+  overflow: hidden;
+  white-space: nowrap;
+}
+</style>

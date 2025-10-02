@@ -82,16 +82,28 @@ export const useAuthStore = defineStore("auth", {
       if (this.initialized) return;
       this.status = "initializing";
       try {
-        await this.fetchMe();
+        // Try to refresh token first, then fetch user
+        try {
+          await this.refresh();
+          console.log("Token refreshed during initialization");
+        } catch (refreshError) {
+          // If refresh fails, it's ok - user might not be logged in
+          console.log("No valid refresh token during initialization");
+        }
+
+        // Now try to fetch user (should work if refresh succeeded)
+        try {
+          await this.fetchMe();
+        } catch (fetchError) {
+          // User is not authenticated
+          console.log("User not authenticated:", fetchError.message);
+        }
       } catch (e) {
-        // User is not authenticated or backend is not available
-        console.log(
-          "User not authenticated or backend not available:",
-          e.message
-        );
+        console.log("Initialization error:", e.message);
         this.status = "idle";
       } finally {
         this.initialized = true;
+        this.status = "idle";
       }
     },
     async refresh() {

@@ -26,6 +26,44 @@ export async function fetchItem(id) {
   return transformedItem;
 }
 
+/**
+ * Fetch unavailable dates for an item
+ * @param {string} id - Item ID
+ * @returns {Promise<string[]>} Array of unavailable date strings (YYYY-MM-DD)
+ */
+export async function fetchUnavailableDates(id) {
+  try {
+    const { data } = await http.get(`/items/${id}/unavailable-dates`);
+    return data.unavailableDates || [];
+  } catch (error) {
+    console.error("Failed to fetch unavailable dates:", error);
+    return [];
+  }
+}
+
+/**
+ * Update item availability (block/unblock dates)
+ * @param {string} id - Item ID
+ * @param {Object} payload - { action: 'block' | 'unblock', dates: string[] }
+ * @returns {Promise<Object>}
+ */
+export async function updateAvailability(id, payload) {
+  // Transform payload to backend format
+  const backendPayload = {
+    ranges: payload.dates.map((date) => ({
+      from: date,
+      to: date,
+      available: payload.action === "unblock", // true = unblock (make available), false = block (make unavailable)
+    })),
+  };
+
+  const { data } = await http.patch(
+    `/items/${id}/availability`,
+    backendPayload
+  );
+  return data;
+}
+
 export async function fetchRelated(id, limit = 6) {
   if (USE_MOCK) return mockFetchRelated(id, limit);
   const { data } = await http.get(`/items/${id}/related`, {
