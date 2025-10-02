@@ -153,13 +153,19 @@ const confirmed = ref(false)
 
 // Methods
 function formatPrice(amount) {
+  // Backend sends prices in cents, so divide by 100 for display
   const formatter = new Intl.NumberFormat('he-IL', {
     style: 'currency',
     currency: 'ILS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   })
-  return formatter.format(amount / 100) // Assuming backend sends amounts in cents
+  return formatter.format(amount / 100)
+}
+
+function formatPriceForBackend(amount) {
+  // Convert display price to backend format (multiply by 100)
+  return Math.round(amount * 100);
 }
 
 function formatDate(dateString) {

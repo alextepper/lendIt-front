@@ -83,7 +83,7 @@
               >
                 <img 
                   :src="auth.user?.avatar || 'https://placehold.co/40x40?text=' + (auth.user?.name?.[0] || 'U')" 
-                  :alt="auth.user?.name || 'User'"
+                  :alt="auth.user?.username || 'User'"
                   class="rounded-circle border border-2 border-primary profile-img"
                   width="40" 
                   height="40"
@@ -100,7 +100,7 @@
                       height="32"
                     />
                     <div>
-                      <div class="fw-semibold">{{ auth.user?.name || 'User' }}</div>
+                      <div class="fw-semibold">{{ auth.user?.username || 'User' }}</div>
                       <small class="text-muted">{{ auth.user?.email || '' }}</small>
                     </div>
                   </div>

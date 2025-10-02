@@ -2,6 +2,16 @@
 defineProps({
   item: { type: Object, required: true },
 });
+
+function formatPrice(amount) {
+  // Backend sends prices in cents, so divide by 100 for display
+  return new Intl.NumberFormat('he-IL', {
+    style: 'currency',
+    currency: 'ILS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(amount / 100)
+}
 </script>
 
 <template>
@@ -21,7 +31,7 @@ defineProps({
         <span>{{ item.category }}</span>
       </div>
       <div class="d-flex align-items-center justify-content-between mt-2">
-        <span class="fw-semibold">${{ item.pricePerDay || item.price_per_day }}/day</span>
+        <span class="fw-semibold">{{ formatPrice(item.pricePerDay || item.price_per_day) }}/day</span>
         <span class="small">
           <i class="bi bi-star-fill me-1"></i>{{ item.rating ?? '—' }}
           <span class="text-secondary">({{ item.reviews_count ?? 0 }})</span>

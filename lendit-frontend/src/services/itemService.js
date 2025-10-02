@@ -27,17 +27,57 @@ export async function fetchItem(id) {
 }
 
 /**
- * Fetch unavailable dates for an item
+ * Fetch calendar availability for an item
  * @param {string} id - Item ID
- * @returns {Promise<string[]>} Array of unavailable date strings (YYYY-MM-DD)
+ * @param {string} month - Month in format YYYY-MM (optional, defaults to current month)
+ * @returns {Promise<Object>} Calendar availability object
  */
-export async function fetchUnavailableDates(id) {
+export async function fetchItemCalendar(id, month = null) {
   try {
-    const { data } = await http.get(`/items/${id}/unavailable-dates`);
-    return data.unavailableDates || [];
+    const params = month ? { month } : {};
+    const { data } = await http.get(`/items/${id}/calendar`, { params });
+
+    // Transform calendar data to array of unavailable dates for backward compatibility
+    const unavailableDates = [];
+    if (data.availability) {
+      Object.entries(data.availability).forEach(([date, info]) => {
+        if (!info.available) {
+          unavailableDates.push(date);
+        }
+      });
+    }
+
+    return {
+      month: data.month,
+      availability: data.availability,
+      unavailableDates, // For backward compatibility
+    };
   } catch (error) {
-    console.error("Failed to fetch unavailable dates:", error);
-    return [];
+    console.error("Failed to fetch calendar:", error);
+    return {
+      month: month || new Date().toISOString().slice(0, 7),
+      availability: {},
+      unavailableDates: [],
+    };
+  }
+}
+
+/**
+ * Check if specific date range is available for booking
+ * @param {string} id - Item ID
+ * @param {string} from - Start date (YYYY-MM-DD)
+ * @param {string} to - End date (YYYY-MM-DD)
+ * @returns {Promise<Object>} { available: boolean, unavailableRanges: [] }
+ */
+export async function checkBookingAvailability(id, from, to) {
+  try {
+    const { data } = await http.get(`/items/${id}/booking-availability`, {
+      params: { from, to },
+    });
+    return data;
+  } catch (error) {
+    console.error("Failed to check booking availability:", error);
+    throw error;
   }
 }
 

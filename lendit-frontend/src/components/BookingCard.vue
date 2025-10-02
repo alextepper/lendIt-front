@@ -1,141 +1,166 @@
 <template>
-  <div class="card p-3">
-    <h3 class="h6 mb-3">Book this item</h3>
-    
-    <!-- Date Range Picker -->
-    <!-- Start Date -->
-    <div class="mb-3">
-      <label class="form-label">Start Date</label>
-      <input
-        v-model="startDate"
-        type="date"
-        :min="minDate"
-        :max="maxDate"
-        class="form-control"
-        :class="{ 'is-invalid': startDateError }"
-        @change="onStartDateChange"
-      />
-      <div v-if="startDateError" class="invalid-feedback d-block">{{ startDateError }}</div>
-    </div>
-
-    <!-- Return Date -->
-    <div class="mb-3">
-      <label class="form-label">Return Date</label>
-      <input
-        v-model="returnDate"
-        type="date"
-        :min="startDate || minDate"
-        :max="maxDate"
-        class="form-control"
-        :class="{ 'is-invalid': returnDateError }"
-        @change="onReturnDateChange"
-      />
-      <div v-if="returnDateError" class="invalid-feedback d-block">{{ returnDateError }}</div>
-    </div>
-
-    <!-- Duration Display -->
-    <div v-if="selectedDuration" class="duration-display mb-3 small">
-      <div class="d-flex align-items-center justify-content-between">
-        <div class="text-primary">
-          <i class="bi bi-clock me-1"></i>
-          <strong>Duration:</strong> {{ selectedDuration }}
+  <div class="booking-card">
+    <!-- Header -->
+    <div class="booking-header">
+      <div class="d-flex align-items-center gap-2">
+        <div class="booking-icon">
+          <i class="bi bi-calendar-check"></i>
         </div>
-        <div v-if="selectedNights < minStay" class="text-warning">
-          <i class="bi bi-exclamation-triangle me-1"></i>
-          Min {{ minStay }} night{{ minStay !== 1 ? 's' : '' }}
-        </div>
-        <div v-if="selectedNights > maxStay" class="text-danger">
-          <i class="bi bi-x-circle me-1"></i>
-          Max {{ maxStay }} night{{ maxStay !== 1 ? 's' : '' }}
+        <div>
+          <h3 class="booking-title">Book this item</h3>
+          <p class="booking-subtitle">Select your dates and get an instant quote</p>
         </div>
       </div>
     </div>
 
-    <!-- Guests Input -->
-    <!-- <div class="mb-3">
-      <label class="form-label">Guests (optional)</label>
-      <input
-        v-model.number="guests"
-        type="number"
-        min="1"
-        max="10"
-        class="form-control"
-        placeholder="Number of guests"
-      />
-    </div> -->
+    <!-- Date Selection Section -->
+    <div class="booking-section">
+      <div class="section-header">
+        <i class="bi bi-calendar3 me-2"></i>
+        <span>Select Dates</span>
+      </div>
+      
+      <div class="date-inputs">
+        <div class="date-input-group">
+          <label class="date-label">Check-in</label>
+          <input
+            v-model="startDate"
+            type="date"
+            :min="minDate"
+            :max="maxDate"
+            class="date-input"
+            :class="{ 'is-invalid': startDateError }"
+            @change="onStartDateChange"
+          />
+          <div v-if="startDateError" class="error-message">{{ startDateError }}</div>
+        </div>
 
-    <!-- Notes Input -->
-    <div class="mb-3">
-      <label class="form-label">Special requests (optional)</label>
+        <div class="date-input-group">
+          <label class="date-label">Check-out</label>
+          <input
+            v-model="returnDate"
+            type="date"
+            :min="startDate || minDate"
+            :max="maxDate"
+            class="date-input"
+            :class="{ 'is-invalid': returnDateError }"
+            @change="onReturnDateChange"
+          />
+          <div v-if="returnDateError" class="error-message">{{ returnDateError }}</div>
+        </div>
+      </div>
+
+      <!-- Duration Display -->
+      <div v-if="selectedDuration" class="duration-card">
+        <div class="duration-content">
+          <div class="duration-info">
+            <i class="bi bi-clock me-2"></i>
+            <span class="duration-text">{{ selectedDuration }}</span>
+          </div>
+          <div v-if="selectedNights < minStay" class="duration-warning">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Min {{ minStay }} night{{ minStay !== 1 ? 's' : '' }}
+          </div>
+          <div v-if="selectedNights > maxStay" class="duration-error">
+            <i class="bi bi-x-circle me-1"></i>
+            Max {{ maxStay }} night{{ maxStay !== 1 ? 's' : '' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Special Requests Section -->
+    <div class="booking-section">
+      <div class="section-header">
+        <i class="bi bi-chat-text me-2"></i>
+        <span>Special Requests</span>
+        <span class="optional-badge">Optional</span>
+      </div>
       <textarea
         v-model="notes"
-        class="form-control"
-        rows="2"
+        class="notes-input"
+        rows="3"
         placeholder="Any special requests or notes for the owner..."
       ></textarea>
     </div>
 
     <!-- Check Availability Button -->
     <button
-      class="btn btn-primary w-100 mb-3"
+      class="check-availability-btn"
       :disabled="!canCheckAvailability || loading"
       @click="checkAvailability"
     >
       <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
-      {{ loading ? 'Checking...' : 'Check Availability & Quote' }}
+      <i v-else class="bi bi-search me-2"></i>
+      {{ loading ? 'Checking Availability...' : 'Check Availability & Get Quote' }}
     </button>
 
     <!-- Error Message -->
-    <div v-if="error" class="alert alert-danger mb-3">
+    <div v-if="error" class="error-alert">
+      <i class="bi bi-exclamation-triangle me-2"></i>
       {{ error }}
     </div>
 
     <!-- Price Breakdown Card -->
-    <div v-if="quote" ref="priceBreakdown" class="card bg-light p-3 mb-3">
-      <h6 class="card-title mb-3">Price Breakdown</h6>
-      
-      <div class="d-flex justify-content-between small text-secondary mb-2">
-        <span>{{ quote.nights }} night(s) × {{ formatPrice(quote.nightlyPrice) }}</span>
-        <span>{{ formatPrice(quote.subtotal) }}</span>
+    <div v-if="quote" ref="priceBreakdown" class="price-breakdown-card">
+      <div class="price-header">
+        <h4 class="price-title">
+          <i class="bi bi-calculator me-2"></i>
+          Price Breakdown
+        </h4>
+        <div class="price-currency">Prices in ₪</div>
       </div>
       
-      <div v-if="quote.fees > 0" class="d-flex justify-content-between small text-secondary mb-2">
-        <span>Service fee</span>
-        <span>{{ formatPrice(quote.fees) }}</span>
-      </div>
-      
-      <div v-if="quote.discount > 0" class="d-flex justify-content-between small text-success mb-2">
-        <span>Discount</span>
-        <span>-{{ formatPrice(quote.discount) }}</span>
-      </div>
-      
-      <hr class="my-2">
-      
-      <div class="d-flex justify-content-between fw-semibold mb-2">
-        <span>Total</span>
-        <span>{{ formatPrice(quote.total) }}</span>
+      <div class="price-details">
+        <div class="price-line">
+          <span class="price-label">{{ quote.nights }} night(s) × {{ formatPrice(quote.nightlyPrice) }}</span>
+          <span class="price-value">{{ formatPrice(quote.subtotal) }}</span>
+        </div>
+        
+        <div v-if="quote.fees > 0" class="price-line">
+          <span class="price-label">Service fee</span>
+          <span class="price-value">{{ formatPrice(quote.fees) }}</span>
+        </div>
+        
+        <div v-if="quote.discount > 0" class="price-line discount">
+          <span class="price-label">Discount</span>
+          <span class="price-value">-{{ formatPrice(quote.discount) }}</span>
+        </div>
+        
+        <div class="price-divider"></div>
+        
+        <div class="price-total">
+          <span class="total-label">Total</span>
+          <span class="total-value">{{ formatPrice(quote.total) }}</span>
+        </div>
       </div>
 
-      <div class="small text-muted">
-        <i class="bi bi-info-circle me-1"></i>
-        Prices in ₪ incl. VAT (if applicable)
+      <div class="price-footer">
+        <div class="price-note">
+          <i class="bi bi-info-circle me-1"></i>
+          All prices include VAT (if applicable)
+        </div>
       </div>
 
       <!-- Book Button -->
       <button
-        class="btn btn-success w-100 mt-3"
+        class="book-now-btn"
         :disabled="loading"
         @click="bookItem"
       >
         <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+        <i v-else class="bi bi-check-circle me-2"></i>
         Book Now - {{ formatPrice(quote.total) }}
       </button>
     </div>
 
     <!-- Unavailable Message -->
-    <div v-if="!loading && !quote && hasCheckedAvailability" class="alert alert-warning">
-      <i class="bi bi-exclamation-triangle me-2"></i>
-      Those dates are unavailable. Try different dates.
+    <div v-if="!loading && !quote && hasCheckedAvailability" class="unavailable-alert">
+      <i class="bi bi-calendar-x me-2"></i>
+      <div>
+        <strong>Dates Unavailable</strong>
+        <p class="mb-0">Those dates are unavailable. Please try different dates.</p>
+      </div>
     </div>
   </div>
 </template>
@@ -240,14 +265,19 @@ const currentMonthDisplay = computed(() => {
 
 // Methods
 function formatPrice(amount) {
-  // Use ILS (₪) for Israeli locale
+  // Backend sends prices in cents, so divide by 100 for display
   const formatter = new Intl.NumberFormat('he-IL', {
     style: 'currency',
     currency: 'ILS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   })
-  return formatter.format(amount / 100) // Assuming backend sends amounts in cents
+  return formatter.format(amount / 100)
+}
+
+function formatPriceForBackend(amount) {
+  // Convert display price to backend format (multiply by 100)
+  return Math.round(amount * 100)
 }
 
 function formatDateForAPI(date) {
@@ -451,294 +481,503 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Duration display styling */
-.duration-display {
-  background-color: #e7f3ff;
-  border: 1px solid #b3d9ff;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
+/* Main Card Container */
+.booking-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8ecf0;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
-/* Error states */
-.is-invalid {
-  border-color: #dc3545 !important;
+.booking-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
-.invalid-feedback {
-  color: #dc3545;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
+/* Header Section */
+.booking-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Loading states */
-.btn:disabled {
-  opacity: 0.65;
+.booking-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+}
+
+.booking-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.booking-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.booking-subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 4px 0 0 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Section Styling */
+.booking-section {
+  padding: 24px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.booking-section:last-of-type {
+  border-bottom: none;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 16px;
+}
+
+.optional-badge {
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: auto;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Date Inputs */
+.date-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.date-input-group {
+  position: relative;
+}
+
+.date-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.date-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #2d3748;
+  background: #ffffff;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  transform: translateY(-1px);
+}
+
+.date-input.is-invalid {
+  border-color: #e53e3e;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+}
+
+/* Duration Card */
+.duration-card {
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.duration-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.duration-info {
+  display: flex;
+  align-items: center;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.duration-text {
+  font-size: 16px;
+}
+
+.duration-warning {
+  color: #d69e2e;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.duration-error {
+  color: #e53e3e;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+/* Notes Input */
+.notes-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #4a5568;
+  background: #ffffff;
+  transition: all 0.3s ease;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.notes-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.notes-input::placeholder {
+  color: #a0aec0;
+}
+
+/* Buttons */
+.check-availability-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 24px;
+  width: calc(100% - 48px);
+  position: relative;
+  overflow: hidden;
+}
+
+.check-availability-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.check-availability-btn:hover::before {
+  left: 100%;
+}
+
+.check-availability-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.check-availability-btn:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-/* Quote section styling */
-.quote-section {
-  border-top: 1px solid #dee2e6;
-  padding-top: 1rem;
+/* Price Breakdown Card */
+.price-breakdown-card {
+  margin: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-/* DatePicker Wrapper */
-.date-picker-wrapper {
-  position: relative;
-  width: 100%;
-  z-index: 1000;
-}
-
-/* Vue DatePicker Styles */
-:deep(.vue-datepicker) {
-  width: 100%;
-  position: relative;
-  z-index: 1000;
-}
-
-/* Ensure the datepicker container doesn't clip the calendar */
-.card {
-  overflow: visible;
-  position: relative;
-  z-index: 1;
-}
-
-/* Ensure sticky sidebar doesn't interfere with datepicker */
-.sticky-top {
-  overflow: visible;
-  position: relative;
-  z-index: 1;
-}
-
-/* Calendar positioning - targeting actual mx-datepicker classes */
-:deep(.mx-datepicker-main) {
-  position: fixed !important;
-  z-index: 999999 !important;
-  background: white !important;
-  border: 1px solid #dee2e6 !important;
-  border-radius: 0.375rem !important;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25) !important;
-  max-height: 300px;
-  overflow-y: auto;
-  transform: translateZ(0) !important;
-  will-change: transform !important;
-}
-
-:deep(.mx-datepicker-popup) {
-  position: fixed !important;
-  z-index: 999999 !important;
-  background: white !important;
-  border: 1px solid #dee2e6 !important;
-  border-radius: 0.375rem !important;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25) !important;
-  max-height: 300px;
-  overflow-y: auto;
-  transform: translateZ(0) !important;
-  will-change: transform !important;
-}
-
-:deep(.mx-calendar) {
-  position: relative !important;
-  z-index: 999999 !important;
-  background: white !important;
-}
-
-
-:deep(.vue-datepicker .vue-datepicker__input) {
-  width: 100%;
-  padding: 0.375rem 0.75rem;
-  border: 1px solid #ced4da;
-  border-radius: 0.375rem;
-  background-color: #fff;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: #212529;
-}
-
-:deep(.vue-datepicker .vue-datepicker__input:focus) {
-  border-color: #86b7fe;
-  outline: 0;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
-:deep(.vue-datepicker.is-invalid .vue-datepicker__input) {
-  border-color: #dc3545;
-}
-
-:deep(.vue-datepicker.is-invalid .vue-datepicker__input:focus) {
-  border-color: #dc3545;
-  box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
-}
-
-/* DatePicker Calendar Styles */
-:deep(.vue-datepicker__calendar) {
-  position: absolute !important;
-  top: 100% !important;
-  left: 0 !important;
-  right: 0 !important;
-  z-index: 9999 !important;
-  background: white !important;
-  border: 1px solid #dee2e6 !important;
-  border-radius: 0.375rem !important;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-  margin-top: 0.25rem !important;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-:deep(.vue-datepicker__calendar-header) {
+.price-header {
+  background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+  color: white;
+  padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem;
-  border-bottom: 1px solid #dee2e6;
 }
 
-:deep(.vue-datepicker__calendar-body) {
-  padding: 0.5rem;
-}
-
-:deep(.vue-datepicker__calendar-item) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  margin: 0.125rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-}
-
-:deep(.vue-datepicker__calendar-item:hover) {
-  background-color: #e9ecef;
-}
-
-:deep(.vue-datepicker__calendar-item--selected) {
-  background-color: #0d6efd;
-  color: white;
-}
-
-:deep(.vue-datepicker__calendar-item--disabled) {
-  background-color: #f8f9fa;
-  color: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-:deep(.vue-datepicker__calendar-item--disabled:hover) {
-  background-color: #f8f9fa;
-  color: #6c757d;
-}
-
-/* Calendar styling for disabled dates (existing bookings) */
-:deep(.vue-datepicker .vue-datepicker__calendar .vue-datepicker__calendar-item--disabled) {
-  background-color: #f8f9fa !important;
-  color: #6c757d !important;
-  cursor: not-allowed !important;
-  opacity: 0.6;
-}
-
-:deep(.vue-datepicker .vue-datepicker__calendar .vue-datepicker__calendar-item--disabled:hover) {
-  background-color: #f8f9fa !important;
-  color: #6c757d !important;
-}
-
-/* Selected range highlighting */
-:deep(.vue-datepicker .vue-datepicker__calendar .vue-datepicker__calendar-item--in-range) {
-  background-color: #e3f2fd !important;
-  color: #1976d2 !important;
-}
-
-:deep(.vue-datepicker .vue-datepicker__calendar .vue-datepicker__calendar-item--range-start),
-:deep(.vue-datepicker .vue-datepicker__calendar .vue-datepicker__calendar-item--range-end) {
-  background-color: #1976d2 !important;
-  color: white !important;
-  font-weight: bold;
-}
-
-/* Month navigation buttons */
-.month-nav-btn {
-  width: 32px;
-  height: 32px;
+.price-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
 }
 
-.month-nav-btn:hover:not(:disabled) {
-  background-color: #e9ecef;
-  transform: scale(1.05);
+.price-currency {
+  font-size: 12px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.month-nav-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.price-details {
+  padding: 24px;
 }
 
-/* Enhanced error states */
-.invalid-feedback {
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
+.price-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
 }
 
-.text-warning {
-  color: #f0ad4e !important;
+.price-line.discount {
+  color: #38a169;
 }
 
-.text-danger {
-  color: #d9534f !important;
+.price-label {
+  color: #4a5568;
+  font-weight: 500;
 }
 
-/* Loading states */
-.btn:disabled {
+.price-value {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.price-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  margin: 16px 0;
+}
+
+.price-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0 8px 0;
+  border-top: 2px solid #e2e8f0;
+  margin-top: 8px;
+}
+
+.total-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.total-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #2d3748;
+}
+
+.price-footer {
+  padding: 0 24px 16px 24px;
+}
+
+.price-note {
+  font-size: 12px;
+  color: #718096;
+  display: flex;
+  align-items: center;
+}
+
+/* Book Now Button */
+.book-now-btn {
+  width: calc(100% - 48px);
+  margin: 0 24px 24px 24px;
+  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  color: white;
+  border: none;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.book-now-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(56, 161, 105, 0.3);
+}
+
+.book-now-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
+/* Alerts */
+.error-alert {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin: 24px;
+  border-left: 4px solid #e53e3e;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.unavailable-alert {
+  background: #fef5e7;
+  color: #c05621;
+  padding: 20px 24px;
+  border-radius: 12px;
+  margin: 24px;
+  border-left: 4px solid #ed8936;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.unavailable-alert i {
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+/* Error Messages */
+.error-message {
+  color: #e53e3e;
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* Loading States */
 .spinner-border-sm {
-  width: 1rem;
-  height: 1rem;
+  width: 16px;
+  height: 16px;
 }
 
-/* Date labels styling */
-.date-labels {
-  background-color: #f8f9fa;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-  border: 1px solid #e9ecef;
-}
-
-/* Nights count styling */
-.nights-display {
-  background-color: #e3f2fd;
-  border: 1px solid #bbdefb;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-}
-
-/* Mobile responsiveness */
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
-  .card {
-    margin-bottom: 1rem;
+  .booking-card {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
   }
   
-  .month-nav-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 0.8rem;
+  .booking-header {
+    padding: 20px;
   }
   
-  :deep(.vue-datepicker) {
-    font-size: 0.9rem;
+  .booking-title {
+    font-size: 20px;
   }
   
-  .d-flex.justify-content-between {
+  .booking-section {
+    padding: 20px;
+  }
+  
+  .date-inputs {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .duration-content {
     flex-direction: column;
-    gap: 0.5rem;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .price-breakdown-card {
+    margin: 20px;
+  }
+  
+  .check-availability-btn,
+  .book-now-btn {
+    margin: 20px;
+    width: calc(100% - 40px);
+  }
+  
+  .error-alert,
+  .unavailable-alert {
+    margin: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-header {
+    padding: 16px;
+  }
+  
+  .booking-section {
+    padding: 16px;
+  }
+  
+  .price-breakdown-card {
+    margin: 16px;
+  }
+  
+  .check-availability-btn,
+  .book-now-btn {
+    margin: 16px;
+    width: calc(100% - 32px);
+    padding: 14px 20px;
+    font-size: 14px;
+  }
+  
+  .error-alert,
+  .unavailable-alert {
+    margin: 16px;
+    padding: 16px;
   }
 }
 </style>

@@ -76,6 +76,21 @@ export async function createListing(payload) {
     transformedPayload.category = transformedPayload.category.toUpperCase();
   }
 
+  // Convert prices to backend format (multiply by 100)
+  if (transformedPayload.pricePerDay) {
+    transformedPayload.pricePerDay = Math.round(
+      transformedPayload.pricePerDay * 100
+    );
+  }
+  if (transformedPayload.initialPrice) {
+    transformedPayload.initialPrice = Math.round(
+      transformedPayload.initialPrice * 100
+    );
+  }
+  if (transformedPayload.deposit) {
+    transformedPayload.deposit = Math.round(transformedPayload.deposit * 100);
+  }
+
   const { data } = await http.post("/items", transformedPayload);
   return data;
 }
@@ -87,6 +102,21 @@ export async function updateListing(id, payload) {
   const transformedPayload = { ...payload };
   if (transformedPayload.category) {
     transformedPayload.category = transformedPayload.category.toUpperCase();
+  }
+
+  // Convert prices to backend format (multiply by 100)
+  if (transformedPayload.pricePerDay) {
+    transformedPayload.pricePerDay = Math.round(
+      transformedPayload.pricePerDay * 100
+    );
+  }
+  if (transformedPayload.initialPrice) {
+    transformedPayload.initialPrice = Math.round(
+      transformedPayload.initialPrice * 100
+    );
+  }
+  if (transformedPayload.deposit) {
+    transformedPayload.deposit = Math.round(transformedPayload.deposit * 100);
   }
 
   const { data } = await http.patch(`/items/${id}`, transformedPayload);

@@ -6,6 +6,7 @@ import 'vue-datepicker-next/index.css';
 const props = defineProps({
   itemId: { type: String, required: true },
   unavailableDates: { type: Array, default: () => [] }, // Array of date strings from backend
+  availabilityData: { type: Object, default: () => ({}) }, // Full availability data with status
   disabled: { type: Boolean, default: false },
 });
 
@@ -31,11 +32,23 @@ function disabledDate(date) {
 // Custom cell class for styling
 function cellClassName(date) {
   const dateStr = formatDate(date);
-  const isBlocked = props.unavailableDates.includes(dateStr);
   
-  if (isBlocked) {
-    return 'blocked-date';
+  // Check if we have detailed availability data
+  if (props.availabilityData[dateStr]) {
+    const status = props.availabilityData[dateStr].status;
+    if (status === 'booked') {
+      return 'booked-date';
+    } else if (status === 'blocked') {
+      return 'blocked-date';
+    }
+  } else {
+    // Fallback to simple unavailableDates array
+    const isBlocked = props.unavailableDates.includes(dateStr);
+    if (isBlocked) {
+      return 'blocked-date';
+    }
   }
+  
   return '';
 }
 
@@ -128,10 +141,14 @@ function clearSelection() {
         </div>
 
         <!-- Legend -->
-        <div class="d-flex gap-3 mt-3 small text-muted">
+        <div class="d-flex flex-wrap gap-3 mt-3 small text-muted">
           <div class="d-flex align-items-center gap-1">
             <span class="legend-box bg-danger"></span>
             Blocked
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            <span class="legend-box bg-warning"></span>
+            Booked
           </div>
           <div class="d-flex align-items-center gap-1">
             <span class="legend-box bg-success"></span>
@@ -192,6 +209,16 @@ function clearSelection() {
 
 .calendar-wrapper :deep(.blocked-date:hover) {
   background-color: #bb2d3b;
+}
+
+.calendar-wrapper :deep(.booked-date) {
+  background-color: #ffc107;
+  color: #000;
+  border-radius: 4px;
+}
+
+.calendar-wrapper :deep(.booked-date:hover) {
+  background-color: #ffb300;
 }
 
 .legend-box {

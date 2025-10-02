@@ -91,12 +91,18 @@ function searchItem(itemTitle) {
 
 // Format price for display
 function formatPrice(price) {
+  // Backend sends prices in cents, so divide by 100 for display
   return new Intl.NumberFormat('he-IL', {
     style: 'currency',
     currency: 'ILS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  }).format(price)
+  }).format(price / 100)
+}
+
+function formatPriceForBackend(amount) {
+  // Convert display price to backend format (multiply by 100)
+  return Math.round(amount * 100);
 }
 
 onMounted(() => {
@@ -246,7 +252,7 @@ onMounted(() => {
                   <div class="mt-auto">
                     <div class="d-flex justify-content-between align-items-center">
                       <span class="h6 text-primary mb-0">
-                        {{ formatPrice(item.pricePerDay || item.price_per_day) }}/day
+                        {{ formatPrice(item.pricePerDay) }}/day
                       </span>
                       <button class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-search"></i>

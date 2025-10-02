@@ -3,10 +3,11 @@ import { onMounted, ref, computed, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
-import { fetchItem, fetchUnavailableDates, updateAvailability } from '../services/itemService';
+import { fetchItem, fetchItemCalendar, updateAvailability, checkBookingAvailability } from '../services/itemService';
 import { updateListing, fetchCategories, fetchLocations } from '../services/listingsService';
 import ImageGallery from '../components/ImageGallery.vue';
 import BookingCard from '../components/BookingCard.vue';
+import BookingFlow from '../components/BookingFlow.vue';
 import OwnerPanel from '../components/OwnerPanel.vue';
 import ReviewsSection from '../components/ReviewsSection.vue';
 import AvailabilityCalendar from '../components/AvailabilityCalendar.vue';
@@ -24,6 +25,7 @@ const ownerModal = ref(null);
 const editMode = ref(false);
 const saving = ref(false);
 const unavailableDates = ref([]);
+const availabilityData = ref({});
 const updatingAvailability = ref(false);
 
 // Categories and locations for dropdown
@@ -72,7 +74,9 @@ async function load() {
     
     // Load unavailable dates if user is owner
     if (isOwner.value) {
-      unavailableDates.value = await fetchUnavailableDates(id);
+      const calendarData = await fetchItemCalendar(id);
+      unavailableDates.value = calendarData.unavailableDates;
+      availabilityData.value = calendarData.availability || {};
     }
   } catch (e) {
     error.value = e?.response?.data?.message || e.message || 'Failed to load item';
@@ -94,10 +98,23 @@ onMounted(async () => {
 });
 
 function showBookingModal() {
+  if (!auth.isAuthed) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } });
+    return;
+  }
+  
   const modalEl = document.getElementById('bookingModal');
   if (modalEl) {
     const modal = new Modal(modalEl);
     modal.show();
+  }
+}
+
+function closeBookingModal() {
+  const modalEl = document.getElementById('bookingModal');
+  if (modalEl) {
+    const modal = Modal.getInstance(modalEl);
+    if (modal) modal.hide();
   }
 }
 
@@ -215,6 +232,16 @@ async function handleAvailabilityUpdate(payload) {
     updatingAvailability.value = false;
   }
 }
+
+function formatPrice(amount) {
+  // Backend sends prices in cents, so divide by 100 for display
+  return new Intl.NumberFormat('he-IL', {
+    style: 'currency',
+    currency: 'ILS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(amount / 100)
+}
 </script>
 
 <template>
@@ -274,14 +301,14 @@ async function handleAvailabilityUpdate(payload) {
               <span>·</span>
               <span class="badge bg-primary">{{ item.category }}</span>
               <span>·</span>
-              <span class="fw-bold">{{ item.pricePerDay || item.price_per_day }} {{ item.currency || 'ILS' }}/day</span>
+              <span class="fw-bold">{{ formatPrice(item.pricePerDay || item.price_per_day) }}/day</span>
               <template v-if="item.initialPrice">
                 <span>·</span>
-                <span class="text-muted">Initial: {{ item.initialPrice }} {{ item.currency || 'ILS' }}</span>
+                <span class="text-muted">Initial: {{ formatPrice(item.initialPrice) }}</span>
               </template>
               <template v-if="item.deposit">
                 <span>·</span>
-                <span class="text-muted">Deposit: {{ item.deposit }} {{ item.currency || 'ILS' }}</span>
+                <span class="text-muted">Deposit: {{ formatPrice(item.deposit) }}</span>
               </template>
             </div>
             <div v-else class="row g-3">
@@ -376,14 +403,14 @@ async function handleAvailabilityUpdate(payload) {
             <!-- Non-Owner Actions -->
             <template v-else>
               <!-- TODO: Booking functionality - Coming soon -->
-              <!-- <button
+              <button
                 class="btn btn-primary"
                 @click="showBookingModal"
                 title="Book this item"
               >
                 <i class="bi bi-calendar-check"></i>
                 <span class="ms-1">Book Now</span>
-              </button> -->
+              </button>
               
               <button
                 class="btn btn-primary"
@@ -444,6 +471,7 @@ async function handleAvailabilityUpdate(payload) {
             <AvailabilityCalendar
               :item-id="item.id"
               :unavailable-dates="unavailableDates"
+              :availability-data="availabilityData"
               :disabled="updatingAvailability"
               @update="handleAvailabilityUpdate"
             />
@@ -460,26 +488,24 @@ async function handleAvailabilityUpdate(payload) {
       </div>
     </div>
 
-    <!-- TODO: Booking Modal - Coming soon -->
-    <!-- <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
+    <!-- Booking Modal -->
+    <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="bookingModalLabel">Book this item</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body p-0">
-            <BookingCard 
+          <div class="modal-body">
+            <BookingFlow 
               v-if="item"
-              :item-id="item.id"
-              :price-per-day="item.pricePerDay || item.price_per_day"
-              :currency="item.currency || 'USD'"
-              @book="onBookingConfirmed"
+              :item="item"
+              @close="closeBookingModal"
             />
           </div>
         </div>
       </div>
-    </div> -->
+    </div>
 
     <!-- Owner Modal -->
     <div class="modal fade" id="ownerModal" tabindex="-1" aria-labelledby="ownerModalLabel" aria-hidden="true">

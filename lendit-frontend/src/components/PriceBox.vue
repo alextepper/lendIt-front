@@ -33,6 +33,16 @@ watch(
   }
 );
 
+function formatPrice(amount) {
+  // Backend sends prices in cents, so divide by 100 for display
+  return new Intl.NumberFormat('he-IL', {
+    style: 'currency',
+    currency: 'ILS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(amount / 100)
+}
+
 function submit() {
   if (!valid.value) return;
   emit('request', { ...form, days: days.value, total: total.value });
@@ -42,12 +52,12 @@ function submit() {
 <template>
   <div class="card p-3">
     <div class="mb-3">
-      <div class="fs-5 fw-semibold">{{ pricePerDay }} {{ currency }}<span class="text-secondary fs-6">/day</span></div>
+      <div class="fs-5 fw-semibold">{{ formatPrice(pricePerDay) }}<span class="text-secondary fs-6">/day</span></div>
       <div v-if="initialPrice" class="small text-muted mt-1">
-        <i class="bi bi-info-circle me-1"></i>Initial fee: {{ initialPrice }} {{ currency }}
+        <i class="bi bi-info-circle me-1"></i>Initial fee: {{ formatPrice(initialPrice) }}
       </div>
       <div v-if="deposit" class="small text-muted">
-        <i class="bi bi-shield-check me-1"></i>Deposit: {{ deposit }} {{ currency }}
+        <i class="bi bi-shield-check me-1"></i>Deposit: {{ formatPrice(deposit) }}
       </div>
     </div>
 
@@ -64,26 +74,26 @@ function submit() {
 
     <div v-if="days" class="mt-3 border-top pt-3">
       <div class="d-flex justify-content-between small text-secondary mb-1">
-        <span>{{ days }} day(s) × {{ pricePerDay }} {{ currency }}</span>
-        <span>{{ days * pricePerDay }} {{ currency }}</span>
+        <span>{{ days }} day(s) × {{ formatPrice(pricePerDay) }}</span>
+        <span>{{ formatPrice(days * pricePerDay) }}</span>
       </div>
       <div v-if="initialPrice" class="d-flex justify-content-between small text-secondary mb-1">
         <span>Initial fee</span>
-        <span>{{ initialPrice }} {{ currency }}</span>
+        <span>{{ formatPrice(initialPrice) }}</span>
       </div>
       <div class="d-flex justify-content-between small text-secondary mb-1">
         <span>Service fee (8%)</span>
-        <span>{{ fee }} {{ currency }}</span>
+        <span>{{ formatPrice(fee) }}</span>
       </div>
       <div v-if="deposit" class="d-flex justify-content-between small text-warning mb-1">
         <span>Security deposit</span>
-        <span>{{ deposit }} {{ currency }}</span>
+        <span>{{ formatPrice(deposit) }}</span>
       </div>
     </div>
 
     <div class="d-flex justify-content-between fw-semibold border-top pt-2 mt-2">
       <span>Total</span>
-      <span>{{ total }} {{ currency }}</span>
+      <span>{{ formatPrice(total) }}</span>
     </div>
     <div v-if="deposit" class="small text-muted mt-1">
       <i class="bi bi-info-circle me-1"></i>Deposit will be refunded after return
