@@ -28,3 +28,43 @@ export async function uploadAvatar(file) {
   });
   return data; // { avatar: 'url' }
 }
+
+/**
+ * Get user profile by ID
+ * @param {string} userId - User ID
+ * @returns {Promise<Object>} User profile data
+ */
+export async function getUserById(userId) {
+  try {
+    const { data } = await http.get(`/users/${userId}/profile`);
+    return data;
+  } catch (error) {
+    console.error("Failed to fetch user profile:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get user reviews
+ * @param {string} userId - User ID
+ * @param {Object} params - Query parameters
+ * @returns {Promise<Array>} User reviews
+ */
+export async function getUserReviews(userId, params = {}) {
+  try {
+    const queryParams = {
+      page: params.page || 1,
+      limit: params.limit || 20,
+      type: params.type, // 'renter' or 'owner'
+      ...params,
+    };
+
+    const { data } = await http.get(`/users/${userId}/reviews`, {
+      params: queryParams,
+    });
+    return data.reviews || data;
+  } catch (error) {
+    console.error("Failed to fetch user reviews:", error);
+    throw error;
+  }
+}

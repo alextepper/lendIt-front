@@ -5,12 +5,15 @@ import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import { fetchItem, fetchItemCalendar, updateAvailability, checkBookingAvailability } from '../services/itemService';
 import { updateListing, fetchCategories, fetchLocations } from '../services/listingsService';
+import { fetchBookingCalendarData } from '../services/bookingCalendarService';
+import { fetchItemReviews } from '../services/reviewsService';
 import ImageGallery from '../components/ImageGallery.vue';
 import BookingCard from '../components/BookingCard.vue';
 import BookingFlow from '../components/BookingFlow.vue';
 import OwnerPanel from '../components/OwnerPanel.vue';
 import ReviewsSection from '../components/ReviewsSection.vue';
 import AvailabilityCalendar from '../components/AvailabilityCalendar.vue';
+import BookingCalendar from '../components/BookingCalendar.vue';
 import { Modal } from 'bootstrap';
 
 const route = useRoute();
@@ -27,6 +30,15 @@ const saving = ref(false);
 const unavailableDates = ref([]);
 const availabilityData = ref({});
 const updatingAvailability = ref(false);
+
+// Booking calendar data
+const bookings = ref([]);
+const loadingBookings = ref(false);
+
+// Reviews data
+const reviews = ref([]);
+const loadingReviews = ref(false);
+const reviewsError = ref(null);
 
 // Categories and locations for dropdown
 const categories = ref([]);
@@ -63,9 +75,9 @@ async function load() {
     editForm.title = item.value.title || '';
     editForm.category = item.value.category || '';
     editForm.location = item.value.address || item.value.location || '';
-    editForm.pricePerDay = item.value.pricePerDay || item.value.price_per_day || 0;
-    editForm.initialPrice = item.value.initialPrice || 0;
-    editForm.deposit = item.value.deposit || 0;
+    editForm.pricePerDay = item.value.pricePerDay/100 || 0;
+    editForm.initialPrice = item.value.initialPrice/100 || 0;
+    editForm.deposit = item.value.deposit/100 || 0;
     editForm.currency = item.value.currency || 'ILS';
     editForm.description = item.value.description || '';
     
@@ -77,7 +89,13 @@ async function load() {
       const calendarData = await fetchItemCalendar(id);
       unavailableDates.value = calendarData.unavailableDates;
       availabilityData.value = calendarData.availability || {};
+      
+      // Load bookings for the current month
+      await loadBookings();
     }
+    
+    // Load reviews for the item
+    await loadReviews();
   } catch (e) {
     error.value = e?.response?.data?.message || e.message || 'Failed to load item';
   } finally {
@@ -152,9 +170,9 @@ function cancelEdit() {
   editForm.title = originalItem.value.title || '';
   editForm.category = originalItem.value.category || '';
   editForm.location = originalItem.value.address || originalItem.value.location || '';
-  editForm.pricePerDay = originalItem.value.pricePerDay || originalItem.value.price_per_day || 0;
-  editForm.initialPrice = originalItem.value.initialPrice || 0;
-  editForm.deposit = originalItem.value.deposit || 0;
+  editForm.pricePerDay = originalItem.value.pricePerDay/100 || 0;
+  editForm.initialPrice = originalItem.value.initialPrice/100 || 0;
+  editForm.deposit = originalItem.value.deposit/100 || 0;
   editForm.currency = originalItem.value.currency || 'ILS';
   editForm.description = originalItem.value.description || '';
   
@@ -233,6 +251,78 @@ async function handleAvailabilityUpdate(payload) {
   }
 }
 
+async function loadBookings(month = null) {
+  if (!isOwner.value) return;
+  
+  loadingBookings.value = true;
+  try {
+    const targetMonth = month || new Date().toISOString().slice(0, 7);
+    
+    try {
+      // Try to fetch real data from backend
+      const response = await fetchBookingCalendarData(item.value.id, targetMonth);
+      console.log('Backend response:', response);
+      bookings.value = response.bookings || [];
+    } catch (backendError) {
+      console.warn('Backend not ready, using mock data:', backendError);
+      
+      // Fallback to mock data when backend is not ready
+      bookings.value = [
+        {
+          id: '1',
+          startDate: '2024-01-15',
+          endDate: '2024-01-17',
+          customerName: 'John Doe',
+          status: 'CONFIRMED',
+          totalAmount: 15000
+        },
+        {
+          id: '2',
+          startDate: '2024-01-20',
+          endDate: '2024-01-22',
+          customerName: 'Jane Smith',
+          status: 'PENDING',
+          totalAmount: 12000
+        }
+      ];
+    }
+  } catch (e) {
+    console.error('Failed to load bookings:', e);
+    ui.showToast('Failed to load bookings', 'danger');
+  } finally {
+    loadingBookings.value = false;
+  }
+}
+
+function handleBookingRefresh(params) {
+  loadBookings(params.month);
+}
+
+function handleViewBooking(data) {
+  console.log('View booking:', data);
+  // Implement booking details modal or navigation
+  ui.showToast(`Viewing booking for ${data.date.toLocaleDateString()}`, 'info');
+}
+
+async function loadReviews() {
+  if (!item.value?.id) return;
+  
+  console.log('Loading reviews for item:', item.value.id);
+  loadingReviews.value = true;
+  reviewsError.value = null;
+  
+  try {
+    const reviewsData = await fetchItemReviews(item.value.id);
+    console.log('Reviews data received:', reviewsData);
+    reviews.value = reviewsData;
+  } catch (error) {
+    console.error('Failed to load reviews:', error);
+    reviewsError.value = error?.response?.data?.message || 'Failed to load reviews';
+  } finally {
+    loadingReviews.value = false;
+  }
+}
+
 function formatPrice(amount) {
   // Backend sends prices in cents, so divide by 100 for display
   return new Intl.NumberFormat('he-IL', {
@@ -274,8 +364,23 @@ function formatPrice(amount) {
       <div class="item-header mb-4" :class="{ 'edit-mode': editMode }">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
           <div class="flex-grow-1">
-            <!-- Title: View or Edit Mode -->
-            <h1 v-if="!editMode" class="item-title mb-2">{{ item.title }}</h1>
+            <!-- Title with Image (Owners Only) -->
+            <div v-if="isOwner && !editMode" class="d-flex align-items-center gap-3 mb-2">
+              <div class="item-thumbnail">
+                <img 
+                  v-if="item.photos && item.photos.length > 0"
+                  :src="item.photos[0].url" 
+                  :alt="item.title"
+                  class="thumbnail-image"
+                />
+                <div v-else class="thumbnail-placeholder">
+                  <i class="bi bi-image"></i>
+                </div>
+              </div>
+              <h1 class="item-title mb-0">{{ item.title }}</h1>
+            </div>
+            <!-- Title: View Mode (Non-Owners) -->
+            <h1 v-else-if="!editMode" class="item-title mb-2">{{ item.title }}</h1>
             <div v-else class="mb-3">
               <label class="form-label small fw-bold">Title</label>
               <input 
@@ -301,7 +406,7 @@ function formatPrice(amount) {
               <span>·</span>
               <span class="badge bg-primary">{{ item.category }}</span>
               <span>·</span>
-              <span class="fw-bold">{{ formatPrice(item.pricePerDay || item.price_per_day) }}/day</span>
+              <span class="fw-bold">{{ formatPrice(item.pricePerDay) }}/day</span>
               <template v-if="item.initialPrice">
                 <span>·</span>
                 <span class="text-muted">Initial: {{ formatPrice(item.initialPrice) }}</span>
@@ -447,8 +552,8 @@ function formatPrice(amount) {
       <div class="row g-4">
         <!-- Main Content Column -->
         <div class="col-lg-8">
-          <!-- Image Gallery -->
-          <ImageGallery :photos="item.photos" />
+          <!-- Image Gallery (Non-Owners Only) -->
+          <ImageGallery v-if="!isOwner" :photos="item.photos" />
 
           <!-- Description Card -->
           <div class="card p-3 p-md-4 mt-3 mt-md-4">
@@ -467,13 +572,24 @@ function formatPrice(amount) {
           </div>
 
           <!-- Availability Calendar (Owner Only) -->
-          <div v-if="isOwner" class="mt-3 mt-md-4">
+          <!-- <div v-if="isOwner" class="mt-3 mt-md-4">
             <AvailabilityCalendar
               :item-id="item.id"
               :unavailable-dates="unavailableDates"
               :availability-data="availabilityData"
               :disabled="updatingAvailability"
               @update="handleAvailabilityUpdate"
+            />
+          </div> -->
+
+          <!-- Booking Calendar (Owner Only) -->
+          <div v-if="isOwner" class="mt-3 mt-md-4">
+            <BookingCalendar
+              :item-id="item.id"
+              :bookings="bookings"
+              :loading="loadingBookings"
+              @refresh="handleBookingRefresh"
+              @view-booking="handleViewBooking"
             />
           </div>
         </div>
@@ -482,7 +598,14 @@ function formatPrice(amount) {
         <div class="col-lg-4">
           <div class="sidebar-content">
             <!-- Reviews Section -->
-            <ReviewsSection :item-id="item.id" :can-review="!isOwner" />
+            <ReviewsSection 
+              :item="item" 
+              :can-review="!isOwner"
+              :reviews="reviews"
+              :loading="loadingReviews"
+              :error="reviewsError"
+              @refresh="loadReviews"
+            />
           </div>
         </div>
       </div>
@@ -542,6 +665,35 @@ function formatPrice(amount) {
   color: #212529;
   margin: 0;
   line-height: 1.3;
+}
+
+/* Item Thumbnail for Owners */
+.item-thumbnail {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid #fff;
+}
+
+.thumbnail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-size: 24px;
 }
 
 .item-meta {
@@ -619,6 +771,15 @@ function formatPrice(amount) {
     font-size: 1.5rem;
   }
   
+  .item-thumbnail {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .thumbnail-placeholder {
+    font-size: 18px;
+  }
+  
   .item-actions {
     width: 100%;
   }
@@ -641,6 +802,15 @@ function formatPrice(amount) {
 @media (max-width: 576px) {
   .item-title {
     font-size: 1.25rem;
+  }
+  
+  .item-thumbnail {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .thumbnail-placeholder {
+    font-size: 16px;
   }
   
   .item-header {

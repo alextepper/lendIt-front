@@ -82,7 +82,7 @@
                 type="button"
               >
                 <img 
-                  :src="auth.user?.avatar || 'https://placehold.co/40x40?text=' + (auth.user?.name?.[0] || 'U')" 
+                  :src="auth.user?.avatar || 'https://placehold.co/40x40?text=' + (auth.user?.username?.[0] || 'U')" 
                   :alt="auth.user?.username || 'User'"
                   class="rounded-circle border border-2 border-primary profile-img"
                   width="40" 

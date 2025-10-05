@@ -128,3 +128,28 @@ export async function deleteListing(id) {
   const { data } = await http.patch(`/items/${id}`, { active: false });
   return data;
 }
+
+/**
+ * Fetch user's listings
+ * @param {string} userId - User ID
+ * @param {Object} params - Query parameters
+ * @returns {Promise<Array>} User's listings
+ */
+export async function fetchUserListings(userId, params = {}) {
+  try {
+    const queryParams = {
+      page: params.page || 1,
+      limit: params.limit || 20,
+      status: params.status || "active",
+      ...params,
+    };
+
+    const { data } = await http.get(`/users/${userId}/listings`, {
+      params: queryParams,
+    });
+    return data.listings || data;
+  } catch (error) {
+    console.error("Failed to fetch user listings:", error);
+    throw error;
+  }
+}

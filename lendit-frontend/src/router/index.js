@@ -16,6 +16,7 @@ const OrderCheckout = () => import("../views/OrderCheckout.vue");
 const BookingCheckout = () => import("../views/BookingCheckout.vue");
 const CheckoutSuccess = () => import("../views/CheckoutSuccess.vue");
 const CheckoutFailure = () => import("../views/CheckoutFailure.vue");
+const UserProfile = () => import("../views/UserProfile.vue");
 const NotFound = () => import("../views/NotFound.vue");
 
 const router = createRouter({
@@ -36,6 +37,12 @@ const router = createRouter({
     },
     { path: "/search", name: "search", component: Search },
     { path: "/item/:id", name: "item", component: Item, props: true },
+    {
+      path: "/users/:id",
+      name: "user-profile",
+      component: UserProfile,
+      props: true,
+    },
     {
       path: "/dashboard",
       name: "dashboard",
