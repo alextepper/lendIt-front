@@ -1,8 +1,9 @@
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import http from '../lib/http';
+import { fetchLocations } from '../services/listingsService';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -15,12 +16,35 @@ const messageType = ref(''); // 'success' or 'error'
 const profileForm = reactive({
   username: auth.user?.username || '',
   email: auth.user?.email || '',
+  city: auth.user?.city || auth.user?.location || '',
 });
+const cities = ref([]);
 
 const passwordForm = reactive({
   currentPassword: '',
   newPassword: '',
   confirmPassword: '',
+});
+
+// Load cities on mount
+onMounted(async () => {
+  try {
+    const locations = await fetchLocations();
+    cities.value = locations || [];
+  } catch (e) {
+    // Non-blocking if locations fail
+    console.warn('Failed to load cities:', e);
+  }
+  
+  // Load user profile data if not already in auth.user
+  if (!profileForm.city && auth.user) {
+    try {
+      const { data } = await http.get('/auth/me');
+      profileForm.city = data.city || data.location || '';
+    } catch (e) {
+      // Non-blocking
+    }
+  }
 });
 
 // Update profile (username/email)
@@ -37,10 +61,11 @@ async function updateProfile() {
     const { data } = await http.patch('/users/me', {
       username: profileForm.username,
       email: profileForm.email,
+      city: profileForm.city,
     });
     
     // Update auth store with new user data
-    auth.user = data.user || data;
+    auth.user = { ...(data.user || data), city: profileForm.city };
     
     showMessage('Profile updated successfully!', 'success');
   } catch (error) {
@@ -142,7 +167,7 @@ function cancel() {
                 />
               </div>
 
-              <div class="mb-4">
+              <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
                 <input
                   type="email"
@@ -152,6 +177,21 @@ function cancel() {
                   placeholder="Enter email"
                   required
                 />
+              </div>
+
+              <div class="mb-4">
+                <label for="city" class="form-label">City</label>
+                <select
+                  class="form-select"
+                  id="city"
+                  v-model="profileForm.city"
+                >
+                  <option value="">Select your city</option>
+                  <option v-for="city in cities" :key="city" :value="city">
+                    {{ city }}
+                  </option>
+                </select>
+                <div class="form-text">Choose the city where you live</div>
               </div>
 
               <button 
