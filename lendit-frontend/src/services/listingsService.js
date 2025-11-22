@@ -11,7 +11,7 @@ export async function fetchListings(params = {}) {
   if (USE_MOCK) return mockFetchListings(params);
 
   // Use different endpoints based on whether we want user's own listings
-  const endpoint = params.mine ? "/items/my-listings" : "/items";
+  let endpoint = params.mine ? "/items/my-listings" : "/items";
 
   // Transform params for the API
   const apiParams = { ...params };
@@ -25,18 +25,64 @@ export async function fetchListings(params = {}) {
     apiParams.category = apiParams.category.toUpperCase();
   }
 
+  // Handle location-based search - use /items/nearby endpoint when location is provided
+  const hasLocation = apiParams.lat != null && apiParams.lng != null;
+  if (hasLocation) {
+    // Convert to numbers if they're strings
+    apiParams.lat = typeof apiParams.lat === 'string' ? parseFloat(apiParams.lat) : apiParams.lat;
+    apiParams.lng = typeof apiParams.lng === 'string' ? parseFloat(apiParams.lng) : apiParams.lng;
+    
+    // Set default radius if not provided (15km default)
+    if (apiParams.radiusKm == null || apiParams.radiusKm === '') {
+      apiParams.radiusKm = 15;
+    } else {
+      apiParams.radiusKm = typeof apiParams.radiusKm === 'string' ? parseFloat(apiParams.radiusKm) : apiParams.radiusKm;
+    }
+    
+    // Use dedicated nearby endpoint for location-based searches
+    endpoint = "/items/nearby";
+    
+    // Ensure sort is distance when location is provided (unless explicitly set otherwise)
+    if (!apiParams.sort || apiParams.sort === 'relevance') {
+      apiParams.sort = 'distance';
+    }
+  }
+
+  // Transform date format to ISO if provided
+  if (apiParams.date_from && typeof apiParams.date_from === 'string' && !apiParams.date_from.includes('T')) {
+    // Convert YYYY-MM-DD to ISO format
+    apiParams.date_from = new Date(apiParams.date_from + 'T00:00:00Z').toISOString();
+  }
+  if (apiParams.date_to && typeof apiParams.date_to === 'string' && !apiParams.date_to.includes('T')) {
+    // Convert YYYY-MM-DD to ISO format
+    apiParams.date_to = new Date(apiParams.date_to + 'T23:59:59Z').toISOString();
+  }
+
   const { data } = await http.get(endpoint, { params: apiParams });
 
   // Transform backend response to expected frontend format
-  // Backend returns: { data: [...], page, pageSize, total }
-  // Frontend expects: { items: [...], page, per_page, total, total_pages }
-  const transformedData = {
-    items: data.data || [],
-    page: data.page || 1,
-    per_page: data.pageSize || 12,
-    total: data.total || 0,
-    total_pages: Math.ceil((data.total || 0) / (data.pageSize || 12)),
-  };
+  // Backend can return: { data: [...], pagination: {...} } or { data: [...], page, pageSize, total }
+  let transformedData;
+  
+  if (data.pagination) {
+    // New format with pagination object
+    transformedData = {
+      items: data.data || [],
+      page: data.pagination.page || 1,
+      per_page: data.pagination.per_page || data.pagination.pageSize || 12,
+      total: data.pagination.total || 0,
+      total_pages: data.pagination.total_pages || Math.ceil((data.pagination.total || 0) / (data.pagination.per_page || data.pagination.pageSize || 12)),
+    };
+  } else {
+    // Legacy format
+    transformedData = {
+      items: data.data || [],
+      page: data.page || 1,
+      per_page: data.pageSize || 12,
+      total: data.total || 0,
+      total_pages: Math.ceil((data.total || 0) / (data.pageSize || 12)),
+    };
+  }
 
   // Map backend field names to frontend expected names
   transformedData.items = transformedData.items.map((item) => ({
@@ -48,6 +94,11 @@ export async function fetchListings(params = {}) {
     thumbnail:
       item.photos && item.photos.length > 0 ? item.photos[0].url : null,
     location: item.address || item.location, // Use address if available, fallback to location
+    // Preserve distance if provided (from location-based search)
+    distance: item.distance,
+    // Preserve latitude/longitude if provided
+    latitude: item.latitude,
+    longitude: item.longitude,
   }));
 
   return transformedData;

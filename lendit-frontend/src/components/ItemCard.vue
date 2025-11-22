@@ -26,9 +26,13 @@ function formatPrice(amount) {
     </div>
     <div class="card-body">
       <h3 class="h6 card-title mb-1 text-truncate">{{ item.title }}</h3>
-      <div class="small text-secondary d-flex justify-content-between">
+      <div class="small text-secondary d-flex justify-content-between align-items-center mb-1">
         <span>{{ item.location }}</span>
         <span>{{ item.category }}</span>
+      </div>
+      <div v-if="item.distance" class="small text-primary mb-1">
+        <i class="bi bi-geo-alt-fill me-1"></i>
+        {{ item.distance.toFixed(1) }} km away
       </div>
       <div class="d-flex align-items-center justify-content-between mt-2">
         <span class="fw-semibold">{{ formatPrice(item.pricePerDay || item.price_per_day) }}/day</span>

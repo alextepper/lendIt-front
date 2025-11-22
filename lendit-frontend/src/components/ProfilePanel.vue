@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { getProfile, updateProfile, uploadAvatar } from '../services/userService';
+import { fetchLocations } from '../services/listingsService';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import UserHistory from './UserHistory.vue';
@@ -8,20 +9,28 @@ import UserItems from './UserItems.vue';
 
 const ui = useUiStore();
 const auth = useAuthStore();
-const form = ref({ name: '', email: '', phone: '', avatar: '' });
+const form = ref({ name: '', email: '', phone: '', avatar: '', profilePicture: '', city: '' });
 const originalForm = ref({});
 const loading = ref(true);
 const saving = ref(false);
 const editMode = ref(false);
+const cities = ref([]);
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 onMounted(async () => {
   try {
-    const me = await getProfile();
+    const [me, locations] = await Promise.all([
+      getProfile(),
+      fetchLocations().catch(() => []) // Non-blocking if locations fail
+    ]);
+    cities.value = locations || [];
     form.value = {
       username: me.username || '',
       email: me.email || '',
       phone: me.phone || '',
-      avatar: me.avatar || '',
+      avatar: me.avatar || me.profilePicture || '',
+      profilePicture: me.profilePicture || me.avatar || '',
+      city: me.city || me.location || '',
     };
     // Store original values for cancel
     originalForm.value = { ...form.value };
@@ -38,12 +47,29 @@ function toggleEditMode() {
   editMode.value = !editMode.value;
 }
 
+function getProfilePictureUrl(profilePicture) {
+  if (!profilePicture) {
+    return 'https://placehold.co/96x96?text=Avatar';
+  }
+  // If it's already a full URL, return as is
+  if (profilePicture.startsWith('http://') || profilePicture.startsWith('https://')) {
+    return profilePicture;
+  }
+  // If it starts with /uploads, prepend base URL
+  if (profilePicture.startsWith('/uploads/')) {
+    return `${baseURL}${profilePicture}`;
+  }
+  // Otherwise, assume it's a relative path
+  return `${baseURL}/${profilePicture}`;
+}
+
 async function save() {
   saving.value = true;
   try {
     const updated = await updateProfile({
       username: form.value.username,
       phone: form.value.phone,
+      city: form.value.city,
     });
     ui.showToast('Profile updated', 'success');
     // Update original form with saved values
@@ -56,7 +82,8 @@ async function save() {
         ...auth.user,
         username: updated.username,
         phone: updated.phone,
-        avatar: updated.avatar,
+        avatar: updated.profilePicture || updated.avatar,
+        city: updated.city || updated.location,
       };
   } catch (e) {
     ui.showToast(e?.response?.data?.message || e.message, 'danger');
@@ -68,13 +95,40 @@ async function save() {
 async function onAvatarChange(ev) {
   const file = ev.target.files?.[0];
   if (!file) return;
+  
+  // Validate file type
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  if (!validTypes.includes(file.type)) {
+    ui.showToast('Invalid file type. Please upload JPEG, PNG, WebP, or GIF', 'danger');
+    return;
+  }
+  
+  // Validate file size (5MB limit)
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    ui.showToast('File size too large. Maximum size is 5MB', 'danger');
+    return;
+  }
+  
   try {
-    const { avatar } = await uploadAvatar(file);
-    form.value.avatar = avatar;
-    if (auth.user) auth.user = { ...auth.user, avatar };
-    ui.showToast('Avatar updated', 'success');
+    const result = await uploadAvatar(file);
+    const profilePictureUrl = result.profilePicture || result.avatar;
+    form.value.avatar = profilePictureUrl;
+    form.value.profilePicture = profilePictureUrl;
+    // Update original form to reflect the change
+    originalForm.value.avatar = profilePictureUrl;
+    originalForm.value.profilePicture = profilePictureUrl;
+    
+    if (auth.user) {
+      auth.user = { 
+        ...auth.user, 
+        avatar: profilePictureUrl,
+        profilePicture: profilePictureUrl
+      };
+    }
+    ui.showToast('Profile picture updated', 'success');
   } catch (e) {
-    ui.showToast('Failed to upload avatar', 'danger');
+    ui.showToast(e?.response?.data?.message || 'Failed to upload profile picture', 'danger');
   }
 }
 </script>
@@ -98,20 +152,23 @@ async function onAvatarChange(ev) {
 
     <div v-else class="row g-3">
       <div class="col-auto">
-        <div class="position-relative">
+        <div class="position-relative profile-picture-container">
           <img
-            :src="form.avatar || 'https://placehold.co/96x96?text=Avatar'"
+            :src="getProfilePictureUrl(form.profilePicture || form.avatar)"
             class="rounded-circle profile-avatar"
             width="96"
             height="96"
-            alt="Avatar"
+            alt="Profile Picture"
           />
-          <div v-if="editMode" class="mt-2">
-            <label class="btn btn-sm btn-outline-secondary">
-              <i class="bi bi-upload"></i> Upload
-              <input type="file" accept="image/*" class="d-none" @change="onAvatarChange" />
-            </label>
-          </div>
+          <label class="btn btn-sm btn-primary profile-picture-upload-btn">
+            <i class="bi bi-camera-fill"></i>
+            <input 
+              type="file" 
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" 
+              class="d-none" 
+              @change="onAvatarChange" 
+            />
+          </label>
         </div>
       </div>
 
@@ -129,6 +186,10 @@ async function onAvatarChange(ev) {
           <div class="profile-field mb-3">
             <label class="field-label text-muted small">Phone</label>
             <div class="field-value">{{ form.phone || 'Not set' }}</div>
+          </div>
+          <div class="profile-field mb-3">
+            <label class="field-label text-muted small">City</label>
+            <div class="field-value">{{ form.city || 'Not set' }}</div>
           </div>
         </div>
 
@@ -160,6 +221,18 @@ async function onAvatarChange(ev) {
                 placeholder="+972…" 
               />
             </div>
+            <div class="col-md-6">
+              <label class="form-label">City</label>
+              <select 
+                v-model="form.city" 
+                class="form-select"
+              >
+                <option value="">Select your city</option>
+                <option v-for="city in cities" :key="city" :value="city">
+                  {{ city }}
+                </option>
+              </select>
+            </div>
           </div>
 
           <div class="mt-3 d-flex gap-2">
@@ -189,10 +262,41 @@ async function onAvatarChange(ev) {
 </template>
 
 <style scoped>
+.profile-picture-container {
+  display: inline-block;
+}
+
 .profile-avatar {
   object-fit: cover;
   border: 3px solid #f8f9fa;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: block;
+}
+
+.profile-picture-upload-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-picture-upload-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.profile-picture-upload-btn i {
+  font-size: 14px;
 }
 
 .profile-view {

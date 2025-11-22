@@ -9,7 +9,10 @@ const ui = useUiStore()
 
 // Search state
 const searchQuery = ref('')
-const searchLocation = ref('')
+const locationSearchQuery = ref('')
+const locationSuggestions = ref([])
+const showingSuggestions = ref(false)
+const selectedLocation = ref(null) // Store selected location with coordinates
 
 // Featured categories with sample items
 const categories = ref([
@@ -60,16 +63,80 @@ async function loadFeaturedItems() {
   }
 }
 
+// Geocoding functions - convert address to coordinates
+let geocodeTimeout = null;
+
+async function searchLocationQuery(query) {
+  if (!query || query.trim().length < 3) {
+    locationSuggestions.value = [];
+    showingSuggestions.value = false;
+    return;
+  }
+
+  clearTimeout(geocodeTimeout);
+  geocodeTimeout = setTimeout(async () => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&accept-language=en`
+      );
+      const data = await response.json();
+      locationSuggestions.value = data || [];
+      showingSuggestions.value = data && data.length > 0;
+    } catch (e) {
+      console.error('Geocoding error:', e);
+      locationSuggestions.value = [];
+      showingSuggestions.value = false;
+    }
+  }, 300);
+}
+
+function selectLocation(suggestion) {
+  const lat = parseFloat(suggestion.lat);
+  const lng = parseFloat(suggestion.lon);
+  
+  if (isNaN(lat) || isNaN(lng)) {
+    return;
+  }
+
+  locationSearchQuery.value = suggestion.display_name;
+  locationSuggestions.value = [];
+  showingSuggestions.value = false;
+  
+  // Store selected location with coordinates
+  selectedLocation.value = {
+    name: suggestion.display_name,
+    lat,
+    lng
+  };
+}
+
 // Search functionality
 function handleSearch() {
-  if (!searchQuery.value.trim()) return
+  // Allow search with just location, or just query, or both
+  if (!searchQuery.value.trim() && !selectedLocation.value && !locationSearchQuery.value) {
+    return;
+  }
+  
+  const queryParams = {};
+  
+  // Add search query if provided
+  if (searchQuery.value.trim()) {
+    queryParams.q = searchQuery.value.trim();
+  }
+  
+  // If location with coordinates is selected, use lat/lng
+  if (selectedLocation.value) {
+    queryParams.lat = selectedLocation.value.lat;
+    queryParams.lng = selectedLocation.value.lng;
+    queryParams.radiusKm = 15; // Default radius
+  } else if (locationSearchQuery.value) {
+    // Fallback to text location if no coordinates
+    queryParams.location = locationSearchQuery.value;
+  }
   
   router.push({
     name: 'search',
-    query: {
-      q: searchQuery.value,
-      ...(searchLocation.value && { location: searchLocation.value })
-    }
+    query: queryParams
   })
 }
 
@@ -138,24 +205,43 @@ onMounted(() => {
                   </div>
                 </div>
                 <div class="col-md-4">
-                  <div class="input-group">
-                    <span class="input-group-text">
-                      <i class="bi bi-geo-alt"></i>
-                    </span>
-                    <input
-                      v-model="searchLocation"
-                      type="text"
-                      class="form-control"
-                      placeholder="Location (optional)"
-                      @keyup.enter="handleSearch"
-                    />
+                  <div class="position-relative">
+                    <div class="input-group">
+                      <span class="input-group-text">
+                        <i class="bi bi-geo-alt"></i>
+                      </span>
+                      <input
+                        v-model="locationSearchQuery"
+                        type="text"
+                        class="form-control"
+                        placeholder="Location (optional)"
+                        @input="searchLocationQuery(locationSearchQuery)"
+                        @focus="showingSuggestions = locationSuggestions.length > 0"
+                        @blur="setTimeout(() => { showingSuggestions = false; }, 200)"
+                        @keyup.enter.prevent="locationSuggestions.length > 0 && selectLocation(locationSuggestions[0]) || handleSearch()"
+                      />
+                    </div>
+                    <div v-if="showingSuggestions && locationSuggestions.length > 0" class="location-suggestions">
+                      <div
+                        v-for="suggestion in locationSuggestions"
+                        :key="suggestion.place_id"
+                        class="suggestion-item"
+                        @mousedown.prevent="selectLocation(suggestion)"
+                      >
+                        <i class="bi bi-geo-alt"></i>
+                        <div class="flex-grow-1">
+                          <div class="fw-semibold small">{{ suggestion.display_name.split(',')[0] }}</div>
+                          <div class="text-muted" style="font-size: 0.75rem;">{{ suggestion.display_name }}</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="col-md-2">
                   <button
                     class="btn btn-light w-100"
                     @click="handleSearch"
-                    :disabled="!searchQuery.trim()"
+                    :disabled="!searchQuery.trim() && !selectedLocation && !locationSearchQuery.trim()"
                   >
                     Search
                   </button>
@@ -363,6 +449,48 @@ onMounted(() => {
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
+}
+
+.location-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 2px;
+}
+
+.suggestion-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+}
+
+.suggestion-item:active {
+  background-color: #e9ecef;
+}
+
+.suggestion-item i {
+  color: #4285F4;
+  margin-top: 0.125rem;
 }
 
 @media (max-width: 768px) {

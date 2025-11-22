@@ -21,12 +21,18 @@ export async function updateProfile(payload) {
 
 export async function uploadAvatar(file) {
   if (USE_MOCK) return mockUploadAvatar(file);
-  const form = new FormData();
-  form.append("avatar", file);
-  const { data } = await http.post("/uploads/sign", form, {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await http.post("/users/me/profile-picture", formData, {
     headers: { "Content-Type": "multipart/form-data" },
+    timeout: 30000, // 30 seconds timeout for file uploads
   });
-  return data; // { avatar: 'url' }
+  // Backend returns { profilePicture: "/uploads/users/..." }
+  // Return in format expected by frontend
+  return { 
+    avatar: data.profilePicture || data.avatar,
+    profilePicture: data.profilePicture || data.avatar
+  };
 }
 
 /**

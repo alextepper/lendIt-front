@@ -10,8 +10,13 @@ export function useQuerySync(defaults) {
   onMounted(() => {
     state.value = { ...defaults, ...route.query };
     // Coerce numbers
-    for (const k of ["page", "per_page", "price_min", "price_max"]) {
-      if (state.value[k] != null) state.value[k] = Number(state.value[k]);
+    for (const k of ["page", "per_page", "price_min", "price_max", "minRating", "lat", "lng", "radiusKm"]) {
+      if (state.value[k] != null && state.value[k] !== '') {
+        const num = Number(state.value[k]);
+        if (!Number.isNaN(num)) {
+          state.value[k] = num;
+        }
+      }
     }
   });
 
