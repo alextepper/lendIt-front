@@ -4,6 +4,7 @@ import { Modal } from 'bootstrap';
 import { fetchOrders } from '../services/orderService';
 import { useAuthStore } from '../stores/auth';
 import OrderDetailsModal from './OrderDetailsModal.vue';
+import { getImageUrl } from '../utils/imageUtils';
 
 const props = defineProps({
   role: { type: String, default: 'renter' }, // 'renter' or 'owner'
@@ -198,7 +199,7 @@ function getStatusIcon(status) {
                   >
                     <img
                       v-if="order.item?.photos?.[0]"
-                      :src="order.item.photos[0].url"
+                      :src="getImageUrl(order.item.photos[0].url)"
                       class="rounded item-image"
                       width="80"
                       height="80"

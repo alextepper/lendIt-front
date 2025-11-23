@@ -1,6 +1,19 @@
 <script setup>
-defineProps({
+import { computed } from 'vue';
+import { getItemPhotoUrl } from '../utils/imageUtils';
+
+const props = defineProps({
   item: { type: Object, required: true },
+});
+
+const thumbnailUrl = computed(() => {
+  if (props.item.thumbnail) {
+    return getItemPhotoUrl(props.item.thumbnail);
+  }
+  if (props.item.photos && props.item.photos.length > 0) {
+    return getItemPhotoUrl(props.item.photos);
+  }
+  return null;
 });
 
 function formatPrice(amount) {
@@ -18,8 +31,8 @@ function formatPrice(amount) {
   <div class="card h-100">
     <div class="ratio ratio-16x9 bg-light">
       <img
-        v-if="item.thumbnail"
-        :src="item.thumbnail"
+        v-if="thumbnailUrl"
+        :src="thumbnailUrl"
         class="w-100 h-100 object-fit-cover"
         :alt="item.title"
       />

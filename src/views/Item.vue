@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import { fetchItem, fetchItemCalendar, updateAvailability, checkBookingAvailability } from '../services/itemService';
-import { updateListing, fetchCategories, fetchLocations } from '../services/listingsService';
+import { updateListing, fetchCategories, fetchLocations, deleteListing, toggleListingActive } from '../services/listingsService';
 import { fetchBookingCalendarData } from '../services/bookingCalendarService';
 import { fetchItemReviews } from '../services/reviewsService';
 import ImageGallery from '../components/ImageGallery.vue';
@@ -15,6 +15,7 @@ import ReviewsSection from '../components/ReviewsSection.vue';
 import AvailabilityCalendar from '../components/AvailabilityCalendar.vue';
 import BookingCalendar from '../components/BookingCalendar.vue';
 import { Modal } from 'bootstrap';
+import { getItemPhotoUrl } from '../utils/imageUtils';
 
 const route = useRoute();
 const router = useRouter();
@@ -228,6 +229,56 @@ async function saveChanges() {
   }
 }
 
+const deleting = ref(false);
+const togglingActive = ref(false);
+
+async function toggleActive() {
+  if (!item.value) return;
+  
+  // Default to true if isActive field doesn't exist (assume active by default)
+  const currentActive = item.value.isActive !== undefined ? item.value.isActive : (item.value.active !== undefined ? item.value.active : true);
+  const newActiveStatus = !currentActive;
+  const action = newActiveStatus ? 'activate' : 'deactivate';
+  
+  if (!confirm(`Are you sure you want to ${action} this listing?`)) {
+    return;
+  }
+  
+  togglingActive.value = true;
+  try {
+    const updated = await toggleListingActive(item.value.id, newActiveStatus);
+    item.value = { ...item.value, ...updated, isActive: newActiveStatus, active: newActiveStatus };
+    originalItem.value = JSON.parse(JSON.stringify(item.value));
+    ui.showToast(`Listing ${newActiveStatus ? 'activated' : 'deactivated'} successfully!`, 'success');
+  } catch (e) {
+    console.error('Failed to toggle listing status:', e);
+    ui.showToast(e?.response?.data?.message || 'Failed to update listing status', 'danger');
+  } finally {
+    togglingActive.value = false;
+  }
+}
+
+async function deleteItem() {
+  if (!item.value) return;
+  
+  if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
+    return;
+  }
+  
+  deleting.value = true;
+  try {
+    await deleteListing(item.value.id);
+    ui.showToast('Listing deleted successfully!', 'success');
+    // Redirect to user's listings or home page
+    router.push({ name: 'dashboard' });
+  } catch (e) {
+    console.error('Failed to delete listing:', e);
+    ui.showToast(e?.response?.data?.message || 'Failed to delete listing', 'danger');
+  } finally {
+    deleting.value = false;
+  }
+}
+
 async function handleAvailabilityUpdate(payload) {
   updatingAvailability.value = true;
   try {
@@ -369,7 +420,7 @@ function formatPrice(amount) {
               <div class="item-thumbnail">
                 <img 
                   v-if="item.photos && item.photos.length > 0"
-                  :src="item.photos[0].url" 
+                  :src="getItemPhotoUrl(item.photos)" 
                   :alt="item.title"
                   class="thumbnail-image"
                 />
@@ -502,6 +553,29 @@ function formatPrice(amount) {
               >
                 <i class="bi bi-x-lg"></i>
                 <span class="d-none d-md-inline ms-1">Cancel</span>
+              </button>
+              <button
+                v-if="editMode"
+                class="btn"
+                :class="(item?.isActive !== false && item?.active !== false) ? 'btn-outline-warning' : 'btn-outline-success'"
+                @click="toggleActive"
+                :title="(item?.isActive !== false && item?.active !== false) ? 'Deactivate listing' : 'Activate listing'"
+                :disabled="saving || togglingActive"
+              >
+                <span v-if="togglingActive" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <i v-else class="bi" :class="(item?.isActive !== false && item?.active !== false) ? 'bi-eye-slash' : 'bi-eye'"></i>
+                <span class="d-none d-md-inline ms-1">{{ (item?.isActive !== false && item?.active !== false) ? 'Deactivate' : 'Activate' }}</span>
+              </button>
+              <button
+                v-if="editMode"
+                class="btn btn-outline-danger"
+                @click="deleteItem"
+                title="Delete listing"
+                :disabled="saving || deleting"
+              >
+                <span v-if="deleting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <i v-else class="bi bi-trash"></i>
+                <span class="d-none d-md-inline ms-1">Delete</span>
               </button>
             </template>
             

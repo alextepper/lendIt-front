@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { getImageUrl } from '../utils/imageUtils';
 
 const props = defineProps({
   userLocation: {
@@ -262,11 +263,12 @@ function updateMarkers() {
       }).addTo(map);
 
       // Add popup with item info and image
+      const safePhotoUrl = photoUrl ? photoUrl.replace(/"/g, '&quot;') : '';
       const popupContent = `
         <div class="map-popup">
           ${photoUrl ? `
             <div class="map-popup-image">
-              <img src="${photoUrl}" alt="${item.title || 'Item'}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+              <img src="${safePhotoUrl}" alt="${(item.title || 'Item').replace(/"/g, '&quot;')}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
               <div class="map-popup-image-placeholder" style="display: none;">
                 <i class="bi bi-image"></i>
               </div>

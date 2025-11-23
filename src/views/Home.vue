@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchListings } from '../services/listingsService'
 import { useUiStore } from '../stores/ui'
+import { getItemPhotoUrl } from '../utils/imageUtils'
 
 const router = useRouter()
 const ui = useUiStore()
@@ -312,8 +313,8 @@ onMounted(() => {
               <div class="card h-100 product-card" @click="searchItem(item.title)">
                 <div class="card-img-top-container">
                   <img
-                    v-if="item.thumbnail"
-                    :src="item.thumbnail"
+                    v-if="item.thumbnail || (item.photos && item.photos.length > 0)"
+                    :src="getItemPhotoUrl(item.thumbnail || item.photos)"
                     :alt="item.title"
                     class="card-img-top"
                     loading="lazy"

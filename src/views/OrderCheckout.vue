@@ -1,4 +1,5 @@
 <script setup>
+import { getImageUrl } from '../utils/imageUtils';
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
@@ -153,7 +154,7 @@ function formatDate(dateString) {
             <div class="d-flex gap-3 mb-4">
               <img
                 v-if="item.photos?.[0]"
-                :src="item.photos[0].url"
+                :src="getImageUrl(item.photos[0].url)"
                 class="rounded"
                 width="120"
                 height="120"

@@ -4,6 +4,7 @@ import { fetchListings, createListing, updateListing, deleteListing } from '../s
 import ListingFormModal from './ListingFormModal.vue';
 import ItemCard from './ItemCard.vue';
 import { useUiStore } from '../stores/ui';
+import http from '../lib/http';
 
 const ui = useUiStore();
 const items = ref([]);
@@ -35,13 +36,36 @@ function openEdit(it) {
 
 async function onSubmit(payload) {
   try {
+    // Extract photoUrls from payload
+    const { photoUrls, ...itemData } = payload;
+    
+    let itemId;
     if (editing.value) {
-      await updateListing(editing.value.id, payload);
+      await updateListing(editing.value.id, itemData);
+      itemId = editing.value.id;
       ui.showToast('Listing updated', 'success');
     } else {
-      await createListing(payload);
+      const createdItem = await createListing(itemData);
+      itemId = createdItem.id;
       ui.showToast('Listing created', 'success');
     }
+
+    // Add photos to the item if there are any
+    if (photoUrls && photoUrls.length > 0 && itemId) {
+      try {
+        for (let i = 0; i < photoUrls.length; i++) {
+          await http.post(`/items/${itemId}/photos`, {
+            url: photoUrls[i],
+            position: i
+          });
+        }
+        ui.showToast('Photos added successfully', 'success');
+      } catch (photoError) {
+        console.error('Error adding photos:', photoError);
+        ui.showToast('Item created but failed to add photos', 'warning');
+      }
+    }
+
     await load();
   } catch (e) {
     ui.showToast(e?.response?.data?.message || e.message, 'danger');

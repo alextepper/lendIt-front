@@ -29,33 +29,54 @@ export async function fetchListings(params = {}) {
   const hasLocation = apiParams.lat != null && apiParams.lng != null;
   if (hasLocation) {
     // Convert to numbers if they're strings
-    apiParams.lat = typeof apiParams.lat === 'string' ? parseFloat(apiParams.lat) : apiParams.lat;
-    apiParams.lng = typeof apiParams.lng === 'string' ? parseFloat(apiParams.lng) : apiParams.lng;
-    
+    apiParams.lat =
+      typeof apiParams.lat === "string"
+        ? parseFloat(apiParams.lat)
+        : apiParams.lat;
+    apiParams.lng =
+      typeof apiParams.lng === "string"
+        ? parseFloat(apiParams.lng)
+        : apiParams.lng;
+
     // Set default radius if not provided (15km default)
-    if (apiParams.radiusKm == null || apiParams.radiusKm === '') {
+    if (apiParams.radiusKm == null || apiParams.radiusKm === "") {
       apiParams.radiusKm = 15;
     } else {
-      apiParams.radiusKm = typeof apiParams.radiusKm === 'string' ? parseFloat(apiParams.radiusKm) : apiParams.radiusKm;
+      apiParams.radiusKm =
+        typeof apiParams.radiusKm === "string"
+          ? parseFloat(apiParams.radiusKm)
+          : apiParams.radiusKm;
     }
-    
+
     // Use dedicated nearby endpoint for location-based searches
     endpoint = "/items/nearby";
-    
+
     // Ensure sort is distance when location is provided (unless explicitly set otherwise)
-    if (!apiParams.sort || apiParams.sort === 'relevance') {
-      apiParams.sort = 'distance';
+    if (!apiParams.sort || apiParams.sort === "relevance") {
+      apiParams.sort = "distance";
     }
   }
 
   // Transform date format to ISO if provided
-  if (apiParams.date_from && typeof apiParams.date_from === 'string' && !apiParams.date_from.includes('T')) {
+  if (
+    apiParams.date_from &&
+    typeof apiParams.date_from === "string" &&
+    !apiParams.date_from.includes("T")
+  ) {
     // Convert YYYY-MM-DD to ISO format
-    apiParams.date_from = new Date(apiParams.date_from + 'T00:00:00Z').toISOString();
+    apiParams.date_from = new Date(
+      apiParams.date_from + "T00:00:00Z"
+    ).toISOString();
   }
-  if (apiParams.date_to && typeof apiParams.date_to === 'string' && !apiParams.date_to.includes('T')) {
+  if (
+    apiParams.date_to &&
+    typeof apiParams.date_to === "string" &&
+    !apiParams.date_to.includes("T")
+  ) {
     // Convert YYYY-MM-DD to ISO format
-    apiParams.date_to = new Date(apiParams.date_to + 'T23:59:59Z').toISOString();
+    apiParams.date_to = new Date(
+      apiParams.date_to + "T23:59:59Z"
+    ).toISOString();
   }
 
   const { data } = await http.get(endpoint, { params: apiParams });
@@ -63,7 +84,7 @@ export async function fetchListings(params = {}) {
   // Transform backend response to expected frontend format
   // Backend can return: { data: [...], pagination: {...} } or { data: [...], page, pageSize, total }
   let transformedData;
-  
+
   if (data.pagination) {
     // New format with pagination object
     transformedData = {
@@ -71,7 +92,12 @@ export async function fetchListings(params = {}) {
       page: data.pagination.page || 1,
       per_page: data.pagination.per_page || data.pagination.pageSize || 12,
       total: data.pagination.total || 0,
-      total_pages: data.pagination.total_pages || Math.ceil((data.pagination.total || 0) / (data.pagination.per_page || data.pagination.pageSize || 12)),
+      total_pages:
+        data.pagination.total_pages ||
+        Math.ceil(
+          (data.pagination.total || 0) /
+            (data.pagination.per_page || data.pagination.pageSize || 12)
+        ),
     };
   } else {
     // Legacy format
@@ -84,6 +110,24 @@ export async function fetchListings(params = {}) {
     };
   }
 
+  // Filter out deleted items (soft-deleted items may still appear in my-listings)
+  // But don't filter if we're specifically requesting inactive items (they might be inactive but not deleted)
+  // Check for common deletion indicators: deletedAt, deleted_at, isDeleted, deleted
+  if (!apiParams.inactive) {
+    transformedData.items = transformedData.items.filter((item) => {
+      // Exclude items that are marked as deleted
+      if (
+        item.deletedAt ||
+        item.deleted_at ||
+        item.isDeleted === true ||
+        item.deleted === true
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }
+
   // Map backend field names to frontend expected names
   transformedData.items = transformedData.items.map((item) => ({
     ...item,
@@ -92,7 +136,7 @@ export async function fetchListings(params = {}) {
     rating: item.ratingAvg || 0,
     reviews_count: item.ratingCount || 0,
     thumbnail:
-      item.photos && item.photos.length > 0 ? item.photos[0].url : null,
+      item.photos && item.photos.length > 0 ? item.photos[0].url : null, // Keep relative URL, components will add base URL
     location: item.address || item.location, // Use address if available, fallback to location
     // Preserve distance if provided (from location-based search)
     distance: item.distance,
@@ -100,6 +144,15 @@ export async function fetchListings(params = {}) {
     latitude: item.latitude,
     longitude: item.longitude,
   }));
+
+  // Update total count after filtering
+  if (transformedData.items.length !== data.data?.length) {
+    // Adjust pagination totals if we filtered items
+    transformedData.total = transformedData.items.length;
+    transformedData.total_pages = Math.ceil(
+      transformedData.total / transformedData.per_page
+    );
+  }
 
   return transformedData;
 }
@@ -176,7 +229,20 @@ export async function updateListing(id, payload) {
 
 export async function deleteListing(id) {
   if (USE_MOCK) return { ok: true };
-  const { data } = await http.patch(`/items/${id}`, { active: false });
+  // Try DELETE endpoint first, fallback to PATCH with isActive: false
+  try {
+    const { data } = await http.delete(`/items/${id}`);
+    return data;
+  } catch (error) {
+    // If DELETE doesn't exist, use PATCH to deactivate
+    const { data } = await http.patch(`/items/${id}`, { isActive: false });
+    return data;
+  }
+}
+
+export async function toggleListingActive(id, isActive) {
+  if (USE_MOCK) return { id, isActive };
+  const { data } = await http.patch(`/items/${id}`, { isActive });
   return data;
 }
 

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import { getUserById } from '../services/userService';
-import { fetchUserListings } from '../services/listingsService';
+import { fetchUserListings, fetchListings } from '../services/listingsService';
 import { fetchItemReviews } from '../services/reviewsService';
 import ItemCard from '../components/ItemCard.vue';
 import StarRating from '../components/StarRating.vue';
@@ -17,8 +17,10 @@ const auth = useAuthStore();
 // State
 const user = ref(null);
 const listings = ref([]);
+const inactiveListings = ref([]);
 const reviews = ref([]);
 const loading = ref(true);
+const loadingInactive = ref(false);
 const error = ref(null);
 const activeTab = ref('listings');
 
@@ -47,6 +49,10 @@ const totalListings = computed(() => {
   return listings.value.length;
 });
 
+const totalInactiveListings = computed(() => {
+  return inactiveListings.value.length;
+});
+
 const totalReviews = computed(() => {
   return reviews.value.length;
 });
@@ -69,6 +75,11 @@ async function loadUserProfile() {
     
     // Load user's reviews from their listings
     await loadUserReviews(userId);
+    
+    // Load inactive listings if viewing own profile (check after user is loaded)
+    if (auth.user && user.value && auth.user.id === user.value.id) {
+      await loadInactiveListings();
+    }
     
   } catch (e) {
     console.error('Failed to load user profile:', e);
@@ -99,6 +110,24 @@ function getRatingText(rating) {
   if (rating >= 2.5) return 'Average';
   if (rating >= 1.5) return 'Below Average';
   return 'Poor';
+}
+
+async function loadInactiveListings() {
+  loadingInactive.value = true;
+  try {
+    const data = await fetchListings({
+      mine: true,
+      inactive: true,
+      page: 1,
+      pageSize: 100, // Load all inactive listings
+    });
+    inactiveListings.value = data.items || [];
+  } catch (error) {
+    console.error('Failed to load inactive listings:', error);
+    inactiveListings.value = [];
+  } finally {
+    loadingInactive.value = false;
+  }
 }
 
 async function loadUserReviews(userId) {
@@ -311,6 +340,16 @@ onMounted(() => {
               Listings ({{ totalListings }})
             </button>
           </li>
+          <li v-if="isOwnProfile" class="nav-item" role="presentation">
+            <button 
+              class="nav-link" 
+              :class="{ active: activeTab === 'inactive' }"
+              @click="activeTab = 'inactive'"
+            >
+              <i class="bi bi-eye-slash me-2"></i>
+              Inactive ({{ totalInactiveListings }})
+            </button>
+          </li>
           <li class="nav-item" role="presentation">
             <button 
               class="nav-link" 
@@ -339,6 +378,27 @@ onMounted(() => {
               <i class="bi bi-box empty-icon"></i>
               <h5>No Listings Yet</h5>
               <p class="text-muted">This user hasn't created any listings yet.</p>
+            </div>
+          </div>
+
+          <!-- Inactive Listings Tab -->
+          <div v-if="activeTab === 'inactive' && isOwnProfile" class="tab-pane active">
+            <div v-if="loadingInactive" class="text-center py-4">
+              <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+              <div class="small text-secondary mt-2">Loading inactive listings...</div>
+            </div>
+            <div v-else-if="inactiveListings.length > 0" class="listings-grid">
+              <ItemCard 
+                v-for="listing in inactiveListings" 
+                :key="listing.id" 
+                :item="listing"
+                class="listing-item"
+              />
+            </div>
+            <div v-else class="empty-state">
+              <i class="bi bi-eye-slash empty-icon"></i>
+              <h5>No Inactive Listings</h5>
+              <p class="text-muted">You don't have any inactive listings.</p>
             </div>
           </div>
 

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useUiStore } from '../stores/ui';
 import { updateOrderStatus } from '../services/orderService';
+import { getImageUrl } from '../utils/imageUtils';
 
 const props = defineProps({
   order: { type: Object, required: true },
@@ -114,7 +115,7 @@ function formatPriceForBackend(amount) {
           <div class="d-flex align-items-center gap-3">
             <img 
               v-if="order.item?.photos?.[0]" 
-              :src="order.item.photos[0].url" 
+              :src="getImageUrl(order.item.photos[0].url)" 
               class="rounded"
               width="80"
               height="80"
