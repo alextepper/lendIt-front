@@ -13,8 +13,9 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Install envsubst for environment variable substitution
 RUN apk add --no-cache gettext
 
-# Create nginx config template with Railway PORT support
-RUN echo 'server {' > /etc/nginx/templates/default.conf.template && \
+# Create templates directory and nginx config template with Railway PORT support
+RUN mkdir -p /etc/nginx/templates && \
+    echo 'server {' > /etc/nginx/templates/default.conf.template && \
     echo '    resolver 127.0.0.11 valid=30s ipv6=off;' >> /etc/nginx/templates/default.conf.template && \
     echo '    listen ${PORT:-80};' >> /etc/nginx/templates/default.conf.template && \
     echo '    server_name _;' >> /etc/nginx/templates/default.conf.template && \
