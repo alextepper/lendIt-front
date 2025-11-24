@@ -15,7 +15,7 @@ const loading = ref(true);
 const saving = ref(false);
 const editMode = ref(false);
 const cities = ref([]);
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const baseURL = import.meta.env.VITE_API_BASE_URL;
 
 onMounted(async () => {
   try {

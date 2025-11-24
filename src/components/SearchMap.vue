@@ -231,7 +231,7 @@ function updateMarkers() {
   props.items.forEach((item) => {
     if (item.latitude && item.longitude) {
       // Get photo URL
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
       let photoUrl = null;
       if (item.photos && item.photos.length > 0) {
         const photo = item.photos[0];

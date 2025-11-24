@@ -8,20 +8,20 @@ export function getImageUrl(imageUrl) {
     return null;
   }
 
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+  const baseURL = import.meta.env.VITE_API_BASE_URL;
 
   // If it's already a full URL, return as is
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
     return imageUrl;
   }
 
   // If it starts with /uploads, prepend base URL
-  if (imageUrl.startsWith('/uploads/')) {
+  if (imageUrl.startsWith("/uploads/")) {
     return `${baseURL}${imageUrl}`;
   }
 
   // If it starts with /, prepend base URL
-  if (imageUrl.startsWith('/')) {
+  if (imageUrl.startsWith("/")) {
     return `${baseURL}${imageUrl}`;
   }
 
@@ -46,13 +46,11 @@ export function getItemPhotoUrl(photos) {
     }
     // Get first photo URL
     const firstPhoto = photos[0];
-    const url = typeof firstPhoto === 'string' ? firstPhoto : firstPhoto.url;
+    const url = typeof firstPhoto === "string" ? firstPhoto : firstPhoto.url;
     return getImageUrl(url);
   }
 
   // If it's a single photo object or string
-  const url = typeof photos === 'string' ? photos : photos.url;
+  const url = typeof photos === "string" ? photos : photos.url;
   return getImageUrl(url);
 }
-
-

@@ -115,9 +115,9 @@
 
     // Step 5: Test connection
     console.log("Step 5: Testing WebSocket connection...");
-    console.log("🔌 Connecting to http://localhost:4000...\n");
+    console.log(`🔌 Connecting to ${import.meta.env.VITE_WS_URL}...\n`);
 
-    const socket = io("http://localhost:4000", {
+    const socket = io(import.meta.env.VITE_WS_URL, {
       auth: {
         token: token,
       },
@@ -135,7 +135,7 @@
       console.log("🎉 SUCCESS! WebSocket Connected");
       console.log("═══════════════════════════════════════\n");
       console.log(`✅ Socket ID: ${socket.id}`);
-      console.log(`✅ Connected to: http://localhost:4000`);
+      console.log(`✅ Connected to: ${import.meta.env.VITE_WS_URL}`);
       console.log(`✅ Transport: ${socket.io.engine.transport.name}\n`);
 
       console.log("📡 Connection is working perfectly!");
@@ -192,10 +192,14 @@
         console.log("\n1️⃣ Backend Server Issue:");
         console.log("   ❌ Backend is not responding");
         console.log(
-          "   ✅ Fix: Make sure backend is running on http://localhost:4000"
+          `   ✅ Fix: Make sure backend is running on ${
+            import.meta.env.VITE_API_BASE_URL
+          }`
         );
         console.log("   ✅ Check: Backend logs for errors");
-        console.log("   ✅ Test: curl http://localhost:4000/health");
+        console.log(
+          `   ✅ Test: curl ${import.meta.env.VITE_API_BASE_URL}/health`
+        );
       } else if (
         error.message.includes("websocket error") ||
         error.message.includes("401")
@@ -222,7 +226,7 @@
       console.log("\n📋 Debug Info:");
       console.log(`   Token length: ${token.length}`);
       console.log(`   Token preview: ${token.substring(0, 50)}...`);
-      console.log(`   Backend URL: http://localhost:4000`);
+      console.log(`   Backend URL: ${import.meta.env.VITE_API_BASE_URL}`);
       console.log(`   Transport attempted: websocket, polling`);
 
       socket.disconnect();

@@ -273,10 +273,10 @@
       document.getElementById('testBtn').disabled = true;
 
       // Connect
-      log('Attempting to connect to http://localhost:4000...', 'info');
+      log(`Attempting to connect to ${import.meta.env.VITE_WS_URL}...`, 'info');
       log('Connection mode: ' + (rawToken ? 'Token-based' : 'Cookie-based'), 'info');
       
-      socket = io('http://localhost:4000', connectionConfig);
+      socket = io(import.meta.env.VITE_WS_URL, connectionConfig);
 
       // Success handlers
       socket.on('connect', () => {
@@ -308,7 +308,7 @@
         
         if (error.message.includes('xhr poll error')) {
           log('Backend server is not responding', 'error');
-          log('Make sure the backend is running on http://localhost:4000', 'warning');
+          log(`Make sure the backend is running on ${import.meta.env.VITE_API_BASE_URL}`, 'warning');
         } else if (error.message.includes('websocket error')) {
           log('WebSocket connection rejected', 'error');
           log('Possible causes:', 'info');

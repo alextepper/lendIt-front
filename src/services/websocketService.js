@@ -35,7 +35,7 @@ class WebSocketService {
     }
 
     try {
-      const wsUrl = import.meta.env.VITE_WS_URL || "http://localhost:4000";
+      const wsUrl = import.meta.env.VITE_WS_URL;
 
       console.log("Connecting to Socket.IO server...");
 

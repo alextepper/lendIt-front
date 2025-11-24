@@ -9,10 +9,7 @@ const USE_MOCK = false; // set true to use mock
 
 export function openSocket() {
   // ws://host/ws - cookies will be sent automatically
-  const url = new URL(
-    import.meta.env.VITE_WS_URL || "ws://localhost:4000/ws",
-    window.location.href
-  );
+  const url = new URL(import.meta.env.VITE_WS_URL, window.location.href);
   return new WebSocket(url.toString());
 }
 

@@ -3,7 +3,7 @@ import router from "../router";
 import { useAuthStore } from "../stores/auth";
 
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:4000",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true, // Important for cookie-based auth
   timeout: 5000, // 5 second timeout to prevent hanging requests
 });
