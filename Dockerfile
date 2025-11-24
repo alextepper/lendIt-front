@@ -14,7 +14,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 RUN echo '#!/bin/sh' > /start.sh && \
     echo 'set -e' >> /start.sh && \
     echo 'PORT=${PORT:-80}' >> /start.sh && \
-    echo 'BACKEND_URL=${BACKEND_URL:-http://backend:4000}' >> /start.sh && \
+    echo 'BACKEND_URL=${BACKEND_URL:-${VITE_API_BASE_URL:-http://backend:4000}}' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "server {" > /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "    resolver 127.0.0.11 valid=30s ipv6=off;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
