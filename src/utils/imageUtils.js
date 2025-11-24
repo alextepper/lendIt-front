@@ -13,11 +13,11 @@ export function getImageUrl(imageUrl) {
     return imageUrl;
   }
 
-  // In production, use relative URLs - nginx will proxy /uploads/ to backend
-  // In development, use VITE_API_BASE_URL if set
-  const baseURL = import.meta.env.PROD
-    ? "" // Production: use relative URLs, nginx proxies to backend
-    : import.meta.env.VITE_API_BASE_URL || ""; // Dev: use env var if set
+  // Get API base URL from runtime config or fallback to build-time env var
+  const baseURL =
+    (typeof window !== "undefined" && window.__API_BASE_URL__) ||
+    import.meta.env.VITE_API_BASE_URL ||
+    "";
 
   // If it starts with /uploads or /, return relative URL (nginx will proxy)
   if (imageUrl.startsWith("/uploads/") || imageUrl.startsWith("/")) {

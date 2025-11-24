@@ -10,11 +10,22 @@ RUN npm run build
 FROM nginx:1.27-alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
+# Create config.js endpoint that serves runtime API URL
+RUN echo '#!/bin/sh' > /generate-config.sh && \
+    echo 'set -e' >> /generate-config.sh && \
+    echo 'API_URL=${VITE_API_BASE_URL:-${BACKEND_URL}}' >> /generate-config.sh && \
+    echo 'echo "window.__API_BASE_URL__ = \"$API_URL\";" > /usr/share/nginx/html/config.js' >> /generate-config.sh && \
+    echo 'echo "window.__WS_URL__ = \"$API_URL\";" >> /usr/share/nginx/html/config.js' >> /generate-config.sh && \
+    chmod +x /generate-config.sh
+
 # Create startup script that generates nginx config with Railway PORT support
 RUN echo '#!/bin/sh' > /start.sh && \
     echo 'set -e' >> /start.sh && \
     echo 'PORT=${PORT:-80}' >> /start.sh && \
     echo 'BACKEND_URL=${BACKEND_URL:-${VITE_API_BASE_URL}}' >> /start.sh && \
+    echo '' >> /start.sh && \
+    echo '# Generate runtime config.js with API URL' >> /start.sh && \
+    echo '/generate-config.sh' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "server {" > /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "    resolver 127.0.0.11 valid=30s ipv6=off;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \

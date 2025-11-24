@@ -230,10 +230,11 @@ function updateMarkers() {
   // Add item markers
   props.items.forEach((item) => {
     if (item.latitude && item.longitude) {
-      // Get photo URL - use relative URLs in production
-      const baseURL = import.meta.env.PROD 
-        ? ''  // Production: use relative URLs, nginx proxies to backend
-        : (import.meta.env.VITE_API_BASE_URL || '');  // Dev: use env var if set
+      // Get photo URL from runtime config or fallback to build-time env var
+      const baseURL = 
+        (typeof window !== 'undefined' && window.__API_BASE_URL__) || 
+        import.meta.env.VITE_API_BASE_URL || 
+        '';
       let photoUrl = null;
       if (item.photos && item.photos.length > 0) {
         const photo = item.photos[0];
