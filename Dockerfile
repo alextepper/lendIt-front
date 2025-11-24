@@ -10,49 +10,48 @@ RUN npm run build
 FROM nginx:1.27-alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Install envsubst for environment variable substitution
-RUN apk add --no-cache gettext
-
-# Create templates directory and nginx config template with Railway PORT support
-RUN mkdir -p /etc/nginx/templates && \
-    echo 'server {' > /etc/nginx/templates/default.conf.template && \
-    echo '    resolver 127.0.0.11 valid=30s ipv6=off;' >> /etc/nginx/templates/default.conf.template && \
-    echo '    listen ${PORT:-80};' >> /etc/nginx/templates/default.conf.template && \
-    echo '    server_name _;' >> /etc/nginx/templates/default.conf.template && \
-    echo '    root /usr/share/nginx/html;' >> /etc/nginx/templates/default.conf.template && \
-    echo '    index index.html;' >> /etc/nginx/templates/default.conf.template && \
-    echo '' >> /etc/nginx/templates/default.conf.template && \
-    echo '    # Health check endpoint for Railway' >> /etc/nginx/templates/default.conf.template && \
-    echo '    location /health { return 200 "OK"; add_header Content-Type text/plain; }' >> /etc/nginx/templates/default.conf.template && \
-    echo '' >> /etc/nginx/templates/default.conf.template && \
-    echo '    # SPA routing - serve index.html for all routes' >> /etc/nginx/templates/default.conf.template && \
-    echo '    location / { try_files $uri $uri/ /index.html; }' >> /etc/nginx/templates/default.conf.template && \
-    echo '' >> /etc/nginx/templates/default.conf.template && \
-    echo '    # API proxy to backend (resolves at request time)' >> /etc/nginx/templates/default.conf.template && \
-    echo '    location /api/ {' >> /etc/nginx/templates/default.conf.template && \
-    echo '        set $backend "${BACKEND_URL:-http://backend:4000}";' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_pass $backend;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_http_version 1.1;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_set_header Upgrade $http_upgrade;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_set_header Connection "upgrade";' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_set_header Host $host;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_set_header X-Real-IP $remote_addr;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_set_header X-Forwarded-Proto $scheme;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_set_header X-Forwarded-Host $server_name;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_connect_timeout 60s;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_send_timeout 60s;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_read_timeout 60s;' >> /etc/nginx/templates/default.conf.template && \
-    echo '        proxy_buffering off;' >> /etc/nginx/templates/default.conf.template && \
-    echo '    }' >> /etc/nginx/templates/default.conf.template && \
-    echo '}' >> /etc/nginx/templates/default.conf.template
-
-# Create entrypoint script to process templates with envsubst
-RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
-    echo 'set -e' >> /docker-entrypoint.sh && \
-    echo 'envsubst '"'"'$$PORT $$BACKEND_URL'"'"' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
-    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
-    chmod +x /docker-entrypoint.sh
+# Create startup script that generates nginx config with Railway PORT support
+RUN echo '#!/bin/sh' > /start.sh && \
+    echo 'set -e' >> /start.sh && \
+    echo 'PORT=${PORT:-80}' >> /start.sh && \
+    echo 'BACKEND_URL=${BACKEND_URL:-http://backend:4000}' >> /start.sh && \
+    echo '' >> /start.sh && \
+    echo 'cat > /etc/nginx/conf.d/default.conf <<EOFMARKER' >> /start.sh && \
+    echo 'server {' >> /start.sh && \
+    echo '    resolver 127.0.0.11 valid=30s ipv6=off;' >> /start.sh && \
+    echo '    listen $PORT;' >> /start.sh && \
+    echo '    server_name _;' >> /start.sh && \
+    echo '    root /usr/share/nginx/html;' >> /start.sh && \
+    echo '    index index.html;' >> /start.sh && \
+    echo '' >> /start.sh && \
+    echo '    # Health check endpoint for Railway' >> /start.sh && \
+    echo '    location /health { return 200 "OK"; add_header Content-Type text/plain; }' >> /start.sh && \
+    echo '' >> /start.sh && \
+    echo '    # SPA routing - serve index.html for all routes' >> /start.sh && \
+    echo '    location / { try_files $uri $uri/ /index.html; }' >> /start.sh && \
+    echo '' >> /start.sh && \
+    echo '    # API proxy to backend (resolves at request time)' >> /start.sh && \
+    echo '    location /api/ {' >> /start.sh && \
+    echo '        set $backend "$BACKEND_URL";' >> /start.sh && \
+    echo '        proxy_pass $backend;' >> /start.sh && \
+    echo '        proxy_http_version 1.1;' >> /start.sh && \
+    echo '        proxy_set_header Upgrade $http_upgrade;' >> /start.sh && \
+    echo '        proxy_set_header Connection "upgrade";' >> /start.sh && \
+    echo '        proxy_set_header Host $host;' >> /start.sh && \
+    echo '        proxy_set_header X-Real-IP $remote_addr;' >> /start.sh && \
+    echo '        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' >> /start.sh && \
+    echo '        proxy_set_header X-Forwarded-Proto $scheme;' >> /start.sh && \
+    echo '        proxy_set_header X-Forwarded-Host $server_name;' >> /start.sh && \
+    echo '        proxy_connect_timeout 60s;' >> /start.sh && \
+    echo '        proxy_send_timeout 60s;' >> /start.sh && \
+    echo '        proxy_read_timeout 60s;' >> /start.sh && \
+    echo '        proxy_buffering off;' >> /start.sh && \
+    echo '    }' >> /start.sh && \
+    echo '}' >> /start.sh && \
+    echo 'EOFMARKER' >> /start.sh && \
+    echo '' >> /start.sh && \
+    echo 'exec nginx -g "daemon off;"' >> /start.sh && \
+    chmod +x /start.sh
 
 EXPOSE 80
-CMD ["/docker-entrypoint.sh"]
+CMD ["/start.sh"]
