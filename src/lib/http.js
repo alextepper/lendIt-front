@@ -2,8 +2,13 @@ import axios from "axios";
 import router from "../router";
 import { useAuthStore } from "../stores/auth";
 
+// Use relative URL for API calls in production - nginx will proxy /api/ to backend
+// In development, use VITE_API_BASE_URL if set, otherwise use /api (Vite proxy)
+const apiBaseURL = import.meta.env.PROD
+  ? "/api" // Production: use relative URL, nginx proxies to backend
+  : import.meta.env.VITE_API_BASE_URL || "/api"; // Dev: use env var or Vite proxy
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: apiBaseURL,
   withCredentials: true, // Important for cookie-based auth
   timeout: 5000, // 5 second timeout to prevent hanging requests
 });

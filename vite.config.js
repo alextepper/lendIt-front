@@ -7,4 +7,13 @@ export default defineConfig({
     sourcemap: false,
     chunkSizeWarningLimit: 900,
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_BASE_URL,
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });
