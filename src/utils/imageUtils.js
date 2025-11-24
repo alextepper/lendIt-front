@@ -8,25 +8,24 @@ export function getImageUrl(imageUrl) {
     return null;
   }
 
-  const baseURL = import.meta.env.VITE_API_BASE_URL;
-
   // If it's already a full URL, return as is
   if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
     return imageUrl;
   }
 
-  // If it starts with /uploads, prepend base URL
-  if (imageUrl.startsWith("/uploads/")) {
-    return `${baseURL}${imageUrl}`;
+  // In production, use relative URLs - nginx will proxy /uploads/ to backend
+  // In development, use VITE_API_BASE_URL if set
+  const baseURL = import.meta.env.PROD
+    ? "" // Production: use relative URLs, nginx proxies to backend
+    : import.meta.env.VITE_API_BASE_URL || ""; // Dev: use env var if set
+
+  // If it starts with /uploads or /, return relative URL (nginx will proxy)
+  if (imageUrl.startsWith("/uploads/") || imageUrl.startsWith("/")) {
+    return baseURL ? `${baseURL}${imageUrl}` : imageUrl;
   }
 
-  // If it starts with /, prepend base URL
-  if (imageUrl.startsWith("/")) {
-    return `${baseURL}${imageUrl}`;
-  }
-
-  // Otherwise, assume it's a relative path and prepend base URL with /
-  return `${baseURL}/${imageUrl}`;
+  // Otherwise, assume it's a relative path
+  return baseURL ? `${baseURL}/${imageUrl}` : `/${imageUrl}`;
 }
 
 /**

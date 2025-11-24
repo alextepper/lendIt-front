@@ -230,15 +230,21 @@ function updateMarkers() {
   // Add item markers
   props.items.forEach((item) => {
     if (item.latitude && item.longitude) {
-      // Get photo URL
-      const baseURL = import.meta.env.VITE_API_BASE_URL;
+      // Get photo URL - use relative URLs in production
+      const baseURL = import.meta.env.PROD 
+        ? ''  // Production: use relative URLs, nginx proxies to backend
+        : (import.meta.env.VITE_API_BASE_URL || '');  // Dev: use env var if set
       let photoUrl = null;
       if (item.photos && item.photos.length > 0) {
         const photo = item.photos[0];
         if (photo.url) {
-          photoUrl = photo.url.startsWith('http') 
-            ? photo.url 
-            : `${baseURL}${photo.url.startsWith('/') ? '' : '/'}${photo.url}`;
+          if (photo.url.startsWith('http')) {
+            photoUrl = photo.url;
+          } else {
+            photoUrl = baseURL 
+              ? `${baseURL}${photo.url.startsWith('/') ? '' : '/'}${photo.url}`
+              : photo.url.startsWith('/') ? photo.url : `/${photo.url}`;
+          }
         }
       }
 

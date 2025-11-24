@@ -35,7 +35,11 @@ class WebSocketService {
     }
 
     try {
-      const wsUrl = import.meta.env.VITE_WS_URL;
+      // In production, use same origin (nginx will proxy WebSocket to backend)
+      // In development, use VITE_WS_URL if set, otherwise use same origin
+      const wsUrl = import.meta.env.PROD
+        ? window.location.origin // Production: use same origin, nginx proxies WebSocket
+        : import.meta.env.VITE_WS_URL || window.location.origin; // Dev: use env var or same origin
 
       console.log("Connecting to Socket.IO server...");
 
