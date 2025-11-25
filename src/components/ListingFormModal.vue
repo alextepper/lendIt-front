@@ -402,7 +402,6 @@ async function submit() {
                 <label class="form-label fw-semibold">
                   Initial Price
                   <i class="bi bi-question-circle text-muted ms-1" 
-                     data-bs-toggle="tooltip" 
                      title="One-time fee charged at the start of rental"></i>
                 </label>
                 <div class="input-group">
@@ -421,7 +420,6 @@ async function submit() {
                 <label class="form-label fw-semibold">
                   Deposit
                   <i class="bi bi-question-circle text-muted ms-1" 
-                     data-bs-toggle="tooltip" 
                      title="Security deposit (refundable)"></i>
                 </label>
                 <div class="input-group">
