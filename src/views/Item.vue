@@ -675,25 +675,38 @@ function formatPrice(amount) {
     <div v-else-if="item">
       <!-- Item Header - Always at top -->
       <div class="item-header mb-4" :class="{ 'edit-mode': editMode }">
-        <div class="d-flex flex-column justify-content-between align-items-start gap-3">
+        <div class="d-flex justify-content-between align-items-start gap-4">
+          <!-- Left Content -->
           <div class="flex-grow-1">
-            <!-- Title with Image (Owners Only) -->
-            <div v-if="isOwner && !editMode" class="d-flex align-items-center gap-3 mb-2">
-              <div class="item-thumbnail">
-                <img 
-                  v-if="item.photos && item.photos.length > 0"
-                  :src="getItemPhotoUrl(item.photos)" 
-                  :alt="item.title"
-                  class="thumbnail-image"
-                />
-                <div v-else class="thumbnail-placeholder">
-                  <i class="bi bi-image"></i>
+            <!-- Title with Rating (View Mode) -->
+            <div v-if="!editMode" class="item-title-section mb-2">
+              <div class="d-flex align-items-center gap-3 flex-wrap">
+                <!-- Thumbnail (Owners Only) -->
+                <div v-if="isOwner" class="item-thumbnail">
+                  <img 
+                    v-if="item.photos && item.photos.length > 0"
+                    :src="getItemPhotoUrl(item.photos)" 
+                    :alt="item.title"
+                    class="thumbnail-image"
+                  />
+                  <div v-else class="thumbnail-placeholder">
+                    <i class="bi bi-image"></i>
+                  </div>
                 </div>
+                <!-- Title -->
+                <h1 class="item-title mb-0">{{ item.title }}</h1>
+                <!-- Rating -->
+                <div class="item-rating d-flex align-items-center gap-1">
+                  <i class="bi bi-star-fill text-warning"></i>
+                  <span class="fw-semibold">{{ item.rating || '0.0' }}</span>
+                  <span class="text-muted small">({{ item.reviews_count || 0 }})</span>
+                </div>
+                <!-- Category Badge -->
+                <span class="badge bg-primary">{{ item.category }}</span>
               </div>
-              <h1 class="item-title mb-0">{{ item.title }}</h1>
             </div>
-            <!-- Title: View Mode (Non-Owners) -->
-            <h1 v-else-if="!editMode" class="item-title mb-2">{{ item.title }}</h1>
+            
+            <!-- Title Input (Edit Mode) -->
             <div v-else class="mb-3">
               <label class="form-label small fw-bold">Title</label>
               <input 
@@ -705,28 +718,33 @@ function formatPrice(amount) {
               />
             </div>
 
-            <!-- Meta: View or Edit Mode -->
-            <div v-if="!editMode" class="item-meta d-flex flex-wrap gap-3 align-items-center text-muted">
-              <span class="d-flex align-items-center gap-1">
-                <i class="bi bi-geo-alt"></i> {{ item.location || item.address }}
-              </span>
-              <span>·</span>
-              <span class="d-flex align-items-center gap-1">
-                <i class="bi bi-star-fill text-warning"></i> 
-                {{ item.rating || '0.0' }} 
-                <span class="text-muted">({{ item.reviews_count || 0 }})</span>
-              </span>
-              <span>·</span>
-              <span class="badge bg-primary">{{ item.category }}</span>
-              <span>·</span>
-              <span class="fw-bold">{{ formatPrice(item.pricePerDay) }}/day</span>
+            <!-- Address (View Mode) -->
+            <div v-if="!editMode" class="item-address mb-2">
+              <div class="d-flex align-items-center gap-1 text-muted">
+                <i class="bi bi-geo-alt"></i>
+                <span>{{ item.location || item.address }}</span>
+              </div>
+            </div>
+
+            <!-- Prices (View Mode) -->
+            <div v-if="!editMode" class="item-prices d-flex flex-wrap align-items-center gap-3">
+              <div class="price-main">
+                <span class="fw-bold fs-5 text-primary">{{ formatPrice(item.pricePerDay) }}</span>
+                <span class="text-muted ms-1">/day</span>
+              </div>
               <template v-if="item.initialPrice">
-                <span>·</span>
-                <span class="text-muted">Initial: {{ formatPrice(item.initialPrice) }}</span>
+                <span class="text-muted">·</span>
+                <div class="price-secondary">
+                  <span class="small text-muted">Initial:</span>
+                  <span class="fw-semibold ms-1">{{ formatPrice(item.initialPrice) }}</span>
+                </div>
               </template>
               <template v-if="item.deposit">
-                <span>·</span>
-                <span class="text-muted">Deposit: {{ formatPrice(item.deposit) }}</span>
+                <span class="text-muted">·</span>
+                <div class="price-secondary">
+                  <span class="small text-muted">Deposit:</span>
+                  <span class="fw-semibold ms-1">{{ formatPrice(item.deposit) }}</span>
+                </div>
               </template>
             </div>
             <div v-else class="row g-3">
@@ -819,34 +837,34 @@ function formatPrice(amount) {
             </div>
           </div>
           
-          <!-- Action Buttons -->
-          <div class="d-flex gap-2 item-actions">
+          <!-- Action Buttons - Top Right Corner -->
+          <div class="d-flex flex-column gap-2 item-actions">
             <!-- Owner Actions -->
             <template v-if="isOwner">
               <button
-                class="btn"
+                class="btn btn-sm"
                 :class="editMode ? 'btn-success' : 'btn-primary'"
                 @click="toggleEditMode"
                 title="Toggle edit mode"
                 :disabled="saving"
               >
-                <span v-if="saving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span v-if="saving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                 <i v-else class="bi" :class="editMode ? 'bi-check-lg' : 'bi-pencil'"></i>
-                <span class="ms-1">{{ saving ? 'Saving...' : (editMode ? 'Save Changes' : 'Edit Listing') }}</span>
+                <span class="d-none d-lg-inline ms-1">{{ saving ? 'Saving...' : (editMode ? 'Save' : 'Edit') }}</span>
               </button>
               <button
                 v-if="editMode"
-                class="btn btn-outline-secondary"
+                class="btn btn-sm btn-outline-secondary"
                 @click="cancelEdit"
                 title="Cancel editing"
                 :disabled="saving"
               >
                 <i class="bi bi-x-lg"></i>
-                <span class="d-none d-md-inline ms-1">Cancel</span>
+                <span class="d-none d-lg-inline ms-1">Cancel</span>
               </button>
               <button
                 v-if="editMode"
-                class="btn"
+                class="btn btn-sm"
                 :class="(item?.isActive !== false && item?.active !== false) ? 'btn-outline-warning' : 'btn-outline-success'"
                 @click="toggleActive"
                 :title="(item?.isActive !== false && item?.active !== false) ? 'Deactivate listing' : 'Activate listing'"
@@ -854,18 +872,18 @@ function formatPrice(amount) {
               >
                 <span v-if="togglingActive" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                 <i v-else class="bi" :class="(item?.isActive !== false && item?.active !== false) ? 'bi-eye-slash' : 'bi-eye'"></i>
-                <span class="d-none d-md-inline ms-1">{{ (item?.isActive !== false && item?.active !== false) ? 'Deactivate' : 'Activate' }}</span>
+                <span class="d-none d-lg-inline ms-1">{{ (item?.isActive !== false && item?.active !== false) ? 'Deactivate' : 'Activate' }}</span>
               </button>
               <button
                 v-if="editMode"
-                class="btn btn-outline-danger"
+                class="btn btn-sm btn-outline-danger"
                 @click="deleteItem"
                 title="Delete listing"
                 :disabled="saving || deleting"
               >
                 <span v-if="deleting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                 <i v-else class="bi bi-trash"></i>
-                <span class="d-none d-md-inline ms-1">Delete</span>
+                <span class="d-none d-lg-inline ms-1">Delete</span>
               </button>
             </template>
             
@@ -873,40 +891,40 @@ function formatPrice(amount) {
             <template v-else>
               <!-- TODO: Booking functionality - Coming soon -->
               <button
-                class="btn btn-primary"
+                class="btn btn-sm btn-primary"
                 @click="showBookingModal"
                 title="Book this item"
               >
                 <i class="bi bi-calendar-check"></i>
-                <span class="ms-1">Book Now</span>
+                <span class="d-none d-lg-inline ms-1">Book Now</span>
               </button>
               
               <button
-                class="btn btn-primary"
+                class="btn btn-sm btn-primary"
                 @click="showOwnerModal"
                 title="Message owner"
               >
                 <i class="bi bi-chat-dots"></i>
-                <span class="ms-1">Message Owner</span>
+                <span class="d-none d-lg-inline ms-1">Message</span>
               </button>
               <button
-                class="btn btn-outline-danger"
+                class="btn btn-sm btn-outline-danger"
                 type="button"
                 title="Report"
               >
                 <i class="bi bi-flag"></i>
-                <span class="d-none d-md-inline ms-1">Report</span>
+                <span class="d-none d-lg-inline ms-1">Report</span>
               </button>
             </template>
             
             <!-- Share button (always visible) -->
             <button
-              class="btn btn-outline-secondary"
+              class="btn btn-outline-secondary btn-sm"
               @click="navigator.clipboard.writeText(location.href)"
               title="Share"
             >
               <i class="bi bi-share"></i>
-              <span class="d-none d-md-inline ms-1">Share</span>
+              <span class="d-none d-lg-inline ms-1">Share</span>
             </button>
           </div>
         </div>
@@ -986,7 +1004,7 @@ function formatPrice(amount) {
           </div>
 
           <!-- Description Card -->
-          <div class="card p-3 p-md-4 mt-3 mt-md-4">
+          <div class="card p-3 p-md-4">
             <h2 class="h5 mb-3">About this item</h2>
             <p v-if="!editMode" class="mb-0 text-muted">{{ item.description }}</p>
             <div v-else>
@@ -1084,9 +1102,16 @@ function formatPrice(amount) {
 }
 
 .item-header {
-  padding-bottom: 1.5rem;
+  padding: 1.5rem;
   margin-bottom: 2rem;
   border-bottom: 2px solid #e0e0e0;
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.item-title-section {
+  margin-bottom: 0.75rem;
 }
 
 .item-title {
@@ -1095,6 +1120,30 @@ function formatPrice(amount) {
   color: #212529;
   margin: 0;
   line-height: 1.3;
+}
+
+.item-rating {
+  padding: 0.25rem 0.75rem;
+  background: #fff3cd;
+  border-radius: 1rem;
+  font-size: 0.95rem;
+}
+
+.item-address {
+  font-size: 1rem;
+  color: #6c757d;
+}
+
+.item-prices {
+  margin-top: 0.5rem;
+}
+
+.price-main {
+  font-size: 1.25rem;
+}
+
+.price-secondary {
+  font-size: 0.95rem;
 }
 
 /* Item Thumbnail for Owners */
@@ -1132,11 +1181,12 @@ function formatPrice(amount) {
 
 .item-actions {
   flex-shrink: 0;
-  flex-wrap: wrap;
+  align-items: flex-end;
 }
 
 .item-actions .btn {
   white-space: nowrap;
+  min-width: fit-content;
 }
 
 /* Sticky sidebar on desktop */
@@ -1168,13 +1218,14 @@ function formatPrice(amount) {
     font-size: 1.75rem;
   }
   
-  .item-meta {
-    font-size: 0.875rem;
+  .item-header {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
   }
   
-  .item-header {
-    padding-bottom: 1rem;
-    margin-bottom: 1.5rem;
+  .item-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
   
   .sidebar-content {
@@ -1304,6 +1355,11 @@ function formatPrice(amount) {
 
 /* Mobile optimizations */
 @media (max-width: 768px) {
+  .item-header {
+    padding: 1rem;
+    flex-direction: column;
+  }
+  
   .item-title {
     font-size: 1.5rem;
   }
@@ -1319,6 +1375,9 @@ function formatPrice(amount) {
   
   .item-actions {
     width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
   
   .item-actions .btn {
@@ -1333,6 +1392,15 @@ function formatPrice(amount) {
   
   .item-actions .btn i {
     margin: 0 !important;
+  }
+  
+  .item-rating {
+    font-size: 0.85rem;
+    padding: 0.2rem 0.5rem;
+  }
+  
+  .price-main {
+    font-size: 1.1rem;
   }
   
   .photo-preview-grid {
