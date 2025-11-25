@@ -1,4 +1,6 @@
 <script>
+import { h } from 'vue';
+
 export default {
   name: "ErrorBoundary",
   data() {
@@ -18,7 +20,7 @@ export default {
     if (this.err) {
       return this.$slots.fallback
         ? this.$slots.fallback({ error: this.err, reset: this.reset })
-        : this.$createElement("div", { class: "alert alert-danger" }, "Something went wrong.");
+        : h("div", { class: "alert alert-danger" }, "Something went wrong.");
     }
     return this.$slots.default?.();
   },
