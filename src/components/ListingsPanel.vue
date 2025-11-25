@@ -82,6 +82,19 @@ async function remove(it) {
     ui.showToast('Failed to delete', 'danger');
   }
 }
+
+function handlePhotoChanged(itemId) {
+  // Reload items to get updated photo
+  load();
+}
+
+function handleItemUpdate(itemId, updatedItem) {
+  // Update the item in the local array
+  const index = items.value.findIndex(it => it.id === itemId);
+  if (index !== -1) {
+    items.value[index] = updatedItem;
+  }
+}
 </script>
 
 <template>
@@ -95,12 +108,17 @@ async function remove(it) {
   <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
     <div v-for="it in items" :key="it.id" class="col">
       <div class="position-relative">
-        <ItemCard :item="it" />
-        <div class="position-absolute top-0 end-0 p-2 d-flex gap-1">
-          <button class="btn btn-light btn-sm" @click="openEdit(it)">
+        <ItemCard 
+          :item="it" 
+          :edit-mode="true"
+          @photo-changed="handlePhotoChanged(it.id)"
+          @update:item="handleItemUpdate(it.id, $event)"
+        />
+        <div class="position-absolute top-0 end-0 p-2 d-flex gap-1" style="z-index: 10;">
+          <button class="btn btn-light btn-sm shadow-sm" @click="openEdit(it)" title="Edit listing">
             <i class="bi bi-pencil"></i>
           </button>
-          <button class="btn btn-light btn-sm" @click="remove(it)">
+          <button class="btn btn-light btn-sm shadow-sm" @click="remove(it)" title="Delete listing">
             <i class="bi bi-trash"></i>
           </button>
         </div>
