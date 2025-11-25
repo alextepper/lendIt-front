@@ -1,10 +1,12 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { getItemPhotoUrl } from '../utils/imageUtils';
 
 const props = defineProps({
   item: { type: Object, required: true },
 });
+
+const isLocationExpanded = ref(false);
 
 const thumbnailUrl = computed(() => {
   if (props.item.thumbnail) {
@@ -15,6 +17,19 @@ const thumbnailUrl = computed(() => {
   }
   return null;
 });
+
+const locationText = computed(() => {
+  return props.item.location || props.item.address || '';
+});
+
+const shouldShowExpand = computed(() => {
+  // Show expand button if location is longer than ~30 characters
+  return locationText.value.length > 30;
+});
+
+function toggleLocation() {
+  isLocationExpanded.value = !isLocationExpanded.value;
+}
 
 function formatPrice(amount) {
   // Backend sends prices in cents, so divide by 100 for display
@@ -39,9 +54,26 @@ function formatPrice(amount) {
     </div>
     <div class="card-body">
       <h3 class="h6 card-title mb-1 text-truncate">{{ item.title }}</h3>
-      <div class="small text-secondary d-flex justify-content-between align-items-center mb-1">
-        <span>{{ item.location }}</span>
-        <span>{{ item.category }}</span>
+      <div class="small text-secondary d-flex justify-content-between align-items-start mb-1">
+        <div class="location-container flex-grow-1 me-2">
+          <span 
+            class="location-text" 
+            :class="{ 'location-expanded': isLocationExpanded }"
+          >
+            {{ locationText }}
+          </span>
+          <button
+            v-if="shouldShowExpand"
+            type="button"
+            class="btn btn-link btn-sm p-0 ms-1 text-decoration-none location-toggle"
+            @click.stop="toggleLocation"
+            :aria-expanded="isLocationExpanded"
+            :aria-label="isLocationExpanded ? 'Collapse location' : 'Expand location'"
+          >
+            <i class="bi" :class="isLocationExpanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+          </button>
+        </div>
+        <span class="text-nowrap">{{ item.category }}</span>
       </div>
       <div v-if="item.distance" class="small text-primary mb-1">
         <i class="bi bi-geo-alt-fill me-1"></i>
@@ -62,3 +94,45 @@ function formatPrice(amount) {
     </div>
   </div>
 </template>
+
+<style scoped>
+.location-container {
+  min-width: 0; /* Allow flex item to shrink */
+}
+
+.location-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.location-text.location-expanded {
+  -webkit-line-clamp: unset;
+  display: block;
+  white-space: normal;
+}
+
+.location-toggle {
+  color: #6c757d;
+  font-size: 0.75rem;
+  line-height: 1;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.location-toggle:hover {
+  color: #0d6efd;
+}
+
+.location-toggle:focus {
+  box-shadow: none;
+  outline: 2px solid #0d6efd;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+</style>
