@@ -6,7 +6,10 @@ export default {
   data() {
     return { err: null };
   },
-  errorCaptured(err) {
+  errorCaptured(err, instance, info) {
+    console.error('ErrorBoundary caught an error:', err);
+    console.error('Error info:', info);
+    console.error('Component instance:', instance);
     this.err = err;
     // prevent from bubbling to app
     return false;

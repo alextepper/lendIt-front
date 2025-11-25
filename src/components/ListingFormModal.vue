@@ -36,6 +36,7 @@ const uploadingPhotos = ref(false);
 const locationSearchQuery = ref('');
 const locationSuggestions = ref([]);
 const showingSuggestions = ref(false);
+const isSelectingLocation = ref(false); // Track if user is clicking on a suggestion
 
 watch(
   () => props.listing,
@@ -119,6 +120,10 @@ async function searchLocationQuery(query) {
 }
 
 function selectLocation(suggestion) {
+  if (!suggestion || !suggestion.display_name) {
+    return;
+  }
+
   const lat = parseFloat(suggestion.lat);
   const lng = parseFloat(suggestion.lon);
   
@@ -126,7 +131,8 @@ function selectLocation(suggestion) {
     return;
   }
 
-  locationSearchQuery.value = suggestion.display_name;
+  isSelectingLocation.value = true;
+  locationSearchQuery.value = suggestion.display_name || '';
   locationSuggestions.value = [];
   showingSuggestions.value = false;
   
@@ -134,6 +140,24 @@ function selectLocation(suggestion) {
   form.address = suggestion.display_name;
   form.latitude = lat;
   form.longitude = lng;
+
+  // Reset flag after a short delay
+  setTimeout(() => {
+    isSelectingLocation.value = false;
+  }, 100);
+}
+
+function handleLocationBlur() {
+  // Don't close suggestions if user is clicking on a suggestion
+  if (isSelectingLocation.value) {
+    return;
+  }
+  // Delay closing to allow click events to fire
+  setTimeout(() => {
+    if (!isSelectingLocation.value) {
+      showingSuggestions.value = false;
+    }
+  }, 200);
 }
 
 // Photo upload functions
@@ -353,7 +377,7 @@ async function submit() {
                     placeholder="Search for location..."
                     @input="searchLocationQuery(locationSearchQuery)"
                     @focus="showingSuggestions = locationSuggestions.length > 0"
-                    @blur="setTimeout(() => { showingSuggestions = false; }, 200)"
+                    @blur="handleLocationBlur"
                     @keyup.enter.prevent="locationSuggestions.length > 0 && selectLocation(locationSuggestions[0])"
                   />
                 </div>
@@ -366,8 +390,8 @@ async function submit() {
                   >
                     <i class="bi bi-geo-alt"></i>
                     <div class="flex-grow-1">
-                      <div class="fw-semibold small">{{ suggestion.display_name.split(',')[0] }}</div>
-                      <div class="text-muted" style="font-size: 0.75rem;">{{ suggestion.display_name }}</div>
+                      <div class="fw-semibold small">{{ suggestion.display_name?.split(',')[0] || 'Location' }}</div>
+                      <div class="text-muted" style="font-size: 0.75rem;">{{ suggestion.display_name || '' }}</div>
                     </div>
                   </div>
                 </div>
