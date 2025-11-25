@@ -271,11 +271,18 @@ function updateMarkers() {
 
       // Add popup with item info and image
       const safePhotoUrl = photoUrl ? photoUrl.replace(/"/g, '&quot;') : '';
+      const safeTitle = (item.title || 'Item').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      const price = (item.pricePerDay || item.price_per_day || 0) / 100;
+      const currency = item.currency || 'ILS';
+      const distance = item.distance ? item.distance.toFixed(1) : null;
+      const rating = item.rating ? item.rating.toFixed(1) : null;
+      const reviewsCount = item.reviews_count || 0;
+      
       const popupContent = `
         <div class="map-popup">
           ${photoUrl ? `
             <div class="map-popup-image">
-              <img src="${safePhotoUrl}" alt="${(item.title || 'Item').replace(/"/g, '&quot;')}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+              <img src="${safePhotoUrl}" alt="${safeTitle}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
               <div class="map-popup-image-placeholder" style="display: none;">
                 <i class="bi bi-image"></i>
               </div>
@@ -286,13 +293,37 @@ function updateMarkers() {
             </div>
           `}
           <div class="map-popup-content">
-            <h6 class="mb-1">${item.title || 'Item'}</h6>
-            <p class="mb-1 small">
-              <strong>${(item.pricePerDay || item.price_per_day || 0) / 100} ${item.currency || 'ILS'}</strong>/day
-            </p>
-            ${item.distance ? `<p class="mb-1 small text-muted">📍 ${item.distance.toFixed(1)} km away</p>` : ''}
-            ${item.rating ? `<p class="mb-1 small">⭐ ${item.rating.toFixed(1)} (${item.reviews_count || 0} reviews)</p>` : ''}
-            <a href="/item/${item.id}" class="btn btn-sm btn-primary mt-2 w-100">View Details</a>
+            <div class="map-popup-header">
+              <h6 class="map-popup-title">${safeTitle}</h6>
+              ${item.category ? `<span class="map-popup-category">${item.category}</span>` : ''}
+            </div>
+            
+            <div class="map-popup-price">
+              <span class="map-popup-price-amount">${price}</span>
+              <span class="map-popup-price-currency">${currency}</span>
+              <span class="map-popup-price-period">/day</span>
+            </div>
+            
+            <div class="map-popup-meta">
+              ${rating ? `
+                <div class="map-popup-rating">
+                  <i class="bi bi-star-fill"></i>
+                  <span class="map-popup-rating-value">${rating}</span>
+                  <span class="map-popup-reviews-count">(${reviewsCount})</span>
+                </div>
+              ` : ''}
+              ${distance ? `
+                <div class="map-popup-distance">
+                  <i class="bi bi-geo-alt-fill"></i>
+                  <span>${distance} km</span>
+                </div>
+              ` : ''}
+            </div>
+            
+            <a href="/item/${item.id}" class="map-popup-button">
+              <span>View Details</span>
+              <i class="bi bi-arrow-right"></i>
+            </a>
           </div>
         </div>
       `;
@@ -579,19 +610,21 @@ onUnmounted(() => {
 }
 
 :deep(.map-popup) {
-  min-width: 250px;
-  max-width: 300px;
+  min-width: 280px;
+  max-width: 320px;
   padding: 0;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  background: white;
 }
 
 :deep(.map-popup-image) {
   width: 100% !important;
   aspect-ratio: 16 / 9 !important;
-  max-height: 180px !important;
+  max-height: 200px !important;
   overflow: hidden !important;
-  background: #f8f9fa !important;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
   position: relative !important;
 }
 
@@ -600,13 +633,18 @@ onUnmounted(() => {
   height: 100% !important;
   object-fit: cover !important;
   display: block !important;
+  transition: transform 0.3s ease !important;
+}
+
+:deep(.map-popup:hover .map-popup-image img) {
+  transform: scale(1.05) !important;
 }
 
 :deep(.map-popup-image-placeholder) {
   width: 100% !important;
   aspect-ratio: 16 / 9 !important;
-  max-height: 180px !important;
-  background: #f8f9fa !important;
+  max-height: 200px !important;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -615,32 +653,167 @@ onUnmounted(() => {
 
 :deep(.map-popup-image-placeholder i) {
   font-size: 3rem !important;
+  opacity: 0.5;
 }
 
 .map-popup-content {
-  padding: 0.75rem;
+  padding: 1rem;
+  background: white;
 }
 
-:deep(.map-popup h6) {
+.map-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+:deep(.map-popup-title) {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  color: #212529 !important;
+  line-height: 1.3 !important;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+:deep(.map-popup-category) {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: #e7f3ff;
+  color: #0d6efd;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.map-popup-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+:deep(.map-popup-price-amount) {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0d6efd;
+  line-height: 1;
+}
+
+:deep(.map-popup-price-currency) {
   font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  color: #0d6efd;
+}
+
+:deep(.map-popup-price-period) {
+  font-size: 0.875rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.map-popup-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.map-popup-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+
+:deep(.map-popup-rating i) {
+  color: #ffc107;
+  font-size: 0.875rem;
+}
+
+:deep(.map-popup-rating-value) {
+  font-weight: 600;
   color: #212529;
 }
 
-:deep(.map-popup .btn) {
+:deep(.map-popup-reviews-count) {
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.map-popup-distance {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+:deep(.map-popup-distance i) {
+  color: #4285F4;
+  font-size: 0.875rem;
+}
+
+.map-popup-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   width: 100%;
-  margin-top: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+}
+
+.map-popup-button:hover {
+  background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+:deep(.map-popup-button i) {
+  font-size: 0.875rem;
+  transition: transform 0.2s ease;
+}
+
+.map-popup-button:hover i {
+  transform: translateX(2px);
 }
 
 :deep(.leaflet-popup-content-wrapper) {
   padding: 0;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
 }
 
 :deep(.leaflet-popup-content) {
   margin: 0;
   width: auto !important;
+}
+
+:deep(.leaflet-popup-tip) {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>
 
@@ -681,9 +854,9 @@ onUnmounted(() => {
 .map-popup-image {
   width: 100% !important;
   aspect-ratio: 16 / 9 !important;
-  max-height: 180px !important;
+  max-height: 200px !important;
   overflow: hidden !important;
-  background: #f8f9fa !important;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
   position: relative !important;
 }
 
@@ -692,13 +865,18 @@ onUnmounted(() => {
   height: 100% !important;
   object-fit: cover !important;
   display: block !important;
+  transition: transform 0.3s ease !important;
+}
+
+.map-popup:hover .map-popup-image img {
+  transform: scale(1.05) !important;
 }
 
 .map-popup-image-placeholder {
   width: 100% !important;
   aspect-ratio: 16 / 9 !important;
-  max-height: 180px !important;
-  background: #f8f9fa !important;
+  max-height: 200px !important;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -707,6 +885,7 @@ onUnmounted(() => {
 
 .map-popup-image-placeholder i {
   font-size: 3rem !important;
+  opacity: 0.5;
 }
 </style>
 
