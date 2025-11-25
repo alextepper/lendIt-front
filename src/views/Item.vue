@@ -16,6 +16,7 @@ import AvailabilityCalendar from '../components/AvailabilityCalendar.vue';
 import BookingCalendar from '../components/BookingCalendar.vue';
 import { Modal } from 'bootstrap';
 import { getItemPhotoUrl } from '../utils/imageUtils';
+import http from '../lib/http';
 
 const route = useRoute();
 const router = useRouter();
@@ -57,6 +58,11 @@ const editForm = reactive({
   description: '',
 });
 
+// Photo management
+const photoInput = ref(null);
+const uploadingPhotos = ref(false);
+const editPhotos = ref([]); // Photos in edit mode
+
 // Store original values for cancel
 const originalItem = ref(null);
 
@@ -81,6 +87,15 @@ async function load() {
     editForm.deposit = item.value.deposit/100 || 0;
     editForm.currency = item.value.currency || 'ILS';
     editForm.description = item.value.description || '';
+    
+    // Initialize photos for edit mode
+    editPhotos.value = (item.value.photos || []).map(photo => ({
+      url: typeof photo === 'string' ? photo : photo.url,
+      publicUrl: typeof photo === 'string' ? photo : photo.publicUrl || photo.url,
+      preview: typeof photo === 'string' ? photo : photo.url,
+      file: null,
+      isNew: false
+    }));
     
     // Store original for cancel
     originalItem.value = JSON.parse(JSON.stringify(item.value));
@@ -177,8 +192,128 @@ function cancelEdit() {
   editForm.currency = originalItem.value.currency || 'ILS';
   editForm.description = originalItem.value.description || '';
   
+  // Restore original photos
+  editPhotos.value = (originalItem.value.photos || []).map(photo => ({
+    url: typeof photo === 'string' ? photo : photo.url,
+    publicUrl: typeof photo === 'string' ? photo : photo.publicUrl || photo.url,
+    preview: typeof photo === 'string' ? photo : photo.url,
+    file: null,
+    isNew: false
+  }));
+  
   editMode.value = false;
   ui.showToast('Changes discarded', 'info');
+}
+
+// Photo management functions
+function handlePhotoUpload(event) {
+  const files = Array.from(event.target.files || []);
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxPhotos = 10;
+
+  files.forEach(file => {
+    if (editPhotos.value.length >= maxPhotos) {
+      ui.showToast(`Maximum ${maxPhotos} photos allowed`, 'warning');
+      return;
+    }
+    
+    if (!validTypes.includes(file.type)) {
+      ui.showToast('Invalid file type. Please upload JPEG, PNG, WebP, or GIF', 'danger');
+      return;
+    }
+    
+    if (file.size > maxSize) {
+      ui.showToast('File size too large. Maximum size is 5MB', 'danger');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      editPhotos.value.push({
+        file: file,
+        preview: e.target.result,
+        url: null,
+        publicUrl: null,
+        isNew: true
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Reset input
+  if (photoInput.value) {
+    photoInput.value.value = '';
+  }
+}
+
+function removePhoto(index) {
+  editPhotos.value.splice(index, 1);
+}
+
+async function uploadPhotos() {
+  const photosToUpload = editPhotos.value.filter(photo => photo.file && photo.isNew);
+  
+  if (photosToUpload.length === 0) {
+    return editPhotos.value.map(photo => photo.url || photo.publicUrl).filter(Boolean);
+  }
+
+  uploadingPhotos.value = true;
+  
+  try {
+    const formData = new FormData();
+    photosToUpload.forEach(photo => {
+      formData.append('files', photo.file);
+    });
+    formData.append('folder', 'items');
+
+    const { data } = await http.post('/uploads/images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    });
+
+    // Update photos with URLs
+    const uploadedUrls = data.urls || [];
+    let urlIndex = 0;
+    
+    editPhotos.value.forEach(photo => {
+      if (photo.file && photo.isNew) {
+        if (uploadedUrls[urlIndex]) {
+          photo.url = uploadedUrls[urlIndex];
+          photo.publicUrl = uploadedUrls[urlIndex];
+          photo.isNew = false;
+          urlIndex++;
+        }
+      }
+    });
+
+    return editPhotos.value.map(photo => photo.url || photo.publicUrl).filter(Boolean);
+  } catch (error) {
+    console.error('Photo upload error:', error);
+    ui.showToast(error?.response?.data?.message || 'Failed to upload photos', 'danger');
+    throw error;
+  } finally {
+    uploadingPhotos.value = false;
+  }
+}
+
+async function addPhotosToItem(itemId, photoUrls) {
+  if (!photoUrls || photoUrls.length === 0) {
+    return;
+  }
+
+  try {
+    // Add each new photo to the item
+    for (let i = 0; i < photoUrls.length; i++) {
+      await http.post(`/items/${itemId}/photos`, {
+        url: photoUrls[i],
+        position: i
+      });
+    }
+  } catch (error) {
+    console.error('Error adding photos to item:', error);
+    throw error;
+  }
 }
 
 async function saveChanges() {
@@ -202,6 +337,16 @@ async function saveChanges() {
   
   saving.value = true;
   try {
+    // Upload new photos first
+    let photoUrls = [];
+    try {
+      photoUrls = await uploadPhotos();
+    } catch (error) {
+      // Error already shown in uploadPhotos
+      return;
+    }
+
+    // Update listing data
     const payload = {
       title: editForm.title,
       category: editForm.category,
@@ -215,9 +360,18 @@ async function saveChanges() {
     
     const updated = await updateListing(item.value.id, payload);
     
-    // Update local item with new values
-    item.value = { ...item.value, ...updated };
-    originalItem.value = JSON.parse(JSON.stringify(item.value));
+    // Add new photos to item
+    if (photoUrls.length > 0) {
+      try {
+        await addPhotosToItem(item.value.id, photoUrls);
+      } catch (error) {
+        console.error('Failed to add photos:', error);
+        // Continue even if photo addition fails
+      }
+    }
+    
+    // Reload item to get updated data including photos
+    await load();
     
     editMode.value = false;
     ui.showToast('Listing updated successfully!', 'success');
@@ -626,8 +780,74 @@ function formatPrice(amount) {
       <div class="row g-4">
         <!-- Main Content Column -->
         <div class="col-lg-8">
-          <!-- Image Gallery (Non-Owners Only) -->
-          <ImageGallery v-if="!isOwner" :photos="item.photos" />
+          <!-- Image Gallery (Non-Owners or Owners in Edit Mode) -->
+          <ImageGallery v-if="!isOwner || editMode" :photos="editMode ? editPhotos : item.photos" />
+          
+          <!-- Photo Management (Edit Mode Only) -->
+          <div v-if="editMode && isOwner" class="card p-3 p-md-4 mt-3 mt-md-4">
+            <h2 class="h5 mb-3">
+              <i class="bi bi-images me-2"></i>
+              Manage Photos
+            </h2>
+            
+            <input 
+              ref="photoInput"
+              type="file" 
+              @change="handlePhotoUpload"
+              multiple
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+              class="d-none"
+            />
+            
+            <div class="mb-3">
+              <button 
+                type="button" 
+                class="btn btn-outline-primary w-100"
+                @click="photoInput?.click()"
+                :disabled="uploadingPhotos || editPhotos.length >= 10"
+              >
+                <i class="bi bi-camera me-2"></i>
+                {{ uploadingPhotos ? 'Uploading...' : 'Add Photos' }}
+              </button>
+              <small class="text-muted d-block mt-2">
+                <i class="bi bi-info-circle me-1"></i>
+                Upload up to 10 photos (JPEG, PNG, WebP, GIF, max 5MB each)
+              </small>
+            </div>
+            
+            <!-- Photo Preview Grid -->
+            <div v-if="editPhotos.length > 0" class="photo-preview-grid">
+              <div 
+                v-for="(photo, index) in editPhotos" 
+                :key="index"
+                class="photo-preview-item"
+              >
+                <img 
+                  :src="photo.preview || (photo.url ? getItemPhotoUrl(photo.url) : null) || (photo.publicUrl ? getItemPhotoUrl(photo.publicUrl) : null)" 
+                  :alt="`Photo ${index + 1}`" 
+                  class="photo-thumbnail" 
+                />
+                <button 
+                  type="button" 
+                  class="btn btn-sm btn-danger photo-remove-btn"
+                  @click="removePhoto(index)"
+                  title="Remove photo"
+                >
+                  <i class="bi bi-x-lg"></i>
+                </button>
+                <div v-if="index === 0" class="badge bg-primary photo-primary-badge">
+                  <i class="bi bi-star-fill me-1"></i>Primary
+                </div>
+                <div v-if="photo.isNew" class="badge bg-success photo-new-badge">
+                  <i class="bi bi-plus-circle me-1"></i>New
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-center text-muted py-4">
+              <i class="bi bi-image fs-1 d-block mb-2"></i>
+              <p class="mb-0">No photos yet. Add some photos to make your listing more attractive!</p>
+            </div>
+          </div>
 
           <!-- Description Card -->
           <div class="card p-3 p-md-4 mt-3 mt-md-4">
@@ -824,6 +1044,10 @@ function formatPrice(amount) {
   .sidebar-content {
     position: static;
   }
+  
+  .photo-preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
 }
 
 /* Edit mode styling */
@@ -837,6 +1061,70 @@ function formatPrice(amount) {
 .form-label.small {
   margin-bottom: 0.25rem;
   color: #6c757d;
+}
+
+/* Photo Management Styles */
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.photo-preview-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 2px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.photo-preview-item:hover {
+  border-color: #0d6efd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.photo-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-remove-btn {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.photo-preview-item:hover .photo-remove-btn {
+  opacity: 1;
+}
+
+.photo-primary-badge {
+  position: absolute;
+  bottom: 0.25rem;
+  left: 0.25rem;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.photo-new-badge {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
 }
 
 /* Mobile optimizations */
@@ -871,6 +1159,11 @@ function formatPrice(amount) {
   .item-actions .btn i {
     margin: 0 !important;
   }
+  
+  .photo-preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.75rem;
+  }
 }
 
 @media (max-width: 576px) {
@@ -893,6 +1186,15 @@ function formatPrice(amount) {
   
   .item-actions {
     gap: 0.5rem !important;
+  }
+  
+  .photo-preview-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .card {
+    padding: 1rem !important;
   }
 }
 </style>
