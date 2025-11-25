@@ -6,9 +6,7 @@
     text-align: right;
 }
 
-.rtl .navbar-nav {
-    flex-direction: row-reverse;
-}
+
 
 .rtl .nav-link {
     text-align: right;

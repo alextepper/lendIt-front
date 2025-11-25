@@ -1,6 +1,6 @@
 <template>
   <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom">
-    <div class="container">
+    <div class="container-fluid container-lg">
       <router-link class="navbar-brand fw-semibold" to="/">{{ $t('app.title') }}</router-link>
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
@@ -29,14 +29,15 @@
           </li>
         </ul>
 
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-1 gap-sm-2 navbar-actions">
           <!-- Language switcher -->
           <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle navbar-control-btn" data-bs-toggle="dropdown" aria-expanded="false">
               <!-- <span class="me-1">{{ language.currentLanguage?.flag }}</span> -->
               <span class="d-none d-sm-inline">{{ language.currentLanguage?.name }}</span>
+              <i class="bi bi-translate d-sm-none"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end language-dropdown">
+            <ul class="dropdown-menu language-dropdown">
               <li v-for="lang in language.availableLocales" :key="lang.code">
                 <button 
                   class="dropdown-item d-flex align-items-center" 
@@ -53,7 +54,7 @@
 
           <!-- Theme switcher -->
           <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle navbar-control-btn" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="bi" :class="{
                 'bi-brightness-high': theme.mode === 'light',
                 'bi-moon': theme.mode === 'dark',
@@ -61,7 +62,7 @@
               }"></i>
               <span class="d-none d-sm-inline ms-1 text-capitalize">{{ theme.mode }}</span>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end">
+            <ul class="dropdown-menu theme-dropdown">
               <li><button class="dropdown-item" @click="theme.setMode('auto')"><i class="bi bi-circle-half me-2"></i>Auto</button></li>
               <li><button class="dropdown-item" @click="theme.setMode('light')"><i class="bi bi-brightness-high me-2"></i>Light</button></li>
               <li><button class="dropdown-item" @click="theme.setMode('dark')"><i class="bi bi-moon me-2"></i>Dark</button></li>
@@ -69,14 +70,14 @@
           </div>
 
           <template v-if="!auth.isAuthed">
-            <router-link class="btn btn-outline-primary" to="/login">{{ $t('nav.login') }}</router-link>
-            <router-link class="btn btn-primary" to="/register">{{ $t('nav.register') }}</router-link>
+            <router-link class="btn btn-outline-primary btn-sm" to="/login">{{ $t('nav.login') }}</router-link>
+            <router-link class="btn btn-primary btn-sm" to="/register">{{ $t('nav.register') }}</router-link>
           </template>
           <template v-else>
             <!-- User Profile Dropdown -->
             <div class="dropdown">
               <button 
-                class="btn btn-link p-0 dropdown-toggle" 
+                class="btn btn-link p-0 dropdown-toggle navbar-profile-btn" 
                 data-bs-toggle="dropdown" 
                 aria-expanded="false"
                 type="button"
@@ -89,7 +90,7 @@
                   height="40"
                 />
               </button>
-              <ul class="dropdown-menu dropdown-menu-end">
+              <ul class="dropdown-menu navbar-profile-menu">
                 <li class="dropdown-header">
                   <div class="d-flex align-items-center">
                     <img 
@@ -155,6 +156,25 @@ watch(() => language.currentLocale, (newLocale) => {
 </script>
 
 <style scoped>
+/* Container adjustments for small screens */
+.container-fluid.container-lg {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+@media (min-width: 992px) {
+  .container-fluid.container-lg {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Navbar actions container */
+.navbar-actions {
+  flex-wrap: nowrap;
+  min-width: 0; /* Allow flex items to shrink */
+}
+
 /* Profile dropdown styling */
 .dropdown-toggle::after {
   display: none; /* Hide the default dropdown arrow */
@@ -162,16 +182,61 @@ watch(() => language.currentLocale, (newLocale) => {
 
 .profile-img {
   transition: transform 0.2s ease;
+  object-fit: cover;
+  object-position: center;
 }
 
 .profile-img:hover {
   transform: scale(1.05);
 }
 
+/* Control buttons on mobile */
+.navbar-control-btn {
+  padding: 0.375rem 0.5rem;
+  min-width: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 576px) {
+  .navbar-control-btn {
+    padding: 0.375rem 0.75rem;
+    min-width: auto;
+  }
+}
+
+/* Profile button */
+.navbar-profile-btn {
+  flex-shrink: 0;
+}
+
+/* Dropdown menus */
 .dropdown-menu {
   min-width: 200px;
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
   border: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 0.5rem;
+}
+
+/* Position dropdowns - center them relative to the button */
+.language-dropdown,
+.theme-dropdown,
+.navbar-profile-menu {
+  left: auto;
+    max-width: calc(100vw - 1rem);
+    transform: translateX(0);
+}
+
+/* On small screens, position from right to prevent clipping */
+@media (max-width: 575.98px) {
+  .language-dropdown,
+  .theme-dropdown,
+  .navbar-profile-menu {
+    left: auto;
+    max-width: calc(100vw - 1rem);
+    transform: translateX(0);
+  }
 }
 
 .dropdown-header {
@@ -183,6 +248,7 @@ watch(() => language.currentLocale, (newLocale) => {
 .dropdown-item {
   padding: 0.5rem 1rem;
   transition: background-color 0.2s ease;
+  white-space: nowrap;
 }
 
 .dropdown-item:hover {
@@ -194,9 +260,39 @@ watch(() => language.currentLocale, (newLocale) => {
   color: #dc3545 !important;
 }
 
-/* Ensure profile image is properly cropped */
-.profile-img {
-  object-fit: cover;
-  object-position: center;
+/* Navbar brand adjustments */
+.navbar-brand {
+  font-size: 1.1rem;
+  padding: 0.5rem 0;
+}
+
+@media (min-width: 576px) {
+  .navbar-brand {
+    font-size: 1.25rem;
+  }
+}
+
+/* Navbar toggler spacing */
+.navbar-toggler {
+  margin-left: auto;
+  border: none;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Ensure nav items don't overflow */
+.navbar-nav {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 991.98px) {
+  .navbar-nav {
+    margin-bottom: 0.5rem;
+  }
+  
+  .navbar-actions {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
 }
 </style>

@@ -123,6 +123,105 @@ function initMap() {
   }
 }
 
+// Helper function to calculate distance between two lat/lng points in meters
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000; // Earth's radius in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Helper function to calculate spiral offset positions
+function getSpiralOffsets(count, baseOffset = 0.0003) {
+  const offsets = [];
+  
+  if (count === 1) {
+    offsets.push({ lat: 0, lng: 0 });
+    return offsets;
+  }
+  
+  // Use golden angle spiral for even distribution
+  // This ensures markers are evenly spaced around a circle
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // Golden angle for even distribution
+  
+  for (let i = 0; i < count; i++) {
+    const angle = i * goldenAngle;
+    // Calculate radius to create a spiral pattern
+    // For small counts, use fixed radius; for larger, spiral outward
+    let radius;
+    if (count <= 6) {
+      // For 2-6 markers, arrange in a circle
+      radius = baseOffset;
+    } else {
+      // For more markers, create spiral
+      const ring = Math.floor(i / 6);
+      radius = baseOffset * (1 + ring * 0.5);
+    }
+    
+    offsets.push({
+      lat: radius * Math.cos(angle),
+      lng: radius * Math.sin(angle)
+    });
+  }
+  
+  return offsets;
+}
+
+// Function to group markers by proximity and calculate offsets
+function calculateMarkerOffsets(items) {
+  const threshold = 50; // Distance in meters to consider markers as overlapping
+  const groups = [];
+  const processed = new Set();
+  
+  items.forEach((item, index) => {
+    if (!item.latitude || !item.longitude || processed.has(index)) return;
+    
+    const group = [index];
+    processed.add(index);
+    
+    // Find all items close to this one
+    items.forEach((otherItem, otherIndex) => {
+      if (index === otherIndex || processed.has(otherIndex) || !otherItem.latitude || !otherItem.longitude) return;
+      
+      const distance = getDistance(
+        item.latitude, item.longitude,
+        otherItem.latitude, otherItem.longitude
+      );
+      
+      if (distance < threshold) {
+        group.push(otherIndex);
+        processed.add(otherIndex);
+      }
+    });
+    
+    if (group.length > 1) {
+      groups.push({
+        centerLat: item.latitude,
+        centerLng: item.longitude,
+        indices: group
+      });
+    }
+  });
+  
+  // Calculate offsets for each group
+  const offsets = new Map();
+  groups.forEach(group => {
+    const spiralOffsets = getSpiralOffsets(group.indices.length);
+    group.indices.forEach((index, i) => {
+      offsets.set(index, {
+        lat: group.centerLat + spiralOffsets[i].lat,
+        lng: group.centerLng + spiralOffsets[i].lng
+      });
+    });
+  });
+  
+  return offsets;
+}
+
 function updateMarkers() {
   if (!map) return;
 
@@ -227,9 +326,16 @@ function updateMarkers() {
     map.setView([props.userLocation.lat, props.userLocation.lng], 12);
   }
 
+  // Calculate offsets for overlapping markers
+  const markerOffsets = calculateMarkerOffsets(props.items);
+
   // Add item markers
-  props.items.forEach((item) => {
+  props.items.forEach((item, index) => {
     if (item.latitude && item.longitude) {
+      // Use offset position if markers are overlapping, otherwise use original position
+      const offset = markerOffsets.get(index);
+      const markerLat = offset ? offset.lat : item.latitude;
+      const markerLng = offset ? offset.lng : item.longitude;
       // Get photo URL from runtime config or fallback to build-time env var
       const baseURL = 
         (typeof window !== 'undefined' && window.__API_BASE_URL__) || 
@@ -265,7 +371,7 @@ function updateMarkers() {
         iconAnchor: [28, 56],
       });
 
-      const marker = L.marker([item.latitude, item.longitude], {
+      const marker = L.marker([markerLat, markerLng], {
         icon: itemIcon,
       }).addTo(map);
 
@@ -320,10 +426,10 @@ function updateMarkers() {
               ` : ''}
             </div>
             
-            <a href="/item/${item.id}" class="map-popup-button">
-              <span>View Details</span>
-              <i class="bi bi-arrow-right"></i>
-            </a>
+            <button onclick="window.location.href='/item/${item.id}'" class="map-popup-button" type="button">
+              <span class="map-popup-button-text">View Details</span>
+              <i class="bi bi-arrow-right map-popup-button-icon"></i>
+            </button>
           </div>
         </div>
       `;
@@ -438,13 +544,13 @@ onUnmounted(() => {
   cursor: move !important;
 }
 
-.user-marker-container {
+:deep(.user-marker-container) {
   position: relative;
   width: 24px;
   height: 24px;
 }
 
-.user-marker-pulse {
+:deep(.user-marker-pulse) {
   position: absolute;
   width: 24px;
   height: 24px;
@@ -457,7 +563,7 @@ onUnmounted(() => {
   top: 50%;
 }
 
-.user-marker-dot {
+:deep(.user-marker-dot) {
   position: absolute;
   width: 16px;
   height: 16px;
@@ -477,7 +583,7 @@ onUnmounted(() => {
   box-shadow: 0 3px 12px rgba(66, 133, 244, 0.6);
 }
 
-.user-marker-drag-hint {
+:deep(.user-marker-drag-hint) {
   position: absolute;
   bottom: -32px;
   left: 50%;
@@ -500,7 +606,7 @@ onUnmounted(() => {
   letter-spacing: 0.3px;
 }
 
-.user-marker-drag-hint::before {
+:deep(.user-marker-drag-hint::before) {
   content: '';
   position: absolute;
   top: -4px;
@@ -513,7 +619,7 @@ onUnmounted(() => {
   border-bottom: 5px solid #4285F4;
 }
 
-.user-marker-drag-hint i {
+:deep(.user-marker-drag-hint i) {
   font-size: 12px;
 }
 
@@ -612,7 +718,7 @@ onUnmounted(() => {
 :deep(.map-popup) {
   min-width: 280px;
   max-width: 320px;
-  padding: 0;
+  padding: 10px;
   border-radius: 0.75rem;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
@@ -731,11 +837,12 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 
-.map-popup-rating {
+:deep(.map-popup-rating) {
   display: flex;
   align-items: center;
   gap: 0.25rem;
   font-size: 0.875rem;
+  margin: 5px 0
 }
 
 :deep(.map-popup-rating i) {
@@ -770,34 +877,70 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.625rem;
   width: 100%;
-  padding: 0.625rem 1rem;
+  padding: 0.75rem 1.25rem;
   background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
   color: white;
-  text-decoration: none;
-  border-radius: 0.5rem;
+  border: none;
+  border-radius: 0.625rem;
   font-weight: 600;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25), 
+              0 2px 4px rgba(13, 110, 253, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.map-popup-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.map-popup-button:hover::before {
+  left: 100%;
 }
 
 .map-popup-button:hover {
   background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
-  color: white;
-  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(13, 110, 253, 0.35), 
+              0 4px 8px rgba(13, 110, 253, 0.2);
 }
 
-:deep(.map-popup-button i) {
-  font-size: 0.875rem;
-  transition: transform 0.2s ease;
+.map-popup-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
 }
 
-.map-popup-button:hover i {
-  transform: translateX(2px);
+.map-popup-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.3),
+              0 4px 12px rgba(13, 110, 253, 0.25);
+}
+
+.map-popup-button-text {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.map-popup-button-icon {
+  font-size: 1rem;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+}
+
+.map-popup-button:hover .map-popup-button-icon {
+  transform: translateX(4px);
 }
 
 :deep(.leaflet-popup-content-wrapper) {
@@ -886,6 +1029,77 @@ onUnmounted(() => {
 .map-popup-image-placeholder i {
   font-size: 3rem !important;
   opacity: 0.5;
+}
+
+.map-popup-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.625rem !important;
+  width: 100% !important;
+  padding: 0.75rem 1.25rem !important;
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 0.625rem !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25), 
+              0 2px 4px rgba(13, 110, 253, 0.15) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  font-family: inherit !important;
+}
+
+.map-popup-button::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
+  transition: left 0.5s ease !important;
+}
+
+.map-popup-button:hover::before {
+  left: 100% !important;
+}
+
+.map-popup-button:hover {
+  background: linear-gradient(135deg, #0a58ca 0%, #084298 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(13, 110, 253, 0.35), 
+              0 4px 8px rgba(13, 110, 253, 0.2) !important;
+}
+
+.map-popup-button:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3) !important;
+}
+
+.map-popup-button:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.3),
+              0 4px 12px rgba(13, 110, 253, 0.25) !important;
+}
+
+.map-popup-button-text {
+  font-weight: 600 !important;
+  letter-spacing: 0.3px !important;
+}
+
+.map-popup-button-icon {
+  font-size: 1rem !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.map-popup-button:hover .map-popup-button-icon {
+  transform: translateX(4px) !important;
 }
 </style>
 

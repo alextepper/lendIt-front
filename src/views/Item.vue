@@ -683,24 +683,24 @@ function formatPrice(amount) {
               <div class="d-flex align-items-center gap-3 flex-wrap">
                 <!-- Thumbnail (Owners Only) -->
                 <div v-if="isOwner" class="item-thumbnail">
-                  <img 
-                    v-if="item.photos && item.photos.length > 0"
-                    :src="getItemPhotoUrl(item.photos)" 
-                    :alt="item.title"
-                    class="thumbnail-image"
-                  />
-                  <div v-else class="thumbnail-placeholder">
-                    <i class="bi bi-image"></i>
-                  </div>
+                <img 
+                  v-if="item.photos && item.photos.length > 0"
+                  :src="getItemPhotoUrl(item.photos)" 
+                  :alt="item.title"
+                  class="thumbnail-image"
+                />
+                <div v-else class="thumbnail-placeholder">
+                  <i class="bi bi-image"></i>
                 </div>
+              </div>
                 <!-- Title -->
-                <h1 class="item-title mb-0">{{ item.title }}</h1>
+              <h1 class="item-title mb-0">{{ item.title }}</h1>
                 <!-- Rating -->
                 <div class="item-rating d-flex align-items-center gap-1">
                   <i class="bi bi-star-fill text-warning"></i>
                   <span class="fw-semibold">{{ item.rating || '0.0' }}</span>
                   <span class="text-muted small">({{ item.reviews_count || 0 }})</span>
-                </div>
+            </div>
                 <!-- Category Badge -->
                 <span class="badge bg-primary">{{ item.category }}</span>
               </div>

@@ -6,6 +6,7 @@ import ItemCard from '../components/ItemCard.vue';
 import PaginationBar from '../components/PaginationBar.vue';
 import SearchMap from '../components/SearchMap.vue';
 import { useQuerySync } from '../composables/useQuerySync';
+import { getItemPhotoUrl } from '../utils/imageUtils';
 // import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel.vue' // if you prefer infinite scroll
 
 const ui = useUiStore();
@@ -42,6 +43,7 @@ const locationSuggestions = ref([]);
 const showingSuggestions = ref(false);
 const isSelectingLocation = ref(false);
 const geocodingLoading = ref(false);
+const filtersCollapsed = ref(false);
 
 // Computed property for radius to ensure it's always a number
 const radiusValue = computed({
@@ -111,6 +113,12 @@ function applyFilters(ev) {
   ev?.preventDefault?.();
   setPage(1);
   runSearch();
+  // Auto-collapse filters after applying
+  filtersCollapsed.value = true;
+}
+
+function toggleFilters() {
+  filtersCollapsed.value = !filtersCollapsed.value;
 }
 
 function clearFilters() {
@@ -434,6 +442,27 @@ function handleLocationChanged(newLocation) {
   }
 }
 
+// Helper function to get item thumbnail for mobile list view
+function getItemThumbnail(item) {
+  if (item.thumbnail) {
+    return getItemPhotoUrl(item.thumbnail);
+  }
+  if (item.photos && item.photos.length > 0) {
+    return getItemPhotoUrl(item.photos);
+  }
+  return null;
+}
+
+// Format price for mobile list view
+function formatPrice(amount) {
+  return new Intl.NumberFormat('he-IL', {
+    style: 'currency',
+    currency: 'ILS',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(amount / 100);
+}
+
 // If you want infinite scroll instead of the pager, keep an accumulator:
 // - store all items in an array and append when sentinel becomes visible and page < total_pages.
 </script>
@@ -441,7 +470,18 @@ function handleLocationChanged(newLocation) {
 <template>
   <div class="search-page">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h4 mb-0">Search</h1>
+      <div class="d-flex align-items-center gap-2">
+        <h1 class="h4 mb-0">Search</h1>
+        <!-- <button
+          class="btn btn-outline-secondary btn-sm"
+          @click="toggleFilters"
+          :aria-expanded="!filtersCollapsed"
+          aria-controls="filtersCollapse"
+        >
+          <i class="bi" :class="filtersCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+          <span class="d-none d-sm-inline ms-1">{{ filtersCollapsed ? 'Show' : 'Hide' }} Filters</span>
+        </button> -->
+      </div>
       <div class="btn-group" role="group">
         <input
           type="radio"
@@ -469,9 +509,23 @@ function handleLocationChanged(newLocation) {
     <div class="row g-3">
       <!-- Filters Sidebar -->
       <div class="col-12 col-lg-3">
-      <form class="card p-3" @submit.prevent="applyFilters">
-        <h2 class="h6">Filters</h2>
-
+      <div class="card">
+        <button
+            class="btn btn-link btn-sm p-0 text-decoration-none"
+            @click="toggleFilters"
+            :aria-expanded="!filtersCollapsed"
+            aria-controls="filtersCollapse"
+          >
+        <div class="card-header d-flex justify-content-between align-items-center p-2">
+          <h2 class="h6 mb-0">Filters</h2>
+          
+            <i class="bi filters-chevron" :class="filtersCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+          
+        </div>
+      </button>
+        <transition name="filters-collapse">
+          <div v-show="!filtersCollapsed" id="filtersCollapse">
+            <form class="card-body p-3" @submit.prevent="applyFilters">
         <div class="mb-3">
           <label class="form-label">Keyword</label>
           <input v-model="state.q" class="form-control" placeholder="drill, PS5, tent…" />
@@ -680,7 +734,10 @@ function handleLocationChanged(newLocation) {
           </button>
           <button class="btn btn-outline-secondary" type="button" @click="clearFilters">Reset</button>
         </div>
-      </form>
+            </form>
+          </div>
+        </transition>
+      </div>
     </div>
 
     <!-- Map/Results Area -->
@@ -717,7 +774,8 @@ function handleLocationChanged(newLocation) {
 
         <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
+        <!-- Desktop/Tablet Grid View -->
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 d-none d-sm-block">
           <div v-for="item in data.items" :key="item.id" class="col">
             <ItemCard :item="item" />
           </div>
@@ -725,6 +783,50 @@ function handleLocationChanged(newLocation) {
           <div v-if="!loading && data.items.length === 0" class="col-12">
             <div class="alert alert-warning">No items matched your filters.</div>
           </div>
+        </div>
+
+        <!-- Mobile List View -->
+        <div class="d-sm-none">
+          <div v-for="item in data.items" :key="item.id" class="mobile-list-item">
+            <router-link :to="`/item/${item.id}`" class="mobile-list-item-link">
+              <div class="mobile-list-item-content">
+                <div class="mobile-list-item-info">
+                  <h3 class="mobile-list-item-title">{{ item.title }}</h3>
+                  <div class="mobile-list-item-meta">
+                    <div class="mobile-list-item-location">
+                      <i class="bi bi-geo-alt-fill"></i>
+                      <span>{{ item.location || item.address || 'Location not specified' }}</span>
+                    </div>
+                    <div v-if="item.distance" class="mobile-list-item-distance">
+                      <i class="bi bi-arrow-right"></i>
+                      {{ item.distance.toFixed(1) }} km
+                    </div>
+                  </div>
+                  <div class="mobile-list-item-footer">
+                    <span class="mobile-list-item-price">{{ formatPrice(item.pricePerDay || item.price_per_day) }}/day</span>
+                    <span class="mobile-list-item-rating">
+                      <i class="bi bi-star-fill"></i>
+                      {{ item.rating ?? '—' }}
+                      <span class="text-muted">({{ item.reviews_count ?? 0 }})</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="mobile-list-item-image">
+                  <img
+                    v-if="getItemThumbnail(item)"
+                    :src="getItemThumbnail(item)"
+                    :alt="item.title"
+                    class="mobile-list-item-img"
+                  />
+                  <div v-else class="mobile-list-item-placeholder">
+                    <i class="bi bi-image"></i>
+                  </div>
+                </div>
+              </div>
+            </router-link>
+          </div>
+
+          <div v-if="!loading && data.items.length === 0" class="alert alert-warning">No items matched your filters.</div>
         </div>
 
         <div class="mt-3">
@@ -798,5 +900,237 @@ function handleLocationChanged(newLocation) {
     position: relative;
     top: 0;
   }
+}
+
+/* Mobile List View Styles */
+.mobile-list-item {
+  margin-bottom: 0.75rem;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: white;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.mobile-list-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.mobile-list-item-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.mobile-list-item-link:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+.mobile-list-item-content {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.mobile-list-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mobile-list-item-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: #212529;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+}
+
+.mobile-list-item-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.mobile-list-item-location {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #6c757d;
+  overflow: hidden;
+}
+
+.mobile-list-item-location i {
+  color: #4285F4;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.mobile-list-item-location span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-list-item-distance {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #0d6efd;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.mobile-list-item-distance i {
+  font-size: 0.7rem;
+}
+
+.mobile-list-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.mobile-list-item-price {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #0d6efd;
+}
+
+.mobile-list-item-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: #212529;
+}
+
+.mobile-list-item-rating i {
+  color: #ffc107;
+  font-size: 0.75rem;
+}
+
+.mobile-list-item-image {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-list-item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mobile-list-item-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #adb5bd;
+  font-size: 1.5rem;
+}
+
+/* Filters Collapse Styles */
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.card-header:hover {
+  background-color: #e9ecef;
+}
+
+.card-header button {
+  color: #6c757d;
+  transition: color 0.2s ease;
+}
+
+.card-header button:hover {
+  color: #0d6efd;
+}
+
+/* Filters Collapse Animation */
+.filters-collapse-enter-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.filters-collapse-leave-active {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.filters-collapse-enter-from {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.filters-collapse-enter-to {
+  max-height: 3000px; /* Large enough to accommodate any filter content */
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.filters-collapse-leave-from {
+  max-height: 3000px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.filters-collapse-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Ensure smooth animation and prevent layout shift */
+#filtersCollapse {
+  will-change: max-height, opacity, transform;
+  display: block;
+}
+
+/* Chevron icon rotation animation */
+.filters-chevron {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+}
+
+.card-header:hover .filters-chevron {
+  transform: scale(1.1);
 }
 </style>
