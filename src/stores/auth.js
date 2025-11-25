@@ -82,21 +82,37 @@ export const useAuthStore = defineStore("auth", {
       if (this.initialized) return;
       this.status = "initializing";
       try {
-        // Try to refresh token first, then fetch user
-        try {
-          await this.refresh();
-          console.log("Token refreshed during initialization");
-        } catch (refreshError) {
-          // If refresh fails, it's ok - user might not be logged in
-          console.log("No valid refresh token during initialization");
-        }
-
-        // Now try to fetch user (should work if refresh succeeded)
+        // First, try to fetch user with existing cookies (if any)
+        // This avoids unnecessary refresh requests when user already has valid session
         try {
           await this.fetchMe();
+          console.log("User authenticated with existing session");
+          return; // Success! User is authenticated, no need to refresh
         } catch (fetchError) {
-          // User is not authenticated
-          console.log("User not authenticated:", fetchError.message);
+          // If /auth/me fails with 401, try to refresh token
+          if (fetchError?.response?.status === 401 && this.refreshTokenValid) {
+            try {
+              await this.refresh();
+              console.log("Token refreshed during initialization");
+              // After refresh, try to fetch user again
+              try {
+                await this.fetchMe();
+                console.log("User authenticated after refresh");
+              } catch (secondFetchError) {
+                // Still failed after refresh - user is not authenticated
+                console.log(
+                  "User not authenticated after refresh:",
+                  secondFetchError.message
+                );
+              }
+            } catch (refreshError) {
+              // Refresh failed - user is not logged in
+              console.log("No valid refresh token during initialization");
+            }
+          } else {
+            // Not a 401 or refresh token is invalid - user is not authenticated
+            console.log("User not authenticated:", fetchError.message);
+          }
         }
       } catch (e) {
         console.log("Initialization error:", e.message);
