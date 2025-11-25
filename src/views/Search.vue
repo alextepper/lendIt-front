@@ -40,6 +40,7 @@ const viewMode = ref('map'); // 'map' or 'list'
 const locationSearchQuery = ref('');
 const locationSuggestions = ref([]);
 const showingSuggestions = ref(false);
+const isSelectingLocation = ref(false);
 const geocodingLoading = ref(false);
 
 // Computed property for radius to ensure it's always a number
@@ -298,7 +299,7 @@ watch(() => state.value.radiusKm, (newRadius, oldRadius) => {
     // Clear previous timeout
     if (radiusTimeout) clearTimeout(radiusTimeout);
     // Debounce search to avoid too many requests
-    radiusTimeout = setTimeout(() => {
+    radiusTimeout = window.setTimeout(() => {
       runSearch();
     }, 500);
   }
@@ -306,6 +307,7 @@ watch(() => state.value.radiusKm, (newRadius, oldRadius) => {
 
 // Geocoding functions - convert address to coordinates
 let geocodeTimeout = null;
+let blurTimeout = null;
 
 async function searchLocation(query) {
   if (!query || query.trim().length < 3) {
@@ -314,8 +316,10 @@ async function searchLocation(query) {
     return;
   }
 
-  clearTimeout(geocodeTimeout);
-  geocodeTimeout = setTimeout(async () => {
+  if (geocodeTimeout) {
+    clearTimeout(geocodeTimeout);
+  }
+  geocodeTimeout = window.setTimeout(async () => {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&accept-language=en`
@@ -332,6 +336,10 @@ async function searchLocation(query) {
 }
 
 function selectLocation(suggestion) {
+  if (!suggestion || !suggestion.display_name) {
+    return;
+  }
+
   const lat = parseFloat(suggestion.lat);
   const lng = parseFloat(suggestion.lon);
   
@@ -347,10 +355,17 @@ function selectLocation(suggestion) {
     type: suggestion.type
   });
 
+  isSelectingLocation.value = true;
   locationSearchQuery.value = suggestion.display_name;
   locationSuggestions.value = [];
   showingSuggestions.value = false;
   locationError.value = null;
+
+  // Clear any pending blur timeout
+  if (blurTimeout) {
+    clearTimeout(blurTimeout);
+    blurTimeout = null;
+  }
 
   // Update location
   currentLocation.value = {
@@ -368,10 +383,29 @@ function selectLocation(suggestion) {
   setPatch({ lat, lng, radiusKm: radius });
 
   // Wait for state to update, then trigger search
-  setTimeout(() => {
+  window.setTimeout(() => {
     isSettingLocation = false;
+    isSelectingLocation.value = false;
     runSearch();
   }, 150);
+}
+
+function handleLocationBlur() {
+  // Don't close suggestions if user is clicking on a suggestion
+  if (isSelectingLocation.value) {
+    return;
+  }
+  // Clear any existing blur timeout
+  if (blurTimeout) {
+    clearTimeout(blurTimeout);
+  }
+  // Delay closing to allow click events to fire
+  blurTimeout = window.setTimeout(() => {
+    if (!isSelectingLocation.value) {
+      showingSuggestions.value = false;
+    }
+    blurTimeout = null;
+  }, 200);
 }
 
 function clearLocationSearch() {
@@ -393,7 +427,7 @@ function handleLocationChanged(newLocation) {
     setPatch({ lat: newLocation.lat, lng: newLocation.lng });
     
     // Wait for state to update, then trigger search
-    setTimeout(() => {
+    window.setTimeout(() => {
       isSettingLocation = false;
       runSearch();
     }, 150);
@@ -503,7 +537,7 @@ function handleLocationChanged(newLocation) {
                     placeholder="Type address or place name..."
                     @input="searchLocation(locationSearchQuery)"
                     @focus="showingSuggestions = locationSuggestions.length > 0"
-                    @blur="setTimeout(() => { showingSuggestions = false; }, 200)"
+                    @blur="handleLocationBlur"
                     @keydown.enter.prevent="locationSuggestions.length > 0 && selectLocation(locationSuggestions[0])"
                   />
                 </div>

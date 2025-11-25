@@ -51,12 +51,21 @@ const editForm = reactive({
   title: '',
   category: '',
   location: '',
+  latitude: null,
+  longitude: null,
+  address: '',
   pricePerDay: 0,
   initialPrice: 0,
   deposit: 0,
   currency: 'ILS',
   description: '',
 });
+
+// Location search
+const locationSearchQuery = ref('');
+const locationSuggestions = ref([]);
+const showingSuggestions = ref(false);
+const isSelectingLocation = ref(false);
 
 // Photo management
 const photoInput = ref(null);
@@ -82,11 +91,17 @@ async function load() {
     editForm.title = item.value.title || '';
     editForm.category = item.value.category || '';
     editForm.location = item.value.address || item.value.location || '';
+    editForm.latitude = item.value.latitude || null;
+    editForm.longitude = item.value.longitude || null;
+    editForm.address = item.value.address || item.value.location || '';
     editForm.pricePerDay = item.value.pricePerDay/100 || 0;
     editForm.initialPrice = item.value.initialPrice/100 || 0;
     editForm.deposit = item.value.deposit/100 || 0;
     editForm.currency = item.value.currency || 'ILS';
     editForm.description = item.value.description || '';
+    
+    // Initialize location search query
+    locationSearchQuery.value = item.value.address || item.value.location || '';
     
     // Initialize photos for edit mode
     editPhotos.value = (item.value.photos || []).map(photo => ({
@@ -186,11 +201,19 @@ function cancelEdit() {
   editForm.title = originalItem.value.title || '';
   editForm.category = originalItem.value.category || '';
   editForm.location = originalItem.value.address || originalItem.value.location || '';
+  editForm.latitude = originalItem.value.latitude || null;
+  editForm.longitude = originalItem.value.longitude || null;
+  editForm.address = originalItem.value.address || originalItem.value.location || '';
   editForm.pricePerDay = originalItem.value.pricePerDay/100 || 0;
   editForm.initialPrice = originalItem.value.initialPrice/100 || 0;
   editForm.deposit = originalItem.value.deposit/100 || 0;
   editForm.currency = originalItem.value.currency || 'ILS';
   editForm.description = originalItem.value.description || '';
+  
+  // Restore location search query
+  locationSearchQuery.value = originalItem.value.address || originalItem.value.location || '';
+  locationSuggestions.value = [];
+  showingSuggestions.value = false;
   
   // Restore original photos
   editPhotos.value = (originalItem.value.photos || []).map(photo => ({
@@ -326,7 +349,7 @@ async function saveChanges() {
     ui.showToast('Category is required', 'warning');
     return;
   }
-  if (!editForm.location) {
+  if (!editForm.location && !editForm.address) {
     ui.showToast('Location is required', 'warning');
     return;
   }
@@ -350,7 +373,10 @@ async function saveChanges() {
     const payload = {
       title: editForm.title,
       category: editForm.category,
-      address: editForm.location,
+      location: editForm.location || editForm.address,
+      address: editForm.address || editForm.location,
+      latitude: editForm.latitude,
+      longitude: editForm.longitude,
       pricePerDay: editForm.pricePerDay,
       initialPrice: editForm.initialPrice,
       deposit: editForm.deposit,
@@ -528,6 +554,88 @@ async function loadReviews() {
   }
 }
 
+// Location search functions
+let geocodeTimeout = null;
+let blurTimeout = null;
+
+async function searchLocationQuery(query) {
+  if (!query || query.trim().length < 3) {
+    locationSuggestions.value = [];
+    showingSuggestions.value = false;
+    return;
+  }
+
+  if (geocodeTimeout) {
+    clearTimeout(geocodeTimeout);
+  }
+  geocodeTimeout = window.setTimeout(async () => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&accept-language=en`
+      );
+      const data = await response.json();
+      locationSuggestions.value = data || [];
+      showingSuggestions.value = data && data.length > 0;
+    } catch (e) {
+      console.error('Geocoding error:', e);
+      locationSuggestions.value = [];
+      showingSuggestions.value = false;
+    }
+  }, 300);
+}
+
+function selectLocation(suggestion) {
+  if (!suggestion || !suggestion.display_name) {
+    return;
+  }
+
+  const lat = parseFloat(suggestion.lat);
+  const lng = parseFloat(suggestion.lon);
+  
+  if (isNaN(lat) || isNaN(lng)) {
+    return;
+  }
+
+  isSelectingLocation.value = true;
+  locationSearchQuery.value = suggestion.display_name || '';
+  locationSuggestions.value = [];
+  showingSuggestions.value = false;
+  
+  editForm.location = suggestion.display_name;
+  editForm.address = suggestion.display_name;
+  editForm.latitude = lat;
+  editForm.longitude = lng;
+
+  // Clear any pending blur timeout
+  if (blurTimeout) {
+    clearTimeout(blurTimeout);
+    blurTimeout = null;
+  }
+
+  // Reset flag after a short delay
+  window.setTimeout(() => {
+    isSelectingLocation.value = false;
+  }, 100);
+}
+
+function handleLocationBlur() {
+  // Don't close suggestions if user is clicking on a suggestion
+  if (isSelectingLocation.value) {
+    return;
+  }
+  // Clear any existing blur timeout
+  if (blurTimeout) {
+    clearTimeout(blurTimeout);
+  }
+  // Delay closing to allow click events to fire
+  blurTimeout = window.setTimeout(() => {
+    if (!isSelectingLocation.value) {
+      showingSuggestions.value = false;
+    }
+    blurTimeout = null;
+  }, 200);
+}
+
 function formatPrice(amount) {
   // Backend sends prices in cents, so divide by 100 for display
   return new Intl.NumberFormat('he-IL', {
@@ -567,7 +675,7 @@ function formatPrice(amount) {
     <div v-else-if="item">
       <!-- Item Header - Always at top -->
       <div class="item-header mb-4" :class="{ 'edit-mode': editMode }">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+        <div class="d-flex flex-column justify-content-between align-items-start gap-3">
           <div class="flex-grow-1">
             <!-- Title with Image (Owners Only) -->
             <div v-if="isOwner && !editMode" class="d-flex align-items-center gap-3 mb-2">
@@ -622,19 +730,47 @@ function formatPrice(amount) {
               </template>
             </div>
             <div v-else class="row g-3">
-              <div class="col-md-3">
+              <div class="col-md-6">
                 <label class="form-label small fw-bold">Category</label>
                 <select v-model="editForm.category" class="form-select" :disabled="saving">
                   <option value="">Choose...</option>
                   <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
                 </select>
               </div>
-              <div class="col-md-3">
-                <label class="form-label small fw-bold">Location</label>
-                <select v-model="editForm.location" class="form-select" :disabled="saving">
-                  <option value="">Choose...</option>
-                  <option v-for="loc in locations" :key="loc" :value="loc">{{ loc }}</option>
-                </select>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Location <span class="text-danger">*</span></label>
+                <div class="position-relative">
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bi bi-geo-alt"></i>
+                    </span>
+                    <input
+                      v-model="locationSearchQuery"
+                      type="text"
+                      class="form-control"
+                      placeholder="Search for location..."
+                      @input="searchLocationQuery(locationSearchQuery)"
+                      @focus="showingSuggestions = locationSuggestions.length > 0"
+                      @blur="handleLocationBlur"
+                      @keyup.enter.prevent="locationSuggestions.length > 0 && selectLocation(locationSuggestions[0])"
+                      :disabled="saving"
+                    />
+                  </div>
+                  <div v-if="showingSuggestions && locationSuggestions.length > 0" class="location-suggestions">
+                    <div
+                      v-for="suggestion in locationSuggestions"
+                      :key="suggestion.place_id"
+                      class="suggestion-item"
+                      @mousedown.prevent="selectLocation(suggestion)"
+                    >
+                      <i class="bi bi-geo-alt"></i>
+                      <div class="flex-grow-1">
+                        <div class="fw-semibold small">{{ suggestion.display_name?.split(',')[0] || 'Location' }}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">{{ suggestion.display_name || '' }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="col-md-2">
                 <label class="form-label small fw-bold">Daily Price</label>
@@ -1061,6 +1197,45 @@ function formatPrice(amount) {
 .form-label.small {
   margin-bottom: 0.25rem;
   color: #6c757d;
+}
+
+/* Location Suggestions */
+.location-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 2px;
+}
+
+.suggestion-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+}
+
+.suggestion-item i {
+  color: #4285F4;
+  margin-top: 0.125rem;
 }
 
 /* Photo Management Styles */
