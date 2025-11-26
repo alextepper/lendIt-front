@@ -1,7 +1,9 @@
 <script setup>
 import { computed, ref, watch, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useChatStore } from '../stores/chat';
 
+const { t } = useI18n();
 const chat = useChatStore();
 const emit = defineEmits(['select']);
 const q = ref('');
@@ -39,7 +41,7 @@ onMounted(() => {
 });
 
 function getDisplayName(conversation) {
-  return conversation.name || conversation.otherUser?.username || 'Unknown User';
+  return conversation.name || conversation.otherUser?.username || t('messages.unknownUser');
 }
 
 async function handleArchive(conversationId, archived) {
@@ -59,10 +61,10 @@ function formatTime(dateString) {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
   
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffMins < 1) return t('messages.justNow');
+  if (diffMins < 60) return t('messages.minutesAgo', { count: diffMins });
+  if (diffHours < 24) return t('messages.hoursAgo', { count: diffHours });
+  if (diffDays < 7) return t('messages.daysAgo', { count: diffDays });
   
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -71,7 +73,7 @@ function formatTime(dateString) {
 <template>
   <div class="conversations-list h-100 d-flex flex-column">
     <div class="conversations-header p-3 border-bottom">
-      <h5 class="mb-0">Messages</h5>
+      <h5 class="mb-0">{{ $t('messages.title') }}</h5>
     </div>
     
     <!-- Tabs -->
@@ -84,7 +86,7 @@ function formatTime(dateString) {
             @click="activeTab = 'active'"
           >
             <i class="bi bi-inbox me-1"></i>
-            Active
+            {{ $t('messages.active') }}
           </button>
         </li>
         <li class="nav-item">
@@ -94,7 +96,7 @@ function formatTime(dateString) {
             @click="activeTab = 'archived'"
           >
             <i class="bi bi-archive me-1"></i>
-            Archived
+            {{ $t('messages.archived') }}
             <span 
               v-if="chat.archivedConversations.length > 0" 
               class="badge bg-secondary ms-2"
@@ -106,7 +108,7 @@ function formatTime(dateString) {
       </ul>
     </div>
     
-    <div class="p-3 border-bottom">
+    <!-- <div class="p-3 border-bottom">
       <div class="input-group">
         <span class="input-group-text bg-transparent border-end-0">
           <i class="bi bi-search"></i>
@@ -117,7 +119,7 @@ function formatTime(dateString) {
           :placeholder="$t('messages.search')" 
         />
       </div>
-    </div>
+    </div> -->
     
     <div class="conversations-scroll flex-grow-1 overflow-auto">
       <div class="list-group list-group-flush">
@@ -153,7 +155,7 @@ function formatTime(dateString) {
               <div class="small text-truncate" :class="c.unread ? 'fw-semibold' : 'text-muted'">
                 <span v-if="c.item" class="me-1">📦</span>
                 <span v-if="c.last_text">{{ c.last_text }}</span>
-                <span v-else class="fst-italic">Start a conversation...</span>
+                <span v-else class="fst-italic">{{ $t('messages.startConversation') }}</span>
               </div>
               
               <div v-if="c.item" class="small text-muted text-truncate mt-1">
@@ -164,7 +166,7 @@ function formatTime(dateString) {
             <!-- Archive/Unarchive button -->
             <button
               class="btn btn-sm btn-link text-muted archive-btn p-1"
-              :title="activeTab === 'active' ? 'Archive' : 'Unarchive'"
+              :title="activeTab === 'active' ? $t('messages.archive') : $t('messages.unarchive')"
               @click.stop="handleArchive(c.id, activeTab === 'active')"
             >
               <i 
@@ -179,7 +181,7 @@ function formatTime(dateString) {
           <div class="spinner-border text-primary mb-3" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
-          <p class="text-muted">Loading archived conversations...</p>
+          <p class="text-muted">{{ $t('messages.loadingArchived') }}</p>
         </div>
         
         <div v-else-if="filtered.length === 0" class="text-center py-5">
@@ -188,7 +190,7 @@ function formatTime(dateString) {
             :class="activeTab === 'active' ? 'bi-inbox' : 'bi-archive'"
           ></i>
           <p class="text-muted">
-            {{ activeTab === 'active' ? $t('messages.noConversations') : 'No archived conversations' }}
+            {{ activeTab === 'active' ? $t('messages.noConversations') : $t('messages.noArchivedConversations') }}
           </p>
         </div>
       </div>

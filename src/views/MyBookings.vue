@@ -1,10 +1,10 @@
 <template>
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="h3 mb-0">My Orders</h1>
+      <h1 class="h3 mb-0">{{ $t('bookings.title') }}</h1>
       <router-link to="/search" class="btn btn-primary">
         <i class="bi bi-search me-2"></i>
-        Find Items to Rent
+        {{ $t('bookings.findItemsToRent') }}
       </router-link>
     </div>
 
@@ -17,7 +17,7 @@
           @click="activeTab = 'renter'"
         >
           <i class="bi bi-box-arrow-in-right me-2"></i>
-          My Rentals
+          {{ $t('bookings.myRentals') }}
         </button>
       </li>
       <li class="nav-item" role="presentation">
@@ -27,7 +27,7 @@
           @click="activeTab = 'owner'"
         >
           <i class="bi bi-box-arrow-up me-2"></i>
-          Items I'm Renting Out
+          {{ $t('bookings.itemsRentingOut') }}
         </button>
       </li>
     </ul>
@@ -42,8 +42,10 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import OrdersList from '../components/OrdersList.vue';
 
+const { t } = useI18n();
 const activeTab = ref('renter');
 </script>
 

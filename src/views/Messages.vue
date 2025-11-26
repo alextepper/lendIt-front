@@ -1,9 +1,11 @@
 <script setup>
 import { onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useChatStore } from '../stores/chat';
 import ConversationsList from '../components/ConversationsList.vue';
 import ChatWindow from '../components/ChatWindow.vue';
 
+const { t } = useI18n();
 const chat = useChatStore();
 
 onMounted(async () => {
@@ -31,7 +33,7 @@ function selectConv(id) {
           <div class="text-center text-secondary">
             <i class="bi bi-chat-dots display-1 mb-3"></i>
             <h5>{{ $t('messages.selectConversation') }}</h5>
-            <p class="text-muted">Choose a conversation to start messaging</p>
+            <p class="text-muted">{{ $t('messages.chooseConversation') }}</p>
           </div>
         </div>
       </div>
@@ -56,6 +58,12 @@ function selectConv(id) {
   overflow-y: auto;
   border-right: 1px solid #dee2e6;
   background: #fff;
+}
+
+/* RTL: Move border to left side */
+.rtl .conversations-sidebar {
+  border-right: none;
+  border-left: 1px solid #dee2e6;
 }
 
 .chat-column {

@@ -146,8 +146,14 @@ export const useAuthStore = defineStore("auth", {
 
         this.refreshTokenValid = true; // Reset flag on successful refresh
 
-        // Redirect to home page on successful refresh
-        router.replace({ name: "home" });
+        // Redirect to home page on successful refresh only if user is on login page
+        const currentRoute = router.currentRoute.value;
+        if (
+          currentRoute.name === "login" ||
+          currentRoute.path.includes("/login")
+        ) {
+          router.replace({ name: "home" });
+        }
 
         return data;
       } catch (error) {

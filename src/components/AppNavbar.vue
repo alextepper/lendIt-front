@@ -16,7 +16,7 @@
           </li>
           <li v-if="auth.isAuthed" class="nav-item">
             <router-link class="nav-link" to="/my/bookings">
-              <i class="bi bi-calendar-check"></i> My Bookings
+              <i class="bi bi-calendar-check"></i> {{ $t('nav.myBookings') }}
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item">
@@ -60,12 +60,12 @@
                 'bi-moon': theme.mode === 'dark',
                 'bi-circle-half': theme.mode === 'auto'
               }"></i>
-              <span class="d-none d-sm-inline ms-1 text-capitalize">{{ theme.mode }}</span>
+              <span class="d-none d-sm-inline ms-1 me-1 text-capitalize">{{ $t(`nav.theme.${theme.mode}`) }}</span>
             </button>
             <ul class="dropdown-menu theme-dropdown">
-              <li><button class="dropdown-item" @click="theme.setMode('auto')"><i class="bi bi-circle-half me-2"></i>Auto</button></li>
-              <li><button class="dropdown-item" @click="theme.setMode('light')"><i class="bi bi-brightness-high me-2"></i>Light</button></li>
-              <li><button class="dropdown-item" @click="theme.setMode('dark')"><i class="bi bi-moon me-2"></i>Dark</button></li>
+              <li><button class="dropdown-item" @click="theme.setMode('auto')"><i class="bi bi-circle-half me-2"></i>{{ $t('nav.theme.auto') }}</button></li>
+              <li><button class="dropdown-item" @click="theme.setMode('light')"><i class="bi bi-brightness-high me-2"></i>{{ $t('nav.theme.light') }}</button></li>
+              <li><button class="dropdown-item" @click="theme.setMode('dark')"><i class="bi bi-moon me-2"></i>{{ $t('nav.theme.dark') }}</button></li>
             </ul>
           </div>
 
@@ -84,7 +84,7 @@
               >
                 <img 
                   :src="auth.user?.avatar || 'https://placehold.co/40x40?text=' + (auth.user?.username?.[0] || 'U')" 
-                  :alt="auth.user?.username || 'User'"
+                  :alt="auth.user?.username || $t('nav.user')"
                   class="rounded-circle border border-2 border-primary profile-img"
                   width="40" 
                   height="40"
@@ -95,13 +95,13 @@
                   <div class="d-flex align-items-center">
                     <img 
                       :src="auth.user?.avatar || 'https://placehold.co/32x32?text=' + (auth.user?.name?.[0] || 'U')" 
-                      :alt="auth.user?.name || 'User'"
+                      :alt="auth.user?.name || $t('nav.user')"
                       class="rounded-circle me-2 profile-img"
                       width="32" 
                       height="32"
                     />
                     <div>
-                      <div class="fw-semibold">{{ auth.user?.username || 'User' }}</div>
+                      <div class="fw-semibold">{{ auth.user?.username || $t('nav.user') }}</div>
                       <small class="text-muted">{{ auth.user?.email || '' }}</small>
                     </div>
                   </div>
@@ -109,23 +109,23 @@
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <router-link class="dropdown-item" to="/dashboard">
-                    <i class="bi bi-person me-2"></i>Profile
+                    <i class="bi bi-person me-2"></i>{{ $t('nav.profile') }}
                   </router-link>
                 </li>
                 <li>
                   <router-link class="dropdown-item" to="/dashboard?tab=listings">
-                    <i class="bi bi-box-seam me-2"></i>My Listings
+                    <i class="bi bi-box-seam me-2"></i>{{ $t('nav.myListings') }}
                   </router-link>
                 </li>
                 <li>
                   <router-link class="dropdown-item" to="/settings">
-                    <i class="bi bi-gear me-2"></i>Settings
+                    <i class="bi bi-gear me-2"></i>{{ $t('nav.settings') }}
                   </router-link>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <button class="dropdown-item text-danger" @click="auth.logout">
-                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                    <i class="bi bi-box-arrow-right me-2"></i>{{ $t('nav.logout') }}
                   </button>
                 </li>
               </ul>
@@ -138,12 +138,14 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
 import { useChatStore } from '../stores/chat'
 import { useLanguageStore } from '../stores/language'
 import { watch } from 'vue'
 
+const { t } = useI18n()
 const auth = useAuthStore()
 const theme = useThemeStore()
 const chat = useChatStore()

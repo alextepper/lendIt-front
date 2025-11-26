@@ -1,7 +1,9 @@
 <script setup>
 import { nextTick, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useChatStore } from '../stores/chat';
 
+const { t } = useI18n();
 const chat = useChatStore();
 const input = ref('');
 const messagesEnd = ref(null);
@@ -19,7 +21,7 @@ async function send() {
     await chat.send(text);
     input.value = '';
   } catch (e) {
-    alert(e?.response?.data?.message || e.message || 'Failed to send');
+    alert(e?.response?.data?.message || e.message || t('messages.sendFailed'));
   }
 }
 
@@ -44,7 +46,7 @@ onMounted(scrollToBottom);
         style="object-fit: cover;"
       />
       <div class="flex-grow-1">
-        <h6 class="mb-0">{{ chat.activeConv?.name || chat.activeConv?.otherUser?.username || 'Chat' }}</h6>
+        <h6 class="mb-0">{{ chat.activeConv?.name || chat.activeConv?.otherUser?.username || $t('messages.chat') }}</h6>
         <div v-if="chat.activeConv?.item" class="small text-muted d-flex align-items-center">
           <i class="bi bi-box-seam me-1"></i>
           {{ chat.activeConv.item.title }}

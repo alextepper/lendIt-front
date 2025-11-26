@@ -12,7 +12,16 @@
     "login": "تسجيل الدخول",
     "register": "التسجيل",
     "logout": "تسجيل الخروج",
-    "profile": "الملف الشخصي"
+    "profile": "الملف الشخصي",
+    "myBookings": "حجوزاتي",
+    "myListings": "قوائمي",
+    "settings": "الإعدادات",
+    "user": "مستخدم",
+    "theme": {
+      "auto": "تلقائي",
+      "light": "فاتح",
+      "dark": "داكن"
+    }
   },
   "auth": {
     "login": {
@@ -173,7 +182,21 @@
     "typeMessage": "اكتب رسالة...",
     "send": "إرسال",
     "typing": "يكتب...",
-    "selectConversation": "اختر محادثة"
+    "selectConversation": "اختر محادثة",
+    "chooseConversation": "اختر محادثة لبدء المراسلة",
+    "active": "نشط",
+    "archived": "مؤرشف",
+    "archive": "أرشف",
+    "unarchive": "ألغِ الأرشفة",
+    "justNow": "الآن",
+    "minutesAgo": "منذ {count} دقيقة",
+    "hoursAgo": "منذ {count} ساعة",
+    "daysAgo": "منذ {count} يوم",
+    "unknownUser": "مستخدم غير معروف",
+    "startConversation": "ابدأ محادثة...",
+    "loadingArchived": "جاري تحميل المحادثات المؤرشفة...",
+    "chat": "محادثة",
+    "sendFailed": "فشل إرسال الرسالة"
   },
   "forms": {
     "required": "هذا الحقل مطلوب",
@@ -184,7 +207,8 @@
     "cancel": "إلغاء",
     "save": "حفظ",
     "edit": "تحرير",
-    "delete": "حذف"
+    "delete": "حذف",
+    "chooseCategory": "اختر الفئة…"
   },
   "common": {
     "loading": "جاري التحميل...",
@@ -208,6 +232,38 @@
     "tools": "أدوات",
     "electronics": "إلكترونيات",
     "games": "ألعاب",
-    "outdoors": "خارجي"
+    "outdoors": "خارجي",
+    "bicycles": "دراجات",
+    "cameras": "كاميرات",
+    "toys": "ألعاب",
+    "seasport": "رياضة بحرية",
+    "boardgames": "ألعاب الطاولة",
+    "sportsequipment": "معدات رياضية",
+    "furniture": "أثاث",
+    "appliances": "أجهزة كهربائية",
+    "musicalinstruments": "آلات موسيقية",
+    "partysupplies": "لوازم الحفلات",
+    "campinggear": "معدات التخييم",
+    "watersports": "رياضات مائية",
+    "wintersports": "رياضات شتوية",
+    "fitnessequipment": "معدات اللياقة البدنية",
+    "babygear": "معدات الأطفال",
+    "petsupplies": "لوازم الحيوانات الأليفة",
+    "artsupplies": "لوازم الفن",
+    "books": "كتب",
+    "moviesmedia": "أفلام ووسائط",
+    "gardentools": "أدوات الحديقة",
+    "constructiontools": "أدوات البناء",
+    "photographyequipment": "معدات التصوير",
+    "drones": "طائرات بدون طيار",
+    "vrequipment": "معدات الواقع الافتراضي",
+    "gamingconsoles": "أجهزة ألعاب",
+    "audioequipment": "معدات صوتية"
+  },
+  "bookings": {
+    "title": "طلباتي",
+    "findItemsToRent": "ابحث عن عناصر للإيجار",
+    "myRentals": "إيجاراتي",
+    "itemsRentingOut": "العناصر التي أؤجرها"
   }
 }

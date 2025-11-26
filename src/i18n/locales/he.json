@@ -12,7 +12,16 @@
     "login": "התחברות",
     "register": "הרשמה",
     "logout": "התנתקות",
-    "profile": "פרופיל"
+    "profile": "פרופיל",
+    "myBookings": "ההזמנות שלי",
+    "myListings": "הרשימות שלי",
+    "settings": "הגדרות",
+    "user": "משתמש",
+    "theme": {
+      "auto": "אוטומטי",
+      "light": "בהיר",
+      "dark": "כהה"
+    }
   },
   "auth": {
     "login": {
@@ -40,7 +49,7 @@
     "title": "חיפוש",
     "keyword": "מילת מפתח",
     "placeholder": "מה אתם מחפשים?",
-    "locationPlaceholder": "מיקום (אופציונלי)",
+    "locationPlaceholder": "מיקום",
     "locationSearchPlaceholder": "חפש מיקום...",
     "filters": "מסננים",
     "showFilters": "הצג מסננים",
@@ -173,7 +182,21 @@
     "typeMessage": "כתוב הודעה...",
     "send": "שלח",
     "typing": "כותב...",
-    "selectConversation": "בחר שיחה"
+    "selectConversation": "בחר שיחה",
+    "chooseConversation": "בחר שיחה כדי להתחיל לשלוח הודעות",
+    "active": "פעיל",
+    "archived": "בארכיון",
+    "archive": "ארכיון",
+    "unarchive": "הוצא מארכיון",
+    "justNow": "עכשיו",
+    "minutesAgo": "לפני {count} דק'",
+    "hoursAgo": "לפני {count} ש'",
+    "daysAgo": "לפני {count} ימים",
+    "unknownUser": "משתמש לא ידוע",
+    "startConversation": "התחל שיחה...",
+    "loadingArchived": "טוען שיחות בארכיון...",
+    "chat": "צ'אט",
+    "sendFailed": "שליחת ההודעה נכשלה"
   },
   "forms": {
     "required": "שדה זה נדרש",
@@ -184,7 +207,8 @@
     "cancel": "בטל",
     "save": "שמור",
     "edit": "ערוך",
-    "delete": "מחק"
+    "delete": "מחק",
+    "chooseCategory": "בחר קטגוריה…"
   },
   "common": {
     "loading": "טוען...",
@@ -208,6 +232,38 @@
     "tools": "כלים",
     "electronics": "אלקטרוניקה",
     "games": "משחקים",
-    "outdoors": "חוץ"
+    "outdoors": "חוץ",
+    "bicycles": "אופניים",
+    "cameras": "מצלמות",
+    "toys": "צעצועים",
+    "seasport": "ספורט ימי",
+    "boardgames": "משחקי קופסה",
+    "sportsequipment": "ציוד ספורט",
+    "furniture": "ריהוט",
+    "appliances": "מכשירי חשמל",
+    "musicalinstruments": "כלי נגינה",
+    "partysupplies": "אספקה למסיבות",
+    "campinggear": "ציוד קמפינג",
+    "watersports": "ספורט מים",
+    "wintersports": "ספורט חורף",
+    "fitnessequipment": "ציוד כושר",
+    "babygear": "ציוד תינוקות",
+    "petsupplies": "אספקה לחיות מחמד",
+    "artsupplies": "אספקה לאמנות",
+    "books": "ספרים",
+    "moviesmedia": "סרטים ומדיה",
+    "gardentools": "כלי גינה",
+    "constructiontools": "כלי בנייה",
+    "photographyequipment": "ציוד צילום",
+    "drones": "רחפנים",
+    "vrequipment": "ציוד מציאות מדומה",
+    "gamingconsoles": "קונסולות משחקים",
+    "audioequipment": "ציוד אודיו"
+  },
+  "bookings": {
+    "title": "ההזמנות שלי",
+    "findItemsToRent": "מצא פריטים להשכרה",
+    "myRentals": "ההשכרות שלי",
+    "itemsRentingOut": "פריטים שאני משכיר"
   }
 }

@@ -1,9 +1,11 @@
 <script setup>
-import { reactive, ref, watch, onMounted } from 'vue';
+import { reactive, ref, watch, onMounted, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { fetchCategories, fetchLocations } from '../services/listingsService';
 import { useUiStore } from '../stores/ui';
 import http from '../lib/http';
 
+const { t } = useI18n();
 const ui = useUiStore();
 
 const props = defineProps({
@@ -32,6 +34,60 @@ const locs = reactive({ list: [] });
 const photoInput = ref(null);
 const uploadingPhotos = ref(false);
 const submitting = ref(false);
+
+// Extended category list with fallback categories (using translation keys)
+const defaultCategories = [
+  'Tools',
+  'Electronics',
+  'Games',
+  'Outdoors',
+  'Bicycles',
+  'Cameras',
+  'Toys',
+  'Sea Sport',
+  'Board Games',
+  'Sports Equipment',
+  'Furniture',
+  'Appliances',
+  'Musical Instruments',
+  'Party Supplies',
+  'Camping Gear',
+  'Water Sports',
+  'Winter Sports',
+  'Fitness Equipment',
+  'Baby Gear',
+  'Pet Supplies',
+  'Art Supplies',
+  'Books',
+  'Movies & Media',
+  'Garden Tools',
+  'Construction Tools',
+  'Photography Equipment',
+  'Drones',
+  'VR Equipment',
+  'Gaming Consoles',
+  'Audio Equipment'
+];
+
+// Helper function to get category translation key
+function getCategoryKey(category) {
+  if (!category) return '';
+  // Convert category name to translation key format
+  // Remove spaces, special characters, and convert to lowercase
+  return category
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/&/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+// Computed property for localized categories
+const localizedCategories = computed(() => {
+  return cats.list.map(cat => ({
+    value: cat,
+    label: t(`categories.${getCategoryKey(cat)}`, cat) // Fallback to original if translation missing
+  }));
+});
 
 // Location search
 const locationSearchQuery = ref('');
@@ -89,7 +145,17 @@ function resetForm() {
 }
 
 onMounted(async () => {
-  cats.list = await fetchCategories().catch(() => []);
+  try {
+    const backendCategories = await fetchCategories();
+    // Merge backend categories with default categories, removing duplicates
+    const allCategories = [...new Set([...defaultCategories, ...(backendCategories || [])])];
+    // Sort alphabetically for better UX
+    cats.list = allCategories.sort();
+  } catch (error) {
+    // If backend fails, use default categories
+    console.warn('Failed to fetch categories from backend, using defaults:', error);
+    cats.list = [...defaultCategories].sort();
+  }
   locs.list = await fetchLocations().catch(() => []);
 });
 
@@ -377,8 +443,8 @@ async function submit() {
                 Category <span class="text-danger">*</span>
               </label>
               <select v-model="form.category" class="form-select form-select-lg">
-                <option value="">Choose category…</option>
-                <option v-for="c in cats.list" :key="c" :value="c">{{ c }}</option>
+                <option value="">{{ $t('forms.chooseCategory', 'Choose category…') }}</option>
+                <option v-for="cat in localizedCategories" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
               </select>
             </div>
             <div class="col-md-6">

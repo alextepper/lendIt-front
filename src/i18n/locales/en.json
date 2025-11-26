@@ -12,7 +12,16 @@
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
-    "profile": "Profile"
+    "profile": "Profile",
+    "myBookings": "My Bookings",
+    "myListings": "My Listings",
+    "settings": "Settings",
+    "user": "User",
+    "theme": {
+      "auto": "Auto",
+      "light": "Light",
+      "dark": "Dark"
+    }
   },
   "auth": {
     "login": {
@@ -173,7 +182,21 @@
     "typeMessage": "Write a message...",
     "send": "Send",
     "typing": "typing...",
-    "selectConversation": "Select a conversation"
+    "selectConversation": "Select a conversation",
+    "chooseConversation": "Choose a conversation to start messaging",
+    "active": "Active",
+    "archived": "Archived",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "justNow": "Just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago",
+    "unknownUser": "Unknown User",
+    "startConversation": "Start a conversation...",
+    "loadingArchived": "Loading archived conversations...",
+    "chat": "Chat",
+    "sendFailed": "Failed to send"
   },
   "forms": {
     "required": "This field is required",
@@ -184,7 +207,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "chooseCategory": "Choose category…"
   },
   "common": {
     "loading": "Loading...",
@@ -208,6 +232,38 @@
     "tools": "Tools",
     "electronics": "Electronics",
     "games": "Games",
-    "outdoors": "Outdoors"
+    "outdoors": "Outdoors",
+    "bicycles": "Bicycles",
+    "cameras": "Cameras",
+    "toys": "Toys",
+    "seasport": "Sea Sport",
+    "boardgames": "Board Games",
+    "sportsequipment": "Sports Equipment",
+    "furniture": "Furniture",
+    "appliances": "Appliances",
+    "musicalinstruments": "Musical Instruments",
+    "partysupplies": "Party Supplies",
+    "campinggear": "Camping Gear",
+    "watersports": "Water Sports",
+    "wintersports": "Winter Sports",
+    "fitnessequipment": "Fitness Equipment",
+    "babygear": "Baby Gear",
+    "petsupplies": "Pet Supplies",
+    "artsupplies": "Art Supplies",
+    "books": "Books",
+    "moviesmedia": "Movies & Media",
+    "gardentools": "Garden Tools",
+    "constructiontools": "Construction Tools",
+    "photographyequipment": "Photography Equipment",
+    "drones": "Drones",
+    "vrequipment": "VR Equipment",
+    "gamingconsoles": "Gaming Consoles",
+    "audioequipment": "Audio Equipment"
+  },
+  "bookings": {
+    "title": "My Orders",
+    "findItemsToRent": "Find Items to Rent",
+    "myRentals": "My Rentals",
+    "itemsRentingOut": "Items I'm Renting Out"
   }
 }

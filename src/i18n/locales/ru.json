@@ -12,7 +12,16 @@
     "login": "Вход",
     "register": "Регистрация",
     "logout": "Выход",
-    "profile": "Профиль"
+    "profile": "Профиль",
+    "myBookings": "Мои бронирования",
+    "myListings": "Мои объявления",
+    "settings": "Настройки",
+    "user": "Пользователь",
+    "theme": {
+      "auto": "Авто",
+      "light": "Светлая",
+      "dark": "Тёмная"
+    }
   },
   "auth": {
     "login": {
@@ -173,7 +182,21 @@
     "typeMessage": "Напишите сообщение...",
     "send": "Отправить",
     "typing": "печатает...",
-    "selectConversation": "Выберите разговор"
+    "selectConversation": "Выберите разговор",
+    "chooseConversation": "Выберите разговор, чтобы начать обмен сообщениями",
+    "active": "Активные",
+    "archived": "Архив",
+    "archive": "Архивировать",
+    "unarchive": "Разархивировать",
+    "justNow": "Только что",
+    "minutesAgo": "{count} мин. назад",
+    "hoursAgo": "{count} ч. назад",
+    "daysAgo": "{count} дн. назад",
+    "unknownUser": "Неизвестный пользователь",
+    "startConversation": "Начать разговор...",
+    "loadingArchived": "Загрузка заархивированных разговоров...",
+    "chat": "Чат",
+    "sendFailed": "Не удалось отправить"
   },
   "forms": {
     "required": "Это поле обязательно",
@@ -184,7 +207,8 @@
     "cancel": "Отмена",
     "save": "Сохранить",
     "edit": "Редактировать",
-    "delete": "Удалить"
+    "delete": "Удалить",
+    "chooseCategory": "Выберите категорию…"
   },
   "common": {
     "loading": "Загрузка...",
@@ -208,6 +232,38 @@
     "tools": "Инструменты",
     "electronics": "Электроника",
     "games": "Игры",
-    "outdoors": "На открытом воздухе"
+    "outdoors": "На открытом воздухе",
+    "bicycles": "Велосипеды",
+    "cameras": "Камеры",
+    "toys": "Игрушки",
+    "seasport": "Водный спорт",
+    "boardgames": "Настольные игры",
+    "sportsequipment": "Спортивное оборудование",
+    "furniture": "Мебель",
+    "appliances": "Бытовая техника",
+    "musicalinstruments": "Музыкальные инструменты",
+    "partysupplies": "Товары для вечеринок",
+    "campinggear": "Туристическое снаряжение",
+    "watersports": "Водные виды спорта",
+    "wintersports": "Зимние виды спорта",
+    "fitnessequipment": "Фитнес-оборудование",
+    "babygear": "Детские товары",
+    "petsupplies": "Товары для животных",
+    "artsupplies": "Художественные принадлежности",
+    "books": "Книги",
+    "moviesmedia": "Фильмы и медиа",
+    "gardentools": "Садовые инструменты",
+    "constructiontools": "Строительные инструменты",
+    "photographyequipment": "Фотооборудование",
+    "drones": "Дроны",
+    "vrequipment": "VR-оборудование",
+    "gamingconsoles": "Игровые консоли",
+    "audioequipment": "Аудиооборудование"
+  },
+  "bookings": {
+    "title": "Мои заказы",
+    "findItemsToRent": "Найти товары для аренды",
+    "myRentals": "Мои аренды",
+    "itemsRentingOut": "Товары, которые я сдаю в аренду"
   }
 }
