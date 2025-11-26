@@ -31,6 +31,7 @@ const cats = reactive({ list: [] });
 const locs = reactive({ list: [] });
 const photoInput = ref(null);
 const uploadingPhotos = ref(false);
+const submitting = ref(false);
 
 // Location search
 const locationSearchQuery = ref('');
@@ -248,7 +249,15 @@ async function uploadPhotos() {
 function close() {
   emit('update:modelValue', false);
   resetForm();
+  submitting.value = false;
 }
+
+// Watch for modal close to reset submitting state
+watch(() => props.modelValue, (isOpen) => {
+  if (!isOpen) {
+    submitting.value = false;
+  }
+});
 
 async function addPhotosToItem(itemId, photoUrls) {
   if (!photoUrls || photoUrls.length === 0) {
@@ -286,36 +295,47 @@ async function submit() {
     return;
   }
 
-  // Upload photos first
-  let photoUrls = [];
+  submitting.value = true;
+
   try {
-    photoUrls = await uploadPhotos();
+    // Upload photos first
+    let photoUrls = [];
+    try {
+      photoUrls = await uploadPhotos();
+    } catch (error) {
+      // Error already shown in uploadPhotos
+      submitting.value = false;
+      return;
+    }
+
+    // Prepare form data - prices are already in the correct format (not in cents)
+    // The listingsService will convert them to cents
+    // Note: Don't include photos in initial creation - they'll be added separately
+    const submitData = {
+      title: form.title,
+      category: form.category,
+      location: form.location || form.address,
+      address: form.address || form.location,
+      latitude: form.latitude,
+      longitude: form.longitude,
+      pricePerDay: form.pricePerDay, // Keep as is - service will convert
+      initialPrice: form.initialPrice || 0,
+      deposit: form.deposit || 0,
+      currency: form.currency,
+      description: form.description,
+      // photos: photoUrls, // Photos will be added after item creation
+    };
+
+    // Emit submit event with photos to handle in parent component
+    // The parent should handle the API call and close the modal on success
+    emit('submit', { ...submitData, photoUrls });
+    
+    // Note: Modal will be closed by parent component on success
+    // If parent handles errors, it should reset submitting state
   } catch (error) {
-    // Error already shown in uploadPhotos
-    return;
+    console.error('Submit error:', error);
+    submitting.value = false;
   }
-
-  // Prepare form data - prices are already in the correct format (not in cents)
-  // The listingsService will convert them to cents
-  // Note: Don't include photos in initial creation - they'll be added separately
-  const submitData = {
-    title: form.title,
-    category: form.category,
-    location: form.location || form.address,
-    address: form.address || form.location,
-    latitude: form.latitude,
-    longitude: form.longitude,
-    pricePerDay: form.pricePerDay, // Keep as is - service will convert
-    initialPrice: form.initialPrice || 0,
-    deposit: form.deposit || 0,
-    currency: form.currency,
-    description: form.description,
-    // photos: photoUrls, // Photos will be added after item creation
-  };
-
-  // Emit submit event with photos to handle in parent component
-  emit('submit', { ...submitData, photoUrls });
-  close();
 }
 </script>
 
@@ -536,12 +556,21 @@ async function submit() {
           </div>
         </div>
         <div class="modal-footer border-top">
-          <button class="btn btn-outline-secondary" @click="close">
+          <button 
+            class="btn btn-outline-secondary" 
+            @click="close"
+            :disabled="submitting"
+          >
             <i class="bi bi-x-lg me-1"></i>Cancel
           </button>
-          <button class="btn btn-primary" @click="submit">
-            <i class="bi bi-check-lg me-1"></i>
-            {{ listing ? 'Save Changes' : 'Create Listing' }}
+          <button 
+            class="btn btn-primary" 
+            @click="submit"
+            :disabled="submitting"
+          >
+            <span v-if="submitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            <i v-else class="bi bi-check-lg me-1"></i>
+            {{ submitting ? (listing ? 'Saving...' : 'Creating...') : (listing ? 'Save Changes' : 'Create Listing') }}
           </button>
         </div>
       </div>

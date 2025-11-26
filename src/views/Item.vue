@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, computed, reactive, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import { fetchItem, fetchItemCalendar, updateAvailability, checkBookingAvailability } from '../services/itemService';
@@ -19,6 +20,7 @@ import http from '../lib/http';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const ui = useUiStore();
 const auth = useAuthStore();
 const item = ref(null);
@@ -143,7 +145,7 @@ async function load() {
     // Load reviews for the item
     await loadReviews();
   } catch (e) {
-    error.value = e?.response?.data?.message || e.message || 'Failed to load item';
+    error.value = e?.response?.data?.message || e.message || t('item.failedToLoad');
   } finally {
     loading.value = false;
   }
@@ -207,7 +209,7 @@ function toggleEditMode() {
   } else {
     // Enable edit mode
     editMode.value = true;
-    ui.showToast('Edit mode enabled', 'info');
+    ui.showToast(t('item.editModeEnabled'), 'info');
   }
 }
 
@@ -247,7 +249,7 @@ function cancelEdit() {
     .sort((a, b) => a.position - b.position);
   
   editMode.value = false;
-  ui.showToast('Changes discarded', 'info');
+  ui.showToast(t('item.changesDiscarded'), 'info');
 }
 
 // Photo management functions
@@ -259,17 +261,17 @@ async function handlePhotoUpload(event) {
 
   for (const file of files) {
     if (editPhotos.value.length >= maxPhotos) {
-      ui.showToast(`Maximum ${maxPhotos} photos allowed`, 'warning');
+      ui.showToast(t('item.maxPhotosReached', { max: maxPhotos }), 'warning');
       break;
     }
     
     if (!validTypes.includes(file.type)) {
-      ui.showToast('Invalid file type. Please upload JPEG, PNG, WebP, or GIF', 'danger');
+      ui.showToast(t('item.invalidFileType'), 'danger');
       continue;
     }
     
     if (file.size > maxSize) {
-      ui.showToast('File size too large. Maximum size is 5MB', 'danger');
+      ui.showToast(t('item.fileTooLarge'), 'danger');
       continue;
     }
 
@@ -297,7 +299,7 @@ async function handlePhotoUpload(event) {
       });
     } catch (error) {
       console.error('Photo upload error:', error);
-      ui.showToast(error?.response?.data?.message || 'Failed to upload photo', 'danger');
+      ui.showToast(error?.response?.data?.message || t('item.photoUploadFailed'), 'danger');
     } finally {
       uploadingPhotos.value = false;
     }
@@ -315,16 +317,16 @@ async function removePhoto(photoIndex) {
 
   // If photo is already saved (has id), delete from backend
   if (photo.id && !photo.isNew) {
-    if (!confirm('Are you sure you want to delete this photo?')) {
+    if (!confirm(t('item.deletePhotoConfirm'))) {
       return;
     }
     
     try {
       await http.delete(`/items/${item.value.id}/photos/${photo.id}`);
-      ui.showToast('Photo deleted successfully', 'success');
+      ui.showToast(t('item.photoDeleted'), 'success');
     } catch (error) {
       console.error('Failed to delete photo:', error);
-      ui.showToast(error?.response?.data?.message || 'Failed to delete photo', 'danger');
+      ui.showToast(error?.response?.data?.message || t('item.photoDeleteFailed'), 'danger');
       return; // Don't remove from UI if deletion failed
     }
   }
@@ -358,10 +360,10 @@ async function setMainPhoto(photoIndex) {
       // Re-sort by position
       editPhotos.value.sort((a, b) => a.position - b.position);
       
-      ui.showToast('Main photo updated successfully', 'success');
+      ui.showToast(t('item.mainPhotoUpdated'), 'success');
     } catch (error) {
       console.error('Failed to set main photo:', error);
-      ui.showToast(error?.response?.data?.message || 'Failed to set main photo', 'danger');
+      ui.showToast(error?.response?.data?.message || t('item.mainPhotoUpdateFailed'), 'danger');
     }
   } else {
     // For new photos, just reorder locally
@@ -371,7 +373,7 @@ async function setMainPhoto(photoIndex) {
     }
     photo.position = 0;
     editPhotos.value.sort((a, b) => a.position - b.position);
-    ui.showToast('Main photo will be set when you save', 'info');
+    ui.showToast(t('item.mainPhotoWillBeSet'), 'info');
   }
 }
 
@@ -405,19 +407,19 @@ async function addPhotosToItem(itemId) {
 async function saveChanges() {
   // Validate
   if (!editForm.title?.trim()) {
-    ui.showToast('Title is required', 'warning');
+    ui.showToast(t('item.titleRequired'), 'warning');
     return;
   }
   if (!editForm.category) {
-    ui.showToast('Category is required', 'warning');
+    ui.showToast(t('item.categoryRequired'), 'warning');
     return;
   }
   if (!editForm.location && !editForm.address) {
-    ui.showToast('Location is required', 'warning');
+    ui.showToast(t('item.locationRequired'), 'warning');
     return;
   }
   if (!editForm.pricePerDay || editForm.pricePerDay < 0) {
-    ui.showToast('Valid price is required', 'warning');
+    ui.showToast(t('item.validPriceRequired'), 'warning');
     return;
   }
   
@@ -445,17 +447,17 @@ async function saveChanges() {
       await addPhotosToItem(item.value.id);
     } catch (error) {
       console.error('Failed to add photos:', error);
-      ui.showToast('Listing updated but some photos failed to add', 'warning');
+      ui.showToast(t('item.listingUpdatedButPhotosFailed'), 'warning');
     }
     
     // Reload item to get updated data including photos
     await load();
     
     editMode.value = false;
-    ui.showToast('Listing updated successfully!', 'success');
+    ui.showToast(t('item.listingUpdated'), 'success');
   } catch (e) {
     console.error('Failed to update listing:', e);
-    ui.showToast(e?.response?.data?.message || 'Failed to update listing', 'danger');
+    ui.showToast(e?.response?.data?.message || t('item.listingUpdateFailed'), 'danger');
   } finally {
     saving.value = false;
   }
@@ -481,10 +483,10 @@ async function toggleActive() {
     const updated = await toggleListingActive(item.value.id, newActiveStatus);
     item.value = { ...item.value, ...updated, isActive: newActiveStatus, active: newActiveStatus };
     originalItem.value = JSON.parse(JSON.stringify(item.value));
-    ui.showToast(`Listing ${newActiveStatus ? 'activated' : 'deactivated'} successfully!`, 'success');
+    ui.showToast(t('item.listingStatusUpdated', { status: newActiveStatus ? t('item.activate') : t('item.deactivate') }), 'success');
   } catch (e) {
     console.error('Failed to toggle listing status:', e);
-    ui.showToast(e?.response?.data?.message || 'Failed to update listing status', 'danger');
+    ui.showToast(e?.response?.data?.message || t('item.listingStatusUpdateFailed'), 'danger');
   } finally {
     togglingActive.value = false;
   }
@@ -493,19 +495,19 @@ async function toggleActive() {
 async function deleteItem() {
   if (!item.value) return;
   
-  if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
+  if (!confirm(t('item.deleteConfirm'))) {
     return;
   }
   
   deleting.value = true;
   try {
     await deleteListing(item.value.id);
-    ui.showToast('Listing deleted successfully!', 'success');
+    ui.showToast(t('item.listingDeleted'), 'success');
     // Redirect to user's listings or home page
     router.push({ name: 'dashboard' });
   } catch (e) {
     console.error('Failed to delete listing:', e);
-    ui.showToast(e?.response?.data?.message || 'Failed to delete listing', 'danger');
+    ui.showToast(e?.response?.data?.message || t('item.listingDeleteFailed'), 'danger');
   } finally {
     deleting.value = false;
   }
@@ -806,17 +808,17 @@ watch(fullscreenCarousel, (isOpen) => {
 <template>
   <div class="item-page">
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-3">
+    <!-- <nav aria-label="breadcrumb" class="mb-3">
       <ol class="breadcrumb small mb-0">
-        <li class="breadcrumb-item"><router-link to="/">Home</router-link></li>
+        <li class="breadcrumb-item"><router-link to="/">{{ $t('item.home') }}</router-link></li>
         <li class="breadcrumb-item">
           <router-link :to="{ name: 'search', query: { category: item?.category } }">{{
-            item?.category || 'Items'
+            item?.category || $t('item.items')
           }}</router-link>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ item?.title || 'Item' }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ item?.title || $t('item.title') }}</li>
       </ol>
-    </nav>
+    </nav> -->
 
     <!-- Error State -->
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
@@ -824,7 +826,7 @@ watch(fullscreenCarousel, (isOpen) => {
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border" role="status"></div>
-      <div class="small text-secondary mt-2">Loading item…</div>
+      <div class="small text-secondary mt-2">{{ $t('item.loading') }}</div>
     </div>
 
     <!-- Item Content -->
@@ -864,12 +866,12 @@ watch(fullscreenCarousel, (isOpen) => {
             
             <!-- Title Input (Edit Mode) -->
             <div v-else class="mb-3">
-              <label class="form-label small fw-bold">Title</label>
+              <label class="form-label small fw-bold">{{ $t('item.title') }}</label>
               <input 
                 v-model="editForm.title" 
                 type="text" 
                 class="form-control form-control-lg" 
-                placeholder="Item title"
+                :placeholder="$t('item.itemTitle')"
                 :disabled="saving"
               />
             </div>
@@ -886,33 +888,33 @@ watch(fullscreenCarousel, (isOpen) => {
             <div v-if="!editMode" class="item-prices d-flex flex-wrap align-items-center gap-3">
               <div class="price-main">
                 <span class="fw-bold fs-5 text-primary">{{ formatPrice(item.pricePerDay) }}</span>
-                <span class="text-muted ms-1">/day</span>
+                <span class="text-muted ms-1">{{ $t('item.perDay') }}</span>
               </div>
               <template v-if="item.initialPrice">
                 <span class="text-muted">·</span>
                 <div class="price-secondary">
-                  <span class="small text-muted">Initial:</span>
+                  <span class="small text-muted">{{ $t('item.initial') }}</span>
                   <span class="fw-semibold ms-1">{{ formatPrice(item.initialPrice) }}</span>
                 </div>
               </template>
               <template v-if="item.deposit">
                 <span class="text-muted">·</span>
                 <div class="price-secondary">
-                  <span class="small text-muted">Deposit:</span>
+                  <span class="small text-muted">{{ $t('item.deposit') }}</span>
                   <span class="fw-semibold ms-1">{{ formatPrice(item.deposit) }}</span>
                 </div>
               </template>
             </div>
             <div v-else class="row g-3">
               <div class="col-md-6">
-                <label class="form-label small fw-bold">Category</label>
+                <label class="form-label small fw-bold">{{ $t('item.category') }}</label>
                 <select v-model="editForm.category" class="form-select" :disabled="saving">
-                  <option value="">Choose...</option>
+                  <option value="">{{ $t('item.choose') }}</option>
                   <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
                 </select>
               </div>
               <div class="col-md-6">
-                <label class="form-label small fw-bold">Location <span class="text-danger">*</span></label>
+                <label class="form-label small fw-bold">{{ $t('item.location') }} <span class="text-danger">*</span></label>
                 <div class="position-relative">
                   <div class="input-group">
                     <span class="input-group-text">
@@ -922,7 +924,7 @@ watch(fullscreenCarousel, (isOpen) => {
                       v-model="locationSearchQuery"
                       type="text"
                       class="form-control"
-                      placeholder="Search for location..."
+                      :placeholder="$t('search.locationSearchPlaceholder')"
                       @input="searchLocationQuery(locationSearchQuery)"
                       @focus="showingSuggestions = locationSuggestions.length > 0"
                       @blur="handleLocationBlur"
@@ -939,7 +941,7 @@ watch(fullscreenCarousel, (isOpen) => {
                     >
                       <i class="bi bi-geo-alt"></i>
                       <div class="flex-grow-1">
-                        <div class="fw-semibold small">{{ suggestion.display_name?.split(',')[0] || 'Location' }}</div>
+                        <div class="fw-semibold small">{{ suggestion.display_name?.split(',')[0] || $t('item.location') }}</div>
                         <div class="text-muted" style="font-size: 0.75rem;">{{ suggestion.display_name || '' }}</div>
                       </div>
                     </div>
@@ -947,7 +949,7 @@ watch(fullscreenCarousel, (isOpen) => {
                 </div>
               </div>
               <div class="col-md-2">
-                <label class="form-label small fw-bold">Daily Price</label>
+                <label class="form-label small fw-bold">{{ $t('item.price') }}</label>
                 <input 
                   v-model.number="editForm.pricePerDay" 
                   type="number" 
@@ -958,7 +960,7 @@ watch(fullscreenCarousel, (isOpen) => {
                 />
               </div>
               <div class="col-md-2">
-                <label class="form-label small fw-bold">Initial Price</label>
+                <label class="form-label small fw-bold">{{ $t('item.initial') }}</label>
                 <input 
                   v-model.number="editForm.initialPrice" 
                   type="number" 
@@ -970,7 +972,7 @@ watch(fullscreenCarousel, (isOpen) => {
                 />
               </div>
               <div class="col-md-2">
-                <label class="form-label small fw-bold">Deposit</label>
+                <label class="form-label small fw-bold">{{ $t('item.deposit') }}</label>
                 <input 
                   v-model.number="editForm.deposit" 
                   type="number" 
@@ -982,7 +984,7 @@ watch(fullscreenCarousel, (isOpen) => {
                 />
               </div>
               <div class="col-12 col-md-12">
-                <label class="form-label small fw-bold">Currency</label>
+                <label class="form-label small fw-bold">{{ $t('item.currency') }}</label>
                 <select v-model="editForm.currency" class="form-select" :disabled="saving">
                   <option value="ILS">ILS (₪)</option>
                   <option value="USD">USD ($)</option>
@@ -1006,7 +1008,7 @@ watch(fullscreenCarousel, (isOpen) => {
               >
                 <span v-if="saving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                 <i v-else class="bi" :class="editMode ? 'bi-check-lg' : 'bi-pencil'"></i>
-                <span class="d-none d-lg-inline ms-1">{{ saving ? 'Saving...' : (editMode ? 'Save' : 'Edit') }}</span>
+                <span class="d-none d-lg-inline ms-1">{{ saving ? $t('item.saving') : (editMode ? $t('item.save') : $t('item.edit')) }}</span>
               </button>
               <button
                 v-if="editMode"
@@ -1016,19 +1018,19 @@ watch(fullscreenCarousel, (isOpen) => {
                 :disabled="saving"
               >
                 <i class="bi bi-x-lg"></i>
-                <span class="d-none d-lg-inline ms-1">Cancel</span>
+                <span class="d-none d-lg-inline ms-1">{{ $t('item.cancel') }}</span>
               </button>
               <button
                 v-if="editMode"
                 class="btn btn-sm"
                 :class="(item?.isActive !== false && item?.active !== false) ? 'btn-outline-warning' : 'btn-outline-success'"
                 @click="toggleActive"
-                :title="(item?.isActive !== false && item?.active !== false) ? 'Deactivate listing' : 'Activate listing'"
+                :title="(item?.isActive !== false && item?.active !== false) ? $t('item.deactivateListing') : $t('item.activateListing')"
                 :disabled="saving || togglingActive"
               >
                 <span v-if="togglingActive" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                 <i v-else class="bi" :class="(item?.isActive !== false && item?.active !== false) ? 'bi-eye-slash' : 'bi-eye'"></i>
-                <span class="d-none d-lg-inline ms-1">{{ (item?.isActive !== false && item?.active !== false) ? 'Deactivate' : 'Activate' }}</span>
+                <span class="d-none d-lg-inline ms-1">{{ (item?.isActive !== false && item?.active !== false) ? $t('item.deactivate') : $t('item.activate') }}</span>
               </button>
               <button
                 v-if="editMode"
@@ -1039,7 +1041,7 @@ watch(fullscreenCarousel, (isOpen) => {
               >
                 <span v-if="deleting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                 <i v-else class="bi bi-trash"></i>
-                <span class="d-none d-lg-inline ms-1">Delete</span>
+                <span class="d-none d-lg-inline ms-1">{{ $t('item.delete') }}</span>
               </button>
             </template>
             
@@ -1052,7 +1054,7 @@ watch(fullscreenCarousel, (isOpen) => {
                 title="Book this item"
               >
                 <i class="bi bi-calendar-check"></i>
-                <span class="d-none d-lg-inline ms-1">Book Now</span>
+                <span class="d-none d-lg-inline ms-1">{{ $t('item.bookNow') }}</span>
               </button>
               
               <button
@@ -1061,7 +1063,7 @@ watch(fullscreenCarousel, (isOpen) => {
                 title="Message owner"
               >
                 <i class="bi bi-chat-dots"></i>
-                <span class="d-none d-lg-inline ms-1">Message</span>
+                <span class="d-none d-lg-inline ms-1">{{ $t('item.message') }}</span>
               </button>
               <button
                 class="btn btn-sm btn-outline-danger"
@@ -1069,7 +1071,7 @@ watch(fullscreenCarousel, (isOpen) => {
                 title="Report"
               >
                 <i class="bi bi-flag"></i>
-                <span class="d-none d-lg-inline ms-1">Report</span>
+                <span class="d-none d-lg-inline ms-1">{{ $t('item.report') }}</span>
               </button>
             </template>
             
@@ -1080,7 +1082,7 @@ watch(fullscreenCarousel, (isOpen) => {
               title="Share"
             >
               <i class="bi bi-share"></i>
-              <span class="d-none d-lg-inline ms-1">Share</span>
+              <span class="d-none d-lg-inline ms-1">{{ $t('item.share') }}</span>
             </button>
           </div>
         </div>
@@ -1114,14 +1116,14 @@ watch(fullscreenCarousel, (isOpen) => {
                   <button
                     class="carousel-btn carousel-btn-prev"
                     @click="previousPhoto"
-                    aria-label="Previous photo"
+                    :aria-label="$t('item.previousPhoto')"
                   >
                     <i class="bi bi-chevron-left"></i>
                   </button>
                   <button
                     class="carousel-btn carousel-btn-next"
                     @click="nextPhoto"
-                    aria-label="Next photo"
+                    :aria-label="$t('item.nextPhoto')"
                   >
                     <i class="bi bi-chevron-right"></i>
                   </button>
@@ -1139,7 +1141,7 @@ watch(fullscreenCarousel, (isOpen) => {
                   class="thumbnail-btn"
                   :class="{ active: index === currentPhotoIndex }"
                   @click="currentPhotoIndex = index"
-                  :aria-label="`View photo ${index + 1}`"
+                  :aria-label="$t('item.viewPhoto', { index: index + 1 })"
                 >
                   <img
                     :src="getCarouselPhotoUrl(photo)"
@@ -1153,7 +1155,7 @@ watch(fullscreenCarousel, (isOpen) => {
               <div class="ratio ratio-16x9 bg-light rounded d-flex align-items-center justify-content-center">
                 <div class="text-center text-muted">
                   <i class="bi bi-image display-4 d-block mb-2"></i>
-                  <p class="mb-0">No photos available</p>
+                  <p class="mb-0">{{ $t('item.noPhotosAvailable') }}</p>
                 </div>
               </div>
             </div>
@@ -1163,7 +1165,7 @@ watch(fullscreenCarousel, (isOpen) => {
           <div v-if="editMode && isOwner" class="card p-3 p-md-4 mt-3 mt-md-4">
             <h2 class="h5 mb-3">
               <i class="bi bi-images me-2"></i>
-              Manage Photos
+              {{ $t('item.managePhotos') }}
             </h2>
             
             <input 
@@ -1183,11 +1185,11 @@ watch(fullscreenCarousel, (isOpen) => {
                 :disabled="uploadingPhotos || editPhotos.length >= 10"
               >
                 <i class="bi bi-camera me-2"></i>
-                {{ uploadingPhotos ? 'Uploading...' : 'Add Photos' }}
+                {{ uploadingPhotos ? $t('item.uploading') : $t('item.addPhotos') }}
               </button>
               <small class="text-muted d-block mt-2">
                 <i class="bi bi-info-circle me-1"></i>
-                Upload up to 10 photos (JPEG, PNG, WebP, GIF, max 5MB each)
+                {{ $t('item.photoUploadInfo') }}
               </small>
             </div>
             
@@ -1224,30 +1226,30 @@ watch(fullscreenCarousel, (isOpen) => {
                   <i class="bi bi-star"></i>
                 </button>
                 <div v-if="photo.position === 0" class="badge bg-primary photo-primary-badge">
-                  <i class="bi bi-star-fill me-1"></i>Primary
+                  <i class="bi bi-star-fill me-1"></i>{{ $t('item.primary') }}
                 </div>
                 <div v-if="photo.isNew" class="badge bg-success photo-new-badge">
-                  <i class="bi bi-plus-circle me-1"></i>New
+                  <i class="bi bi-plus-circle me-1"></i>{{ $t('item.new') }}
                 </div>
               </div>
             </div>
             <div v-else class="text-center text-muted py-4">
               <i class="bi bi-image fs-1 d-block mb-2"></i>
-              <p class="mb-0">No photos yet. Add some photos to make your listing more attractive!</p>
+              <p class="mb-0">{{ $t('item.noPhotosYet') }}</p>
             </div>
           </div>
 
           <!-- Description Card -->
           <div class="card p-3 p-md-4">
-            <h2 class="h5 mb-3">About this item</h2>
+            <h2 class="h5 mb-3">{{ $t('item.aboutThisItem') }}</h2>
             <p v-if="!editMode" class="mb-0 text-muted">{{ item.description }}</p>
             <div v-else>
-              <label class="form-label small fw-bold">Description</label>
+              <label class="form-label small fw-bold">{{ $t('item.description') }}</label>
               <textarea 
                 v-model="editForm.description" 
                 class="form-control" 
                 rows="6" 
-                placeholder="Describe your item..."
+                :placeholder="$t('item.description')"
                 :disabled="saving"
               ></textarea>
             </div>
@@ -1341,7 +1343,7 @@ watch(fullscreenCarousel, (isOpen) => {
         <button
           class="fullscreen-close-btn"
           @click="closeFullscreenCarousel"
-          aria-label="Close fullscreen"
+          :aria-label="$t('item.closeFullscreen')"
         >
           <i class="bi bi-x-lg"></i>
         </button>
@@ -1360,14 +1362,14 @@ watch(fullscreenCarousel, (isOpen) => {
           <button
             class="fullscreen-nav-btn fullscreen-nav-prev"
             @click="previousPhoto"
-            aria-label="Previous photo"
+            :aria-label="$t('item.previousPhoto')"
           >
             <i class="bi bi-chevron-left"></i>
           </button>
           <button
             class="fullscreen-nav-btn fullscreen-nav-next"
             @click="nextPhoto"
-            aria-label="Next photo"
+            :aria-label="$t('item.nextPhoto')"
           >
             <i class="bi bi-chevron-right"></i>
           </button>
@@ -1385,7 +1387,7 @@ watch(fullscreenCarousel, (isOpen) => {
               class="fullscreen-thumbnail-btn"
               :class="{ active: index === currentPhotoIndex }"
               @click="currentPhotoIndex = index"
-              :aria-label="`View photo ${index + 1}`"
+              :aria-label="$t('item.viewPhoto', { index: index + 1 })"
             >
               <img
                 :src="getCarouselPhotoUrl(photo)"

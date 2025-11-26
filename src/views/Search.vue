@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
 import { fetchListings, fetchCategories, fetchLocations } from '../services/listingsService';
 import ItemCard from '../components/ItemCard.vue';
@@ -9,6 +10,7 @@ import { useQuerySync } from '../composables/useQuerySync';
 import { getItemPhotoUrl } from '../utils/imageUtils';
 // import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel.vue' // if you prefer infinite scroll
 
+const { t } = useI18n();
 const ui = useUiStore();
 
 // URL-synced search state
@@ -471,7 +473,7 @@ function formatPrice(amount) {
   <div class="search-page">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div class="d-flex align-items-center gap-2">
-        <h1 class="h4 mb-0">Search</h1>
+        <h1 class="h4 mb-0">{{ $t('search.title') }}</h1>
         <!-- <button
           class="btn btn-outline-secondary btn-sm"
           @click="toggleFilters"
@@ -491,7 +493,7 @@ function formatPrice(amount) {
           v-model="viewMode"
         />
         <label class="btn btn-outline-primary btn-sm" for="view-map">
-          <i class="bi bi-map me-1"></i> Map
+          <i class="bi bi-map me-1"></i> {{ $t('search.map') }}
         </label>
         <input
           type="radio"
@@ -501,7 +503,7 @@ function formatPrice(amount) {
           v-model="viewMode"
         />
         <label class="btn btn-outline-primary btn-sm" for="view-list">
-          <i class="bi bi-list-ul me-1"></i> List
+          <i class="bi bi-list-ul me-1"></i> {{ $t('search.list') }}
         </label>
       </div>
     </div>
@@ -517,7 +519,7 @@ function formatPrice(amount) {
             aria-controls="filtersCollapse"
           >
         <div class="card-header d-flex justify-content-between align-items-center p-2">
-          <h2 class="h6 mb-0">Filters</h2>
+          <h2 class="h6 mb-0">{{ $t('search.filters') }}</h2>
           
             <i class="bi filters-chevron" :class="filtersCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
           
@@ -527,14 +529,14 @@ function formatPrice(amount) {
           <div v-show="!filtersCollapsed" id="filtersCollapse">
             <form class="card-body p-3" @submit.prevent="applyFilters">
         <div class="mb-3">
-          <label class="form-label">Keyword</label>
-          <input v-model="state.q" class="form-control" placeholder="drill, PS5, tent…" />
+          <label class="form-label">{{ $t('search.keyword') }}</label>
+          <input v-model="state.q" class="form-control" :placeholder="$t('search.placeholder')" />
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Category</label>
+          <label class="form-label">{{ $t('search.category') }}</label>
           <select v-model="state.category" class="form-select">
-            <option value="">Any</option>
+            <option value="">{{ $t('search.any') }}</option>
             <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
@@ -578,7 +580,7 @@ function formatPrice(amount) {
             </div> -->
 
             <div class="mb-2">
-              <label class="form-label small">Search by Location</label>
+              <label class="form-label small">{{ $t('search.location') }}</label>
               <div class="position-relative">
                 <div class="input-group input-group-sm">
                   <span class="input-group-text">
@@ -588,7 +590,7 @@ function formatPrice(amount) {
                     v-model="locationSearchQuery"
                     type="text"
                     class="form-control"
-                    placeholder="Type address or place name..."
+                    :placeholder="$t('search.locationSearchPlaceholder')"
                     @input="searchLocation(locationSearchQuery)"
                     @focus="showingSuggestions = locationSuggestions.length > 0"
                     @blur="handleLocationBlur"
@@ -622,7 +624,7 @@ function formatPrice(amount) {
               >
                 <span v-if="locationLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
                 <i v-else class="bi bi-geo-alt me-1"></i>
-                {{ locationLoading ? 'Getting location...' : (currentLocation.lat ? 'Update My Location' : 'Use My Location') }}
+                {{ locationLoading ? $t('search.gettingLocation') : (currentLocation.lat ? $t('search.updateMyLocation') : $t('search.useMyLocation')) }}
               </button>
             </div>
 
@@ -655,7 +657,7 @@ function formatPrice(amount) {
 
             <div v-if="state.lat && state.lng" class="mb-2">
               <label class="form-label small">
-                Search Radius: <strong>{{ radiusValue }} km</strong>
+                {{ $t('search.searchRadius') }}: <strong>{{ radiusValue }} {{ $t('search.km') }}</strong>
               </label>
               <input
                 v-model.number="radiusValue"
@@ -678,7 +680,7 @@ function formatPrice(amount) {
               class="btn btn-outline-danger btn-sm w-100"
               @click="clearLocation"
             >
-              <i class="bi bi-x-circle me-1"></i> Clear Location
+              <i class="bi bi-x-circle me-1"></i> {{ $t('search.clearLocation') }}
             </button>
           <!-- </div> -->
         </div>
@@ -730,9 +732,9 @@ function formatPrice(amount) {
 
         <div class="d-flex gap-2">
           <button class="btn btn-primary" type="submit">
-            <i class="bi bi-search me-1"></i> Apply
+            <i class="bi bi-search me-1"></i> {{ $t('search.apply') }}
           </button>
-          <button class="btn btn-outline-secondary" type="button" @click="clearFilters">Reset</button>
+          <button class="btn btn-outline-secondary" type="button" @click="clearFilters">{{ $t('search.reset') }}</button>
         </div>
             </form>
           </div>
@@ -758,7 +760,7 @@ function formatPrice(amount) {
         <div class="d-flex align-items-center justify-content-between mb-2">
           <div class="small text-secondary">{{ resultsLabel }}</div>
           <div class="d-flex align-items-center gap-2">
-            <label class="small text-secondary">Per page</label>
+            <label class="small text-secondary">{{ $t('search.perPage') }}</label>
             <select
               v-model.number="state.per_page"
               class="form-select form-select-sm"
@@ -781,7 +783,7 @@ function formatPrice(amount) {
           </div>
 
           <div v-if="!loading && data.items.length === 0" class="col-12">
-            <div class="alert alert-warning">No items matched your filters.</div>
+            <div class="alert alert-warning">{{ $t('search.noResults') }}</div>
           </div>
         </div>
 

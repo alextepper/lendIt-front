@@ -67,8 +67,13 @@ async function onSubmit(payload) {
     }
 
     await load();
+    
+    // Close modal and reset editing on success
+    showModal.value = false;
+    editing.value = null;
   } catch (e) {
     ui.showToast(e?.response?.data?.message || e.message, 'danger');
+    // Don't close modal on error - let user fix and retry
   }
 }
 

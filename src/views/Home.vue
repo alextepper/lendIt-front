@@ -1,11 +1,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { fetchListings } from '../services/listingsService'
 import { useUiStore } from '../stores/ui'
 import { getItemPhotoUrl } from '../utils/imageUtils'
 
 const router = useRouter()
+const { t } = useI18n()
 const ui = useUiStore()
 
 // Search state
@@ -16,30 +18,41 @@ const showingSuggestions = ref(false)
 const selectedLocation = ref(null) // Store selected location with coordinates
 
 // Featured categories with sample items
-const categories = ref([
+const categoryItems = ref({
+  'Tools': [],
+  'Electronics': [],
+  'Games': [],
+  'Outdoors': []
+})
+
+const categories = computed(() => [
   {
     name: 'Tools',
+    displayName: t('categories.tools'),
     icon: 'bi-tools',
     color: 'primary',
-    items: []
+    items: categoryItems.value['Tools']
   },
   {
     name: 'Electronics',
+    displayName: t('categories.electronics'),
     icon: 'bi-laptop',
     color: 'success',
-    items: []
+    items: categoryItems.value['Electronics']
   },
   {
     name: 'Games',
+    displayName: t('categories.games'),
     icon: 'bi-controller',
     color: 'info',
-    items: []
+    items: categoryItems.value['Games']
   },
   {
     name: 'Outdoors',
+    displayName: t('categories.outdoors'),
     icon: 'bi-backpack2',
     color: 'warning',
-    items: []
+    items: categoryItems.value['Outdoors']
   }
 ])
 
@@ -55,7 +68,7 @@ async function loadFeaturedItems() {
         per_page: 4,
         sort: 'rating_desc'
       })
-      category.items = data.items || []
+      categoryItems.value[category.name] = data.items || []
     }
   } catch (error) {
     console.warn('Failed to load featured items:', error)
@@ -74,8 +87,10 @@ async function searchLocationQuery(query) {
     return;
   }
 
-  clearTimeout(geocodeTimeout);
-  geocodeTimeout = setTimeout(async () => {
+  if (geocodeTimeout) {
+    window.clearTimeout(geocodeTimeout);
+  }
+  geocodeTimeout = window.setTimeout(async () => {
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&accept-language=en`
@@ -91,6 +106,20 @@ async function searchLocationQuery(query) {
   }, 300);
 }
 
+const locationBlurTimeout = ref(null);
+
+function handleLocationBlur() {
+  // Clear any existing timeout
+  if (locationBlurTimeout.value) {
+    window.clearTimeout(locationBlurTimeout.value);
+  }
+  // Delay closing to allow click events to fire
+  locationBlurTimeout.value = window.setTimeout(() => {
+    showingSuggestions.value = false;
+    locationBlurTimeout.value = null;
+  }, 200);
+}
+
 function selectLocation(suggestion) {
   const lat = parseFloat(suggestion.lat);
   const lng = parseFloat(suggestion.lon);
@@ -102,6 +131,12 @@ function selectLocation(suggestion) {
   locationSearchQuery.value = suggestion.display_name;
   locationSuggestions.value = [];
   showingSuggestions.value = false;
+  
+  // Clear any pending blur timeout
+  if (locationBlurTimeout.value) {
+    window.clearTimeout(locationBlurTimeout.value);
+    locationBlurTimeout.value = null;
+  }
   
   // Store selected location with coordinates
   selectedLocation.value = {
@@ -200,7 +235,7 @@ onMounted(() => {
                       v-model="searchQuery"
                       type="text"
                       class="form-control"
-                      placeholder="What are you looking for?"
+                      :placeholder="$t('search.placeholder')"
                       @keyup.enter="handleSearch"
                     />
                   </div>
@@ -215,10 +250,10 @@ onMounted(() => {
                         v-model="locationSearchQuery"
                         type="text"
                         class="form-control"
-                        placeholder="Location (optional)"
+                        :placeholder="$t('search.locationPlaceholder')"
                         @input="searchLocationQuery(locationSearchQuery)"
                         @focus="showingSuggestions = locationSuggestions.length > 0"
-                        @blur="setTimeout(() => { showingSuggestions = false; }, 200)"
+                        @blur="handleLocationBlur"
                         @keyup.enter.prevent="locationSuggestions.length > 0 && selectLocation(locationSuggestions[0]) || handleSearch()"
                       />
                     </div>
@@ -244,7 +279,7 @@ onMounted(() => {
                     @click="handleSearch"
                     :disabled="!searchQuery.trim() && !selectedLocation && !locationSearchQuery.trim()"
                   >
-                    Search
+                    {{ $t('search.title') }}
                   </button>
                 </div>
               </div>
@@ -264,8 +299,8 @@ onMounted(() => {
       <div class="container">
         <div class="row">
           <div class="col-12">
-            <h2 class="h3 mb-4 text-center">Popular Categories</h2>
-            <p class="text-center text-secondary mb-5">Discover items in your area</p>
+            <h2 class="h3 mb-4 text-center">{{ $t('home.popularCategories') }}</h2>
+            <p class="text-center text-secondary mb-5">{{ $t('home.discoverItems') }}</p>
           </div>
         </div>
 
@@ -274,13 +309,13 @@ onMounted(() => {
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h3 class="h4 mb-0">
               <i :class="[category.icon, `text-${category.color}`]"></i>
-              {{ category.name }}
+              {{ category.displayName }}
             </h3>
             <button
               class="btn btn-outline-primary btn-sm"
               @click="searchCategory(category.name)"
             >
-              View All <i class="bi bi-arrow-right"></i>
+              {{ $t('home.viewAll') }} <i class="bi bi-arrow-right"></i>
             </button>
           </div>
 
@@ -322,9 +357,9 @@ onMounted(() => {
                   <div v-else class="card-img-top bg-light d-flex align-items-center justify-content-center">
                     <i class="bi bi-image text-muted display-4"></i>
                   </div>
-                  <div class="card-img-overlay">
+                  <!-- <div class="card-img-overlay">
                     <span class="badge bg-primary">{{ item.category }}</span>
-                  </div>
+                  </div> -->
                 </div>
                 <div class="card-body d-flex flex-column">
                   <h5 class="card-title h6 mb-2">{{ item.title }}</h5>
@@ -339,7 +374,7 @@ onMounted(() => {
                   <div class="mt-auto">
                     <div class="d-flex justify-content-between align-items-center">
                       <span class="h6 text-primary mb-0">
-                        {{ formatPrice(item.pricePerDay) }}/day
+                        {{ formatPrice(item.pricePerDay) }}/{{ $t('app.day') }}
                       </span>
                       <button class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-search"></i>
@@ -354,12 +389,12 @@ onMounted(() => {
           <!-- Empty State -->
           <div v-if="!loading && category.items.length === 0" class="text-center py-4">
             <i class="bi bi-inbox display-4 text-muted mb-3"></i>
-            <p class="text-muted">No items found in this category</p>
+            <p class="text-muted">{{ $t('home.noItemsInCategory') }}</p>
             <button
               class="btn btn-primary"
               @click="searchCategory(category.name)"
             >
-              Browse {{ category.name }}
+              {{ $t('home.browseCategory', { category: category.displayName }) }}
             </button>
           </div>
         </div>
@@ -369,14 +404,14 @@ onMounted(() => {
     <!-- Call to Action -->
     <section class="cta-section bg-light py-5 mt-5">
       <div class="container text-center">
-        <h2 class="h3 mb-3">Ready to start renting?</h2>
-        <p class="text-secondary mb-4">Join thousands of users who are already renting and lending items</p>
+        <h2 class="h3 mb-3">{{ $t('home.readyToStart') }}</h2>
+        <p class="text-secondary mb-4">{{ $t('home.joinThousands') }}</p>
         <div class="d-flex gap-2 justify-content-center flex-wrap">
           <router-link class="btn btn-primary btn-lg" to="/search">
-            <i class="bi bi-search me-2"></i>Browse All Items
+            <i class="bi bi-search me-2"></i>{{ $t('home.browseAllItems') }}
           </router-link>
           <router-link class="btn btn-outline-primary btn-lg" to="/dashboard">
-            <i class="bi bi-plus-circle me-2"></i>List Your Item
+            <i class="bi bi-plus-circle me-2"></i>{{ $t('home.listYourItem') }}
           </router-link>
         </div>
       </div>
