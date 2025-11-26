@@ -7,7 +7,6 @@ import { fetchItem, fetchItemCalendar, updateAvailability, checkBookingAvailabil
 import { updateListing, fetchCategories, fetchLocations, deleteListing, toggleListingActive } from '../services/listingsService';
 import { fetchBookingCalendarData } from '../services/bookingCalendarService';
 import { fetchItemReviews } from '../services/reviewsService';
-import ImageGallery from '../components/ImageGallery.vue';
 import BookingCard from '../components/BookingCard.vue';
 import BookingFlow from '../components/BookingFlow.vue';
 import OwnerPanel from '../components/OwnerPanel.vue';
@@ -70,7 +69,8 @@ const isSelectingLocation = ref(false);
 // Photo management
 const photoInput = ref(null);
 const uploadingPhotos = ref(false);
-const editPhotos = ref([]); // Photos in edit mode
+const editPhotos = ref([]); // Photos in edit mode (with id, url, position)
+const currentPhotoIndex = ref(0); // For carousel
 
 // Store original values for cancel
 const originalItem = ref(null);
@@ -103,14 +103,21 @@ async function load() {
     // Initialize location search query
     locationSearchQuery.value = item.value.address || item.value.location || '';
     
-    // Initialize photos for edit mode
-    editPhotos.value = (item.value.photos || []).map(photo => ({
-      url: typeof photo === 'string' ? photo : photo.url,
-      publicUrl: typeof photo === 'string' ? photo : photo.publicUrl || photo.url,
-      preview: typeof photo === 'string' ? photo : photo.url,
-      file: null,
-      isNew: false
-    }));
+    // Initialize photos for edit mode - preserve id and position
+    editPhotos.value = (item.value.photos || [])
+      .map(photo => {
+        const photoObj = typeof photo === 'string' ? { url: photo } : photo;
+        return {
+          id: photoObj.id || null,
+          url: photoObj.url,
+          publicUrl: photoObj.publicUrl || photoObj.url,
+          position: photoObj.position ?? 0,
+          preview: photoObj.url,
+          file: null,
+          isNew: false
+        };
+      })
+      .sort((a, b) => a.position - b.position); // Sort by position
     
     // Store original for cancel
     originalItem.value = JSON.parse(JSON.stringify(item.value));
@@ -216,53 +223,77 @@ function cancelEdit() {
   showingSuggestions.value = false;
   
   // Restore original photos
-  editPhotos.value = (originalItem.value.photos || []).map(photo => ({
-    url: typeof photo === 'string' ? photo : photo.url,
-    publicUrl: typeof photo === 'string' ? photo : photo.publicUrl || photo.url,
-    preview: typeof photo === 'string' ? photo : photo.url,
-    file: null,
-    isNew: false
-  }));
+  editPhotos.value = (originalItem.value.photos || [])
+    .map(photo => {
+      const photoObj = typeof photo === 'string' ? { url: photo } : photo;
+      return {
+        id: photoObj.id || null,
+        url: photoObj.url,
+        publicUrl: photoObj.publicUrl || photoObj.url,
+        position: photoObj.position ?? 0,
+        preview: photoObj.url,
+        file: null,
+        isNew: false
+      };
+    })
+    .sort((a, b) => a.position - b.position);
   
   editMode.value = false;
   ui.showToast('Changes discarded', 'info');
 }
 
 // Photo management functions
-function handlePhotoUpload(event) {
+async function handlePhotoUpload(event) {
   const files = Array.from(event.target.files || []);
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
   const maxSize = 5 * 1024 * 1024; // 5MB
   const maxPhotos = 10;
 
-  files.forEach(file => {
+  for (const file of files) {
     if (editPhotos.value.length >= maxPhotos) {
       ui.showToast(`Maximum ${maxPhotos} photos allowed`, 'warning');
-      return;
+      break;
     }
     
     if (!validTypes.includes(file.type)) {
       ui.showToast('Invalid file type. Please upload JPEG, PNG, WebP, or GIF', 'danger');
-      return;
+      continue;
     }
     
     if (file.size > maxSize) {
       ui.showToast('File size too large. Maximum size is 5MB', 'danger');
-      return;
+      continue;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    // Upload immediately using single file endpoint
+    uploadingPhotos.value = true;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const { data } = await http.post('/uploads/image?folder=items', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000,
+      });
+
+      // Add to editPhotos with position
+      const position = editPhotos.value.length;
       editPhotos.value.push({
+        id: null, // Will be set when added to item
+        url: data.url || data.publicUrl,
+        publicUrl: data.publicUrl || data.url,
+        position: position,
+        preview: data.url || data.publicUrl,
         file: file,
-        preview: e.target.result,
-        url: null,
-        publicUrl: null,
         isNew: true
       });
-    };
-    reader.readAsDataURL(file);
-  });
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      ui.showToast(error?.response?.data?.message || 'Failed to upload photo', 'danger');
+    } finally {
+      uploadingPhotos.value = false;
+    }
+  }
 
   // Reset input
   if (photoInput.value) {
@@ -270,68 +301,92 @@ function handlePhotoUpload(event) {
   }
 }
 
-function removePhoto(index) {
-  editPhotos.value.splice(index, 1);
-}
+async function removePhoto(photoIndex) {
+  const photo = editPhotos.value[photoIndex];
+  if (!photo) return;
 
-async function uploadPhotos() {
-  const photosToUpload = editPhotos.value.filter(photo => photo.file && photo.isNew);
-  
-  if (photosToUpload.length === 0) {
-    return editPhotos.value.map(photo => photo.url || photo.publicUrl).filter(Boolean);
-  }
-
-  uploadingPhotos.value = true;
-  
-  try {
-    const formData = new FormData();
-    photosToUpload.forEach(photo => {
-      formData.append('files', photo.file);
-    });
-    formData.append('folder', 'items');
-
-    const { data } = await http.post('/uploads/images', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 60000,
-    });
-
-    // Update photos with URLs
-    const uploadedUrls = data.urls || [];
-    let urlIndex = 0;
+  // If photo is already saved (has id), delete from backend
+  if (photo.id && !photo.isNew) {
+    if (!confirm('Are you sure you want to delete this photo?')) {
+      return;
+    }
     
-    editPhotos.value.forEach(photo => {
-      if (photo.file && photo.isNew) {
-        if (uploadedUrls[urlIndex]) {
-          photo.url = uploadedUrls[urlIndex];
-          photo.publicUrl = uploadedUrls[urlIndex];
-          photo.isNew = false;
-          urlIndex++;
-        }
-      }
-    });
+    try {
+      await http.delete(`/items/${item.value.id}/photos/${photo.id}`);
+      ui.showToast('Photo deleted successfully', 'success');
+    } catch (error) {
+      console.error('Failed to delete photo:', error);
+      ui.showToast(error?.response?.data?.message || 'Failed to delete photo', 'danger');
+      return; // Don't remove from UI if deletion failed
+    }
+  }
 
-    return editPhotos.value.map(photo => photo.url || photo.publicUrl).filter(Boolean);
-  } catch (error) {
-    console.error('Photo upload error:', error);
-    ui.showToast(error?.response?.data?.message || 'Failed to upload photos', 'danger');
-    throw error;
-  } finally {
-    uploadingPhotos.value = false;
+  // Remove from local array
+  editPhotos.value.splice(photoIndex, 1);
+  
+  // Reorder positions
+  editPhotos.value.forEach((p, index) => {
+    p.position = index;
+  });
+}
+
+async function setMainPhoto(photoIndex) {
+  const photo = editPhotos.value[photoIndex];
+  if (!photo) return;
+
+  // If photo is already saved (has id), use API
+  if (photo.id && !photo.isNew) {
+    try {
+      await http.patch(`/items/${item.value.id}/photos/${photo.id}/main`);
+      
+      // Swap positions: selected photo becomes 0, current main (position 0) gets selected photo's position
+      const currentMainIndex = editPhotos.value.findIndex(p => p.position === 0 && p.id !== photo.id);
+      if (currentMainIndex !== -1) {
+        const currentMain = editPhotos.value[currentMainIndex];
+        currentMain.position = photo.position;
+      }
+      photo.position = 0;
+      
+      // Re-sort by position
+      editPhotos.value.sort((a, b) => a.position - b.position);
+      
+      ui.showToast('Main photo updated successfully', 'success');
+    } catch (error) {
+      console.error('Failed to set main photo:', error);
+      ui.showToast(error?.response?.data?.message || 'Failed to set main photo', 'danger');
+    }
+  } else {
+    // For new photos, just reorder locally
+    const currentMainIndex = editPhotos.value.findIndex(p => p.position === 0);
+    if (currentMainIndex !== -1) {
+      editPhotos.value[currentMainIndex].position = photo.position;
+    }
+    photo.position = 0;
+    editPhotos.value.sort((a, b) => a.position - b.position);
+    ui.showToast('Main photo will be set when you save', 'info');
   }
 }
 
-async function addPhotosToItem(itemId, photoUrls) {
-  if (!photoUrls || photoUrls.length === 0) {
+async function addPhotosToItem(itemId) {
+  const newPhotos = editPhotos.value.filter(photo => photo.isNew);
+  
+  if (newPhotos.length === 0) {
     return;
   }
 
   try {
-    // Add each new photo to the item
-    for (let i = 0; i < photoUrls.length; i++) {
-      await http.post(`/items/${itemId}/photos`, {
-        url: photoUrls[i],
-        position: i
+    // Add each new photo to the item with correct position
+    for (const photo of newPhotos) {
+      const response = await http.post(`/items/${itemId}/photos`, {
+        url: photo.url || photo.publicUrl,
+        position: photo.position
       });
+      
+      // Update photo with id from response
+      if (response.data && response.data.id) {
+        photo.id = response.data.id;
+        photo.isNew = false;
+      }
     }
   } catch (error) {
     console.error('Error adding photos to item:', error);
@@ -360,15 +415,6 @@ async function saveChanges() {
   
   saving.value = true;
   try {
-    // Upload new photos first
-    let photoUrls = [];
-    try {
-      photoUrls = await uploadPhotos();
-    } catch (error) {
-      // Error already shown in uploadPhotos
-      return;
-    }
-
     // Update listing data
     const payload = {
       title: editForm.title,
@@ -384,16 +430,14 @@ async function saveChanges() {
       description: editForm.description,
     };
     
-    const updated = await updateListing(item.value.id, payload);
+    await updateListing(item.value.id, payload);
     
-    // Add new photos to item
-    if (photoUrls.length > 0) {
-      try {
-        await addPhotosToItem(item.value.id, photoUrls);
-      } catch (error) {
-        console.error('Failed to add photos:', error);
-        // Continue even if photo addition fails
-      }
+    // Add new photos to item (photos are already uploaded in handlePhotoUpload)
+    try {
+      await addPhotosToItem(item.value.id);
+    } catch (error) {
+      console.error('Failed to add photos:', error);
+      ui.showToast('Listing updated but some photos failed to add', 'warning');
     }
     
     // Reload item to get updated data including photos
@@ -645,6 +689,42 @@ function formatPrice(amount) {
     maximumFractionDigits: 2
   }).format(amount / 100)
 }
+
+// Computed property for display photos
+const displayPhotos = computed(() => {
+  return editMode.value ? editPhotos.value : (item.value?.photos || []);
+});
+
+// Helper function to get photo URL for carousel
+function getCarouselPhotoUrl(photo) {
+  if (!photo) return null;
+  if (typeof photo === 'string') {
+    return getItemPhotoUrl(photo);
+  }
+  // Handle photo object
+  const url = photo.preview || photo.url || photo.publicUrl;
+  return url ? getItemPhotoUrl(url) : null;
+}
+
+// Carousel navigation functions
+function nextPhoto() {
+  if (displayPhotos.value.length > 0) {
+    currentPhotoIndex.value = (currentPhotoIndex.value + 1) % displayPhotos.value.length;
+  }
+}
+
+function previousPhoto() {
+  if (displayPhotos.value.length > 0) {
+    currentPhotoIndex.value = (currentPhotoIndex.value - 1 + displayPhotos.value.length) % displayPhotos.value.length;
+  }
+}
+
+// Reset carousel when photos change or mode changes
+watch(() => [displayPhotos.value.length, editMode.value], () => {
+  if (currentPhotoIndex.value >= displayPhotos.value.length) {
+    currentPhotoIndex.value = 0;
+  }
+});
 </script>
 
 <template>
@@ -934,8 +1014,67 @@ function formatPrice(amount) {
       <div class="row g-4">
         <!-- Main Content Column -->
         <div class="col-lg-8">
-          <!-- Image Gallery (Non-Owners or Owners in Edit Mode) -->
-          <ImageGallery v-if="!isOwner || editMode" :photos="editMode ? editPhotos : item.photos" />
+          <!-- Image Carousel (Non-Owners or Owners in Edit Mode) -->
+          <div v-if="!isOwner || editMode" class="image-carousel-container mb-4">
+            <div v-if="displayPhotos?.length > 0" class="image-carousel">
+              <!-- Main Image Display -->
+              <div class="carousel-main">
+                <div class="ratio ratio-16x9 bg-light rounded">
+                  <img
+                    :src="getCarouselPhotoUrl(displayPhotos[currentPhotoIndex])"
+                    class="w-100 h-100 object-fit-cover rounded"
+                    :alt="`${item.title} - Photo ${currentPhotoIndex + 1}`"
+                  />
+                </div>
+                <!-- Navigation Arrows (only if more than 1 photo) -->
+                <template v-if="displayPhotos.length > 1">
+                  <button
+                    class="carousel-btn carousel-btn-prev"
+                    @click="previousPhoto"
+                    aria-label="Previous photo"
+                  >
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                  <button
+                    class="carousel-btn carousel-btn-next"
+                    @click="nextPhoto"
+                    aria-label="Next photo"
+                  >
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                  <!-- Photo Counter -->
+                  <div class="carousel-counter">
+                    {{ currentPhotoIndex + 1 }} / {{ displayPhotos.length }}
+                  </div>
+                </template>
+              </div>
+              <!-- Thumbnail Strip (only if more than 1 photo) -->
+              <div v-if="displayPhotos.length > 1" class="carousel-thumbnails">
+                <button
+                  v-for="(photo, index) in displayPhotos"
+                  :key="index"
+                  class="thumbnail-btn"
+                  :class="{ active: index === currentPhotoIndex }"
+                  @click="currentPhotoIndex = index"
+                  :aria-label="`View photo ${index + 1}`"
+                >
+                  <img
+                    :src="getCarouselPhotoUrl(photo)"
+                    :alt="`Thumbnail ${index + 1}`"
+                    class="thumbnail-img"
+                  />
+                </button>
+              </div>
+            </div>
+            <div v-else class="no-photos-placeholder">
+              <div class="ratio ratio-16x9 bg-light rounded d-flex align-items-center justify-content-center">
+                <div class="text-center text-muted">
+                  <i class="bi bi-image display-4 d-block mb-2"></i>
+                  <p class="mb-0">No photos available</p>
+                </div>
+              </div>
+            </div>
+          </div>
           
           <!-- Photo Management (Edit Mode Only) -->
           <div v-if="editMode && isOwner" class="card p-3 p-md-4 mt-3 mt-md-4">
@@ -973,8 +1112,9 @@ function formatPrice(amount) {
             <div v-if="editPhotos.length > 0" class="photo-preview-grid">
               <div 
                 v-for="(photo, index) in editPhotos" 
-                :key="index"
+                :key="photo.id || index"
                 class="photo-preview-item"
+                :class="{ 'is-primary': photo.position === 0 }"
               >
                 <img 
                   :src="photo.preview || (photo.url ? getItemPhotoUrl(photo.url) : null) || (photo.publicUrl ? getItemPhotoUrl(photo.publicUrl) : null)" 
@@ -986,10 +1126,21 @@ function formatPrice(amount) {
                   class="btn btn-sm btn-danger photo-remove-btn"
                   @click="removePhoto(index)"
                   title="Remove photo"
+                  :disabled="saving"
                 >
                   <i class="bi bi-x-lg"></i>
                 </button>
-                <div v-if="index === 0" class="badge bg-primary photo-primary-badge">
+                <button
+                  v-if="photo.position !== 0"
+                  type="button"
+                  class="btn btn-sm btn-primary photo-set-main-btn"
+                  @click="setMainPhoto(index)"
+                  title="Set as main photo"
+                  :disabled="saving"
+                >
+                  <i class="bi bi-star"></i>
+                </button>
+                <div v-if="photo.position === 0" class="badge bg-primary photo-primary-badge">
                   <i class="bi bi-star-fill me-1"></i>Primary
                 </div>
                 <div v-if="photo.isNew" class="badge bg-success photo-new-badge">
@@ -1437,6 +1588,177 @@ function formatPrice(amount) {
   
   .card {
     padding: 1rem !important;
+  }
+}
+
+/* Image Carousel Styles */
+.image-carousel-container {
+  position: relative;
+}
+
+.carousel-main {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #212529;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.carousel-btn:hover {
+  background: white;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.carousel-btn-prev {
+  left: 1rem;
+}
+
+.carousel-btn-next {
+  right: 1rem;
+}
+
+.carousel-counter {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 10;
+}
+
+.carousel-thumbnails {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+  scrollbar-width: thin;
+}
+
+.carousel-thumbnails::-webkit-scrollbar {
+  height: 6px;
+}
+
+.carousel-thumbnails::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.carousel-thumbnails::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.carousel-thumbnails::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.thumbnail-btn {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #f8f9fa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.thumbnail-btn:hover {
+  border-color: #0d6efd;
+  transform: translateY(-2px);
+}
+
+.thumbnail-btn.active {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+.thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.no-photos-placeholder {
+  border: 2px dashed #dee2e6;
+  border-radius: 0.5rem;
+}
+
+/* Photo Preview Grid Updates */
+.photo-preview-item.is-primary {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+.photo-set-main-btn {
+  position: absolute;
+  bottom: 0.25rem;
+  left: 0.25rem;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.photo-preview-item:hover .photo-set-main-btn {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .carousel-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+  
+  .carousel-btn-prev {
+    left: 0.5rem;
+  }
+  
+  .carousel-btn-next {
+    right: 0.5rem;
+  }
+  
+  .carousel-counter {
+    bottom: 0.5rem;
+    right: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .thumbnail-btn {
+    width: 60px;
+    height: 60px;
   }
 }
 </style>
