@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, reactive } from 'vue';
+import { onMounted, ref, computed, reactive, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
