@@ -2,7 +2,9 @@
 import { ref, onMounted } from 'vue';
 import { fetchListings } from '../services/listingsService';
 import ItemCard from './ItemCard.vue';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const items = ref([]);
 const loading = ref(true);
 const error = ref('');
@@ -26,7 +28,7 @@ async function loadUserItems() {
     items.value = data.items || [];
     totalItems.value = data.total || 0;
   } catch (err) {
-    error.value = err.message || 'Failed to load your items';
+    error.value = err.message || t('dashboard.failedToLoadItems');
   } finally {
     loading.value = false;
   }
@@ -36,35 +38,35 @@ async function loadUserItems() {
 <template>
   <div class="card p-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h3 class="h6 mb-0">My Items for Rent</h3>
+      <h3 class="h6 mb-0">{{ t('dashboard.myItemsForRent') }}</h3>
       <router-link 
         v-if="totalItems > 4" 
         to="/dashboard?tab=listings" 
         class="btn btn-outline-primary btn-sm"
       >
         <i class="bi bi-arrow-right me-1"></i>
-        Show More ({{ totalItems }})
-      </router-link>
+        <span>{{ t('dashboard.showMore') }} ({{ totalItems }})</span>
+        </router-link>
     </div>
 
     <div v-if="loading" class="text-center py-4">
       <div class="spinner-border spinner-border-sm" role="status"></div>
-      <div class="small text-secondary mt-2">Loading your items...</div>
+      <div class="small text-secondary mt-2">{{ t('dashboard.loadingYourItems') }}</div>
     </div>
 
     <div v-else-if="error" class="alert alert-danger">
       <i class="bi bi-exclamation-triangle me-2"></i>
-      {{ error }}
+      <span>{{ error }}</span>
     </div>
 
     <div v-else-if="items.length === 0" class="text-center py-4">
       <i class="bi bi-box display-6 text-muted"></i>
       <div class="mt-2">
-        <h6 class="text-muted">No items yet</h6>
-        <p class="small text-muted mb-3">Start earning by listing items for rent.</p>
+        <h6 class="text-muted">{{ t('dashboard.noItemsYet') }}</h6>
+        <p class="small text-muted mb-3">{{ t('dashboard.startEarningByListingItemsForRent') }}</p>
         <router-link to="/dashboard?tab=listings" class="btn btn-primary btn-sm">
           <i class="bi bi-plus-lg me-1"></i>
-          Add Your First Item
+          {{ t('dashboard.addYourFirstItem') }}
         </router-link>
       </div>
     </div>
@@ -81,7 +83,7 @@ async function loadUserItems() {
     <div v-if="totalItems > 4" class="text-center mt-3 d-lg-none">
       <router-link to="/dashboard?tab=listings" class="btn btn-outline-primary">
         <i class="bi bi-arrow-right me-1"></i>
-        View All {{ totalItems }} Items
+        <span>{{ t('dashboard.viewAll') }} {{ totalItems }} {{ t('dashboard.items') }}</span>
       </router-link>
     </div>
   </div>

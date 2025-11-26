@@ -5,9 +5,11 @@ import DashboardTabs from '../components/DashboardTabs.vue';
 import ProfilePanel from '../components/ProfilePanel.vue';
 import ListingsPanel from '../components/ListingsPanel.vue';
 import RentalsPanel from '../components/RentalsPanel.vue';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const tab = ref('profile'); // default to profile
+const { t } = useI18n();
 
 // Handle URL query parameters
 onMounted(() => {
@@ -25,7 +27,7 @@ watch(() => route.query.tab, (newTab) => {
 </script>
 
 <template>
-  <h1 class="h4 mb-3">Dashboard</h1>
+  <h1 class="h4 mb-3">{{ t('dashboard.title') }}</h1>
   <DashboardTabs v-model="tab" />
 
   <div v-show="tab === 'profile'">

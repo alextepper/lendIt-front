@@ -1,7 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { fetchRentals } from '../services/rentalsService';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const history = ref([]);
 const loading = ref(true);
 const error = ref('');
@@ -20,7 +22,7 @@ async function loadHistory() {
     const historyData = await fetchRentals();
     history.value = historyData || [];
   } catch (err) {
-    error.value = err.message || 'Failed to load history';
+    error.value = err.message || t('dashboard.failedToLoadHistory');
   } finally {
     loading.value = false;
   }
@@ -119,45 +121,41 @@ function getStatusBadgeClass(status) {
 }
 
 function getStatusText(status) {
-  const statusTexts = {
-    'approved': 'Approved',
-    'requested': 'Requested',
-    'pending': 'Pending',
-    'confirmed': 'Confirmed',
-    'cancelled': 'Cancelled',
-    'completed': 'Completed',
-    'active': 'Active',
-    'PENDING': 'Pending',
-    'CONFIRMED': 'Confirmed',
-    'CANCELLED': 'Cancelled',
-    'COMPLETED': 'Completed',
-    'ACTIVE': 'Active',
-    'PAID': 'Paid',
-    'REFUNDED': 'Refunded',
-    'FAILED': 'Failed'
+  const statusKey = status?.toUpperCase() || status;
+  const statusMap = {
+    'APPROVED': t('dashboard.status.approved'),
+    'REQUESTED': t('dashboard.status.requested'),
+    'PENDING': t('dashboard.status.pending'),
+    'CONFIRMED': t('dashboard.status.confirmed'),
+    'CANCELLED': t('dashboard.status.cancelled'),
+    'COMPLETED': t('dashboard.status.completed'),
+    'ACTIVE': t('dashboard.status.active'),
+    'PAID': t('dashboard.status.paid'),
+    'REFUNDED': t('dashboard.status.refunded'),
+    'FAILED': t('dashboard.status.failed')
   };
-  return statusTexts[status] || status;
+  return statusMap[statusKey] || status;
 }
 
 function getRoleText(role, isRental) {
   if (isRental) {
-    return role === 'incoming' ? 'Lent to' : 'Rented from';
+    return role === 'incoming' ? t('dashboard.lentTo') : t('dashboard.rentedFrom');
   }
-  return 'Rented';
+  return t('dashboard.rented');
 }
 </script>
 
 <template>
   <div class="card p-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h3 class="h6 mb-0">Rental History</h3>
+      <h3 class="h6 mb-0">{{ t('dashboard.rentalHistory') }}</h3>
       <div class="btn-group btn-group-sm">
         <button 
           class="btn btn-outline-secondary" 
           :class="{ active: activeTab === 'all' }" 
           @click="activeTab = 'all'"
         >
-          All
+          {{ t('dashboard.all') }}
         </button>
         <button 
           class="btn btn-outline-secondary" 
@@ -165,7 +163,7 @@ function getRoleText(role, isRental) {
           @click="activeTab = 'rents'"
           data-testid="rents-tab"
         >
-          <i class="bi bi-bag-check me-1"></i>Rents
+          <i class="bi bi-bag-check me-1"></i>{{ t('dashboard.rents') }}
         </button>
         <button 
           class="btn btn-outline-secondary" 
@@ -173,29 +171,29 @@ function getRoleText(role, isRental) {
           @click="activeTab = 'lends'"
           data-testid="lends-tab"
         >
-          <i class="bi bi-box-seam me-1"></i>Lends
+          <i class="bi bi-box-seam me-1"></i>{{ t('dashboard.lends') }}
         </button>
       </div>
     </div>
 
     <div v-if="loading" class="text-center py-3">
       <div class="spinner-border spinner-border-sm" role="status"></div>
-      <div class="small text-secondary mt-2">Loading history...</div>
+      <div class="small text-secondary mt-2">{{ t('dashboard.loadingHistory') }}</div>
     </div>
 
     <div v-else-if="error" class="alert alert-danger">
       <i class="bi bi-exclamation-triangle me-2"></i>
-      {{ error }}
+      <span>{{ error }}</span>
     </div>
 
     <div v-else-if="filteredHistory.length === 0" class="text-center py-4">
       <i class="bi bi-clock-history display-6 text-muted"></i>
       <div class="mt-2">
-        <h6 class="text-muted">No {{ activeTab === 'all' ? 'history' : activeTab }} yet</h6>
+        <h6 class="text-muted">{{ t('dashboard.noHistoryYet', { tab: activeTab === 'all' ? t('dashboard.history') : activeTab }) }}</h6>
         <p class="small text-muted mb-0">
-          {{ activeTab === 'all' ? 'Your rental and lending history will appear here.' : 
-             activeTab === 'rents' ? 'Items you\'ve rented will appear here.' : 
-             'Items you\'ve lent will appear here.' }}
+          {{ activeTab === 'all' ? t('dashboard.rentalHistoryWillAppearHere') : 
+             activeTab === 'rents' ? t('dashboard.itemsYouveRentedWillAppearHere') : 
+             t('dashboard.itemsYouveLentWillAppearHere') }}
         </p>
       </div>
     </div>
@@ -220,10 +218,10 @@ function getRoleText(role, isRental) {
                 </div>
               </div>
               <div class="flex-grow-1">
-                <h6 class="mb-1">{{ item.item?.title || 'Item' }}</h6>
+                <h6 class="mb-1">{{ item.item?.title || t('item.item') }}</h6>
                 <p class="small text-muted mb-1">
                   <i class="bi bi-geo-alt me-1"></i>
-                  {{ item.item?.location || 'Location' }}
+                  {{ item.item?.location || t('item.location') }}
                 </p>
                 <div class="d-flex flex-wrap gap-3 small text-secondary">
                   <div>
@@ -232,11 +230,11 @@ function getRoleText(role, isRental) {
                   </div>
                   <div v-if="item.duration">
                     <i class="bi bi-clock me-1"></i>
-                    {{ item.duration }} day{{ item.duration !== 1 ? 's' : '' }}
+                    {{ item.duration }} {{ t('item.day') }}{{ item.duration !== 1 ? t('item.s') : '' }}
                   </div>
                   <div v-if="item.dailyRate">
                     <i class="bi bi-currency-dollar me-1"></i>
-                    {{ formatPrice(item.dailyRate) }}/day
+                    {{ formatPrice(item.dailyRate) }}/{{ t('item.day') }}
                   </div>
                 </div>
               </div>
@@ -254,7 +252,7 @@ function getRoleText(role, isRental) {
                 {{ item.counterparty.username || item.counterparty.name }}
               </div>
               <div v-else class="text-muted">
-                {{ item.isRental ? 'Rental transaction' : 'Lending transaction' }}
+                {{ item.isRental ? t('dashboard.rentalTransaction') : t('dashboard.lendingTransaction') }}
               </div>
             </div>
           </div>
@@ -270,11 +268,11 @@ function getRoleText(role, isRental) {
               {{ formatPrice(item.total) }}
             </div>
             <div class="small text-muted">
-              {{ item.isRental ? 'Rental' : 'Lending' }}
+              {{ item.isRental ? t('dashboard.rental') : t('dashboard.lending') }}
             </div>
             <div v-if="item.paidAt" class="small text-success">
               <i class="bi bi-check-circle me-1"></i>
-              Paid {{ formatDate(item.paidAt) }}
+              {{ t('dashboard.paid') }} {{ formatDate(item.paidAt) }}
             </div>
           </div>
         </div>

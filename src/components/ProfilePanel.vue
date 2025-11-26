@@ -4,6 +4,7 @@ import { getProfile, updateProfile, uploadAvatar } from '../services/userService
 import { fetchLocations } from '../services/listingsService';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
+import { useI18n } from 'vue-i18n'; 
 import UserHistory from './UserHistory.vue';
 import UserItems from './UserItems.vue';
 
@@ -16,7 +17,7 @@ const saving = ref(false);
 const editMode = ref(false);
 const cities = ref([]);
 const baseURL = import.meta.env.VITE_API_BASE_URL;
-
+const { t } = useI18n();
 onMounted(async () => {
   try {
     const [me, locations] = await Promise.all([
@@ -71,7 +72,7 @@ async function save() {
       phone: form.value.phone,
       city: form.value.city,
     });
-    ui.showToast('Profile updated', 'success');
+    ui.showToast(t('dashboard.profileUpdated'), 'success');
     // Update original form with saved values
     originalForm.value = { ...form.value };
     // Exit edit mode
@@ -99,14 +100,14 @@ async function onAvatarChange(ev) {
   // Validate file type
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
   if (!validTypes.includes(file.type)) {
-    ui.showToast('Invalid file type. Please upload JPEG, PNG, WebP, or GIF', 'danger');
+    ui.showToast(t('dashboard.invalidFileType'), 'danger');
     return;
   }
   
   // Validate file size (5MB limit)
   const maxSize = 5 * 1024 * 1024; // 5MB
   if (file.size > maxSize) {
-    ui.showToast('File size too large. Maximum size is 5MB', 'danger');
+    ui.showToast(t('dashboard.fileTooLarge'), 'danger');
     return;
   }
   
@@ -126,9 +127,9 @@ async function onAvatarChange(ev) {
         profilePicture: profilePictureUrl
       };
     }
-    ui.showToast('Profile picture updated', 'success');
+    ui.showToast(t('dashboard.profilePictureUpdated'), 'success');
   } catch (e) {
-    ui.showToast(e?.response?.data?.message || 'Failed to upload profile picture', 'danger');
+    ui.showToast(e?.response?.data?.message || t('dashboard.profilePictureUploadFailed'), 'danger');
   }
 }
 </script>
@@ -136,7 +137,7 @@ async function onAvatarChange(ev) {
 <template>
   <div class="card p-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2 class="h6 mb-0">Profile</h2>
+      <h2 class="h6 mb-0">{{ t('dashboard.profile') }}</h2>
       <button 
         v-if="!loading"
         class="btn btn-sm" 
@@ -144,11 +145,11 @@ async function onAvatarChange(ev) {
         @click="toggleEditMode"
       >
         <i class="bi" :class="editMode ? 'bi-x-lg' : 'bi-pencil'"></i>
-        {{ editMode ? 'Cancel' : 'Edit' }}
+        {{ editMode ? t('dashboard.cancel') : t('dashboard.edit') }}
       </button>
     </div>
 
-    <div v-if="loading" class="text-secondary small">Loading…</div>
+    <div v-if="loading" class="text-secondary small">{{ $t('common.loading') }}</div>
 
     <div v-else class="row g-3">
       <div class="col-auto">
@@ -158,7 +159,7 @@ async function onAvatarChange(ev) {
             class="rounded-circle profile-avatar"
             width="96"
             height="96"
-            alt="Profile Picture"
+            :alt="$t('dashboard.profilePicture')"
           />
           <label class="btn btn-sm btn-primary profile-picture-upload-btn">
             <i class="bi bi-camera-fill"></i>
@@ -176,20 +177,20 @@ async function onAvatarChange(ev) {
         <!-- View Mode -->
         <div v-if="!editMode" class="profile-view">
           <div class="profile-field mb-3">
-            <label class="field-label text-muted small">Name</label>
-            <div class="field-value">{{ form.username || 'Not set' }}</div>
+            <label class="field-label text-muted small">{{ t('dashboard.name') }}</label>
+            <div class="field-value">{{ form.username || $t('dashboard.notSet') }}</div>
           </div>
           <div class="profile-field mb-3">
-            <label class="field-label text-muted small">Email</label>
-            <div class="field-value">{{ form.email || 'Not set' }}</div>
+            <label class="field-label text-muted small">{{ t('dashboard.email') }}</label>
+            <div class="field-value">{{ form.email || $t('dashboard.notSet') }}</div>
           </div>
           <div class="profile-field mb-3">
-            <label class="field-label text-muted small">Phone</label>
-            <div class="field-value">{{ form.phone || 'Not set' }}</div>
+            <label class="field-label text-muted small">{{ t('dashboard.phone') }}</label>
+            <div class="field-value">{{ form.phone || $t('dashboard.notSet') }}</div>
           </div>
           <div class="profile-field mb-3">
-            <label class="field-label text-muted small">City</label>
-            <div class="field-value">{{ form.city || 'Not set' }}</div>
+            <label class="field-label text-muted small">{{ t('dashboard.city') }}</label>
+            <div class="field-value">{{ form.city || $t('dashboard.notSet') }}</div>
           </div>
         </div>
 
@@ -197,37 +198,37 @@ async function onAvatarChange(ev) {
         <div v-else class="profile-edit">
           <div class="row g-2">
             <div class="col-md-6">
-              <label class="form-label">Name</label>
+              <label class="form-label">{{ t('dashboard.name') }}</label>
               <input 
                 v-model="form.username" 
                 class="form-control" 
-                placeholder="Enter your name"
+                :placeholder="t('dashboard.enterYourName')"
               />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Email</label>
+              <label class="form-label">{{ t('dashboard.email') }}</label>
               <input 
                 v-model="form.email" 
                 class="form-control" 
                 disabled 
-                title="Email cannot be changed here"
+                :title="t('dashboard.emailCannotBeChangedHere')"
               />
             </div>
             <div class="col-md-6">
-              <label class="form-label">Phone</label>
+              <label class="form-label">{{ t('dashboard.phone') }}</label>
               <input 
                 v-model="form.phone" 
                 class="form-control" 
-                placeholder="+972…" 
+                :placeholder="t('dashboard.enterYourPhone')" 
               />
             </div>
             <div class="col-md-6">
-              <label class="form-label">City</label>
+              <label class="form-label">{{ t('dashboard.city') }}</label>
               <select 
                 v-model="form.city" 
                 class="form-select"
               >
-                <option value="">Select your city</option>
+                <option value="">{{ t('dashboard.selectYourCity') }}</option>
                 <option v-for="city in cities" :key="city" :value="city">
                   {{ city }}
                 </option>
@@ -239,10 +240,10 @@ async function onAvatarChange(ev) {
             <button class="btn btn-primary" :disabled="saving" @click="save">
               <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
               <i v-else class="bi bi-check-lg me-1"></i>
-              Save changes
+              <span>{{ t('dashboard.saveChanges') }}</span>
             </button>
             <button class="btn btn-outline-secondary" @click="toggleEditMode" :disabled="saving">
-              Cancel
+              {{ t('dashboard.cancel') }}
             </button>
           </div>
         </div>
@@ -328,11 +329,7 @@ async function onAvatarChange(ev) {
   min-height: 1.5rem;
 }
 
-.field-value:empty::before {
-  content: 'Not set';
-  color: #adb5bd;
-  font-style: italic;
-}
+/* Removed :empty::before rule as we handle "Not set" in template with i18n */
 
 .profile-edit .form-label {
   font-weight: 600;

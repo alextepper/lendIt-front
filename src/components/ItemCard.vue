@@ -1,7 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { getItemPhotoUrl } from '../utils/imageUtils';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();  
 const props = defineProps({
   item: { type: Object, required: true },
 });
@@ -68,7 +70,7 @@ function formatPrice(amount) {
             class="btn btn-link btn-sm p-0 ms-1 text-decoration-none location-toggle"
             @click.stop="toggleLocation"
             :aria-expanded="isLocationExpanded"
-            :aria-label="isLocationExpanded ? 'Collapse location' : 'Expand location'"
+            :aria-label="isLocationExpanded ? t('item.collapseLocation') : t('item.expandLocation')"
           >
             <i class="bi" :class="isLocationExpanded ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
           </button>
@@ -77,10 +79,10 @@ function formatPrice(amount) {
       </div>
       <div v-if="item.distance" class="small text-primary mb-1">
         <i class="bi bi-geo-alt-fill me-1"></i>
-        {{ item.distance.toFixed(1) }} km away
+        {{ item.distance.toFixed(1) }} {{ t('item.kmAway') }}
       </div>
       <div class="d-flex align-items-center justify-content-between mt-2">
-        <span class="fw-semibold">{{ formatPrice(item.pricePerDay || item.price_per_day) }}/day</span>
+        <span class="fw-semibold">{{ formatPrice(item.pricePerDay || item.price_per_day) }}/{{ t('item.day') }}</span>
         <span class="small">
           <i class="bi bi-star-fill me-1"></i>{{ item.rating ?? '—' }}
           <span class="text-secondary">({{ item.reviews_count ?? 0 }})</span>
@@ -89,7 +91,7 @@ function formatPrice(amount) {
       <router-link
         class="stretched-link"
         :to="`/item/${item.id}`"
-        aria-label="Open item"
+        :aria-label="t('item.openItem')"
       ></router-link>
     </div>
   </div>
