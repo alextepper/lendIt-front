@@ -774,8 +774,8 @@ function formatPrice(amount) {
 
         <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-        <!-- Desktop/Tablet Grid View -->
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 d-none d-sm-block">
+        <!-- Desktop Grid View (lg and up) -->
+        <div class="items-grid row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 d-none d-lg-flex">
           <div v-for="item in data.items" :key="item.id" class="col">
             <ItemCard :item="item" />
           </div>
@@ -785,8 +785,8 @@ function formatPrice(amount) {
           </div>
         </div>
 
-        <!-- Mobile List View -->
-        <div class="d-sm-none">
+        <!-- Mobile/Tablet List View (below lg) -->
+        <div class="d-lg-none">
           <div v-for="item in data.items" :key="item.id" class="mobile-list-item">
             <router-link :to="`/item/${item.id}`" class="mobile-list-item-link">
               <div class="mobile-list-item-content">
@@ -1132,5 +1132,22 @@ function formatPrice(amount) {
 
 .card-header:hover .filters-chevron {
   transform: scale(1.1);
+}
+
+/* Desktop Grid View Styles - Only apply on lg and up */
+@media (min-width: 992px) {
+  .items-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    margin-left: calc(var(--bs-gutter-x, 0.75rem) * -0.5);
+    margin-right: calc(var(--bs-gutter-x, 0.75rem) * -0.5);
+  }
+
+  .items-grid > .col {
+    flex: 0 0 auto;
+    width: 33.333333%;
+    padding-left: calc(var(--bs-gutter-x, 0.75rem) * 0.5);
+    padding-right: calc(var(--bs-gutter-x, 0.75rem) * 0.5);
+  }
 }
 </style>

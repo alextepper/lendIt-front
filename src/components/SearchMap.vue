@@ -136,7 +136,7 @@ function getDistance(lat1, lng1, lat2, lng2) {
 }
 
 // Helper function to calculate spiral offset positions
-function getSpiralOffsets(count, baseOffset = 0.0003) {
+function getSpiralOffsets(count, baseOffset = 0.0009) {
   const offsets = [];
   
   if (count === 1) {
