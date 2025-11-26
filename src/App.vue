@@ -1,4 +1,7 @@
 <template>
+  <!-- App Loading Screen -->
+  <AppLoadingScreen />
+
   <AppNavbar />
 
   <main class="py-4">
@@ -34,6 +37,7 @@ import { watch, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useChatStore } from './stores/chat'
 import AppNavbar from './components/AppNavbar.vue'
+import AppLoadingScreen from './components/AppLoadingScreen.vue'
 import GlobalToast from './components/GlobalToast.vue'
 import GlobalLoader from './components/GlobalLoader.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'

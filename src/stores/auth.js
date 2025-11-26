@@ -145,6 +145,10 @@ export const useAuthStore = defineStore("auth", {
         }
 
         this.refreshTokenValid = true; // Reset flag on successful refresh
+
+        // Redirect to home page on successful refresh
+        router.replace({ name: "home" });
+
         return data;
       } catch (error) {
         // If refresh fails, mark token as invalid immediately
