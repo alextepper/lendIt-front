@@ -149,11 +149,11 @@ function searchCategory(categoryName) {
   })
 }
 
-// Navigate to specific item search
-function searchItem(itemTitle) {
+// Navigate to specific item page
+function viewItem(itemId) {
   router.push({
-    name: 'search',
-    query: { q: itemTitle }
+    name: 'item',
+    params: { id: itemId }
   })
 }
 
@@ -310,7 +310,7 @@ onMounted(() => {
               :key="item.id"
               class="col-lg-3 col-md-6 mb-3"
             >
-              <div class="card h-100 product-card" @click="searchItem(item.title)">
+              <div class="card h-100 product-card" @click="viewItem(item.id)">
                 <div class="card-img-top-container">
                   <img
                     v-if="item.thumbnail || (item.photos && item.photos.length > 0)"

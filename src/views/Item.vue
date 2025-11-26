@@ -1374,7 +1374,6 @@ function formatPrice(amount) {
   }
   
   .item-actions {
-    width: 100%;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: flex-start;
