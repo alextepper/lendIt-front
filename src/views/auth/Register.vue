@@ -1,23 +1,33 @@
 <script setup>
 import { reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import { useI18n } from 'vue-i18n'
+import GoogleSignInButton from '../../components/GoogleSignInButton.vue'
 
 const auth = useAuthStore()
+const route = useRoute()
+const { t } = useI18n()
 const form = reactive({ name: '', email: '', password: '' })
 const submitting = ref(false)
 const error = ref(null)
 
+// Check for OAuth error in query params
+if (route.query.error === 'oauth_failed') {
+  error.value = t('auth.oauthSignInFailed')
+}
+
 async function submit() {
   error.value = null
   if (!form.name || !form.email || !form.password) {
-    error.value = 'Please fill in all fields'
+    error.value = t('auth.register.fillAllFields')
     return
   }
   submitting.value = true
   try {
     await auth.register(form)
   } catch (e) {
-    error.value = auth.error || 'Failed to sign up'
+    error.value = auth.error || t('auth.register.failedToSignUp')
   } finally {
     submitting.value = false
   }
@@ -32,6 +42,16 @@ async function submit() {
       <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
       <form class="card p-3" @submit.prevent="submit" novalidate>
+        <!-- Google Sign In Button -->
+        <div class="mb-3">
+          <GoogleSignInButton :return-url="route.query.redirect" />
+        </div>
+        
+        <!-- Divider -->
+        <div class="divider mb-3">
+          <span class="divider-text">{{ $t('auth.or') }}</span>
+        </div>
+
         <div class="mb-3">
           <label class="form-label">{{ $t('auth.register.name') }}</label>
           <input v-model="form.name" class="form-control" type="text" required />
@@ -54,3 +74,29 @@ async function submit() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #dee2e6;
+}
+
+.divider-text {
+  position: relative;
+  background-color: white;
+  padding: 0 1rem;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+</style>

@@ -43,7 +43,43 @@
       "signIn": "Войдите здесь"
     },
     "logout": "Выход",
-    "welcome": "Добро пожаловать, {name}!"
+    "welcome": "Добро пожаловать, {name}!",
+    "signInWithGoogle": "Войти через Google",
+    "googleSigningIn": "Вход...",
+    "googleSignInFailed": "Не удалось начать вход через Google",
+    "oauthError": "Ошибка OAuth: {error}",
+    "missingTokens": "Отсутствуют токены аутентификации",
+    "failedToFetchUser": "Не удалось получить информацию о пользователе",
+    "oauthCallbackError": "Произошла ошибка во время аутентификации",
+    "oauthSignInFailed": "Вход через Google не удался. Пожалуйста, попробуйте снова.",
+    "completingSignIn": "Завершение входа...",
+    "pleaseWait": "Пожалуйста, подождите, пока мы завершаем вашу аутентификацию",
+    "signInFailed": "Вход не удался",
+    "redirectingToLogin": "Перенаправление на страницу входа...",
+    "loading": "Загрузка...",
+    "or": "ИЛИ",
+    "login": {
+      "title": "Вход",
+      "email": "Электронная почта",
+      "password": "Пароль",
+      "submit": "Войти",
+      "noAccount": "Нет аккаунта?",
+      "signUp": "Зарегистрируйтесь здесь",
+      "fillAllFields": "Пожалуйста, заполните все поля",
+      "failedToSignIn": "Не удалось войти"
+    },
+    "register": {
+      "title": "Регистрация",
+      "name": "Полное имя",
+      "email": "Электронная почта",
+      "password": "Пароль",
+      "confirmPassword": "Подтвердите пароль",
+      "submit": "Зарегистрироваться",
+      "hasAccount": "Уже есть аккаунт?",
+      "signIn": "Войдите здесь",
+      "fillAllFields": "Пожалуйста, заполните все поля",
+      "failedToSignUp": "Не удалось зарегистрироваться"
+    }
   },
   "search": {
     "title": "Поиск",

@@ -43,7 +43,43 @@
       "signIn": "سجل الدخول هنا"
     },
     "logout": "تسجيل الخروج",
-    "welcome": "مرحباً بك، {name}!"
+    "welcome": "مرحباً بك، {name}!",
+    "signInWithGoogle": "تسجيل الدخول باستخدام Google",
+    "googleSigningIn": "جاري تسجيل الدخول...",
+    "googleSignInFailed": "فشل بدء تسجيل الدخول عبر Google",
+    "oauthError": "خطأ OAuth: {error}",
+    "missingTokens": "مفاتيح المصادقة مفقودة",
+    "failedToFetchUser": "فشل جلب معلومات المستخدم",
+    "oauthCallbackError": "حدث خطأ أثناء المصادقة",
+    "oauthSignInFailed": "فشل تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.",
+    "completingSignIn": "إكمال تسجيل الدخول...",
+    "pleaseWait": "يرجى الانتظار بينما نكمل المصادقة الخاصة بك",
+    "signInFailed": "فشل تسجيل الدخول",
+    "redirectingToLogin": "إعادة التوجيه إلى صفحة تسجيل الدخول...",
+    "loading": "جاري التحميل...",
+    "or": "أو",
+    "login": {
+      "title": "تسجيل الدخول",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "submit": "تسجيل الدخول",
+      "noAccount": "ليس لديك حساب؟",
+      "signUp": "سجل هنا",
+      "fillAllFields": "يرجى ملء جميع الحقول",
+      "failedToSignIn": "فشل تسجيل الدخول"
+    },
+    "register": {
+      "title": "التسجيل",
+      "name": "الاسم الكامل",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "submit": "التسجيل",
+      "hasAccount": "لديك حساب بالفعل؟",
+      "signIn": "سجل الدخول هنا",
+      "fillAllFields": "يرجى ملء جميع الحقول",
+      "failedToSignUp": "فشل التسجيل"
+    }
   },
   "search": {
     "title": "البحث",

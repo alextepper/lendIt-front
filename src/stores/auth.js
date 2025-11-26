@@ -187,6 +187,10 @@ export const useAuthStore = defineStore("auth", {
       this.refreshTokenValid = false; // Mark as invalid to prevent refresh attempts
       this.isRefreshing = false; // Reset refresh state
 
+      // Clear localStorage tokens
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+
       try {
         // Tell backend to clear cookies (but don't wait for it)
         http.post("/auth/logout").catch(() => {
@@ -203,6 +207,103 @@ export const useAuthStore = defineStore("auth", {
       setTimeout(() => {
         this.isLoggingOut = false;
       }, 1000);
+    },
+    // Google OAuth sign in - redirects to backend
+    signInWithGoogle(returnUrl = null) {
+      // Get backend base URL - for OAuth we need the actual backend URL, not the proxy path
+      let backendBaseURL;
+      
+      // Check if we're in development mode first
+      const isDev = import.meta.env.DEV || import.meta.env.MODE === 'development' || (typeof window !== "undefined" && window.location.hostname === 'localhost' && window.location.port === '5173');
+      
+      // In development, always use localhost:4000 unless explicitly overridden with absolute URL
+      if (isDev) {
+        // Priority 1: Check for explicit absolute URL in env var (overrides dev default)
+        if (import.meta.env.VITE_API_BASE_URL) {
+          const envURL = import.meta.env.VITE_API_BASE_URL;
+          if (envURL.startsWith('http://') || envURL.startsWith('https://')) {
+            backendBaseURL = envURL;
+          }
+        }
+        // Priority 2: Development default - always use backend directly
+        if (!backendBaseURL) {
+          backendBaseURL = 'http://localhost:4000';
+        }
+      } else {
+        // Production mode
+        // Priority 1: Runtime config (set by nginx in production)
+        if (typeof window !== "undefined" && window.__API_BASE_URL__) {
+          const runtimeURL = window.__API_BASE_URL__;
+          // If it's an absolute URL, use it directly
+          if (runtimeURL.startsWith('http://') || runtimeURL.startsWith('https://')) {
+            backendBaseURL = runtimeURL;
+          }
+        }
+        
+        // Priority 2: Environment variable (absolute URL)
+        if (!backendBaseURL && import.meta.env.VITE_API_BASE_URL) {
+          const envURL = import.meta.env.VITE_API_BASE_URL;
+          // If it's an absolute URL, use it directly
+          if (envURL.startsWith('http://') || envURL.startsWith('https://')) {
+            backendBaseURL = envURL;
+          }
+        }
+        
+        // Priority 3: Production fallback - use current origin with /api
+        if (!backendBaseURL) {
+          backendBaseURL = `${window.location.origin}/api`;
+        }
+      }
+      
+      // Build the Google OAuth URL - backendBaseURL should always be absolute at this point
+      const oauthUrl = `${backendBaseURL}/auth/google`;
+      
+      // Build URL object for query params
+      const url = new URL(oauthUrl);
+      
+      // Add return URL if provided
+      if (returnUrl) {
+        url.searchParams.set('return_url', returnUrl);
+      } else if (router.currentRoute.value.query.redirect) {
+        // Use redirect query param if available
+        url.searchParams.set('return_url', String(router.currentRoute.value.query.redirect));
+      }
+      
+      // Redirect to backend Google OAuth endpoint
+      window.location.href = url.toString();
+    },
+    // Handle OAuth callback - called from OAuthCallback component
+    async handleOAuthCallback(accessToken, refreshToken) {
+      this.status = "loading";
+      this.error = null;
+      
+      try {
+        // Store tokens in localStorage as fallback (backend also sets cookies)
+        if (accessToken) {
+          localStorage.setItem('access_token', accessToken);
+        }
+        if (refreshToken) {
+          localStorage.setItem('refresh_token', refreshToken);
+        }
+
+        // Fetch user data
+        await this.fetchMe();
+        
+        // Reset refresh token validity on successful OAuth
+        this.refreshTokenValid = true;
+        this.status = "idle";
+        
+        return true;
+      } catch (e) {
+        this.status = "error";
+        this.error = extractErr(e);
+        
+        // Clear tokens on error
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        
+        throw e;
+      }
     },
   },
 });

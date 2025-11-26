@@ -30,7 +30,9 @@
       "password": "Password",
       "submit": "Login",
       "noAccount": "Don't have an account?",
-      "signUp": "Sign up here"
+      "signUp": "Sign up here",
+      "fillAllFields": "Please fill in all fields",
+      "failedToSignIn": "Failed to sign in"
     },
     "register": {
       "title": "Register",
@@ -40,10 +42,26 @@
       "confirmPassword": "Confirm Password",
       "submit": "Register",
       "hasAccount": "Already have an account?",
-      "signIn": "Sign in here"
+      "signIn": "Sign in here",
+      "fillAllFields": "Please fill in all fields",
+      "failedToSignUp": "Failed to sign up"
     },
     "logout": "Logout",
-    "welcome": "Welcome back, {name}!"
+    "welcome": "Welcome back, {name}!",
+    "signInWithGoogle": "Sign in with Google",
+    "googleSigningIn": "Signing in...",
+    "googleSignInFailed": "Failed to initiate Google sign in",
+    "oauthError": "OAuth error: {error}",
+    "missingTokens": "Missing authentication tokens",
+    "failedToFetchUser": "Failed to fetch user information",
+    "oauthCallbackError": "An error occurred during authentication",
+    "oauthSignInFailed": "Google sign in failed. Please try again.",
+    "completingSignIn": "Completing sign in...",
+    "pleaseWait": "Please wait while we complete your authentication",
+    "signInFailed": "Sign in failed",
+    "redirectingToLogin": "Redirecting to login page...",
+    "loading": "Loading...",
+    "or": "OR"
   },
   "search": {
     "title": "Search",

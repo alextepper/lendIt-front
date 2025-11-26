@@ -5,6 +5,7 @@ import { useAuthStore } from "../stores/auth";
 const Home = () => import("../views/Home.vue");
 const Login = () => import("../views/auth/Login.vue");
 const Register = () => import("../views/auth/Register.vue");
+const OAuthCallback = () => import("../views/auth/OAuthCallback.vue");
 const Search = () => import("../views/Search.vue");
 const Item = () => import("../views/Item.vue");
 const Dashboard = () => import("../views/Dashboard.vue");
@@ -33,6 +34,12 @@ const router = createRouter({
       path: "/register",
       name: "register",
       component: Register,
+      meta: { guestOnly: true },
+    },
+    {
+      path: "/auth/callback",
+      name: "oauth-callback",
+      component: OAuthCallback,
       meta: { guestOnly: true },
     },
     { path: "/search", name: "search", component: Search },

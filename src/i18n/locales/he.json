@@ -43,7 +43,43 @@
       "signIn": "התחבר כאן"
     },
     "logout": "התנתקות",
-    "welcome": "ברוך הבא, {name}!"
+    "welcome": "ברוך הבא, {name}!",
+    "signInWithGoogle": "התחבר עם Google",
+    "googleSigningIn": "מתחבר...",
+    "googleSignInFailed": "נכשל בהתחלת התחברות Google",
+    "oauthError": "שגיאת OAuth: {error}",
+    "missingTokens": "חסרים אסימוני אימות",
+    "failedToFetchUser": "נכשל בטעינת פרטי המשתמש",
+    "oauthCallbackError": "אירעה שגיאה במהלך האימות",
+    "oauthSignInFailed": "התחברות Google נכשלה. אנא נסה שוב.",
+    "completingSignIn": "מסיים התחברות...",
+    "pleaseWait": "אנא המתן בזמן שאנו מסיימים את האימות שלך",
+    "signInFailed": "התחברות נכשלה",
+    "redirectingToLogin": "מעביר לדף ההתחברות...",
+    "loading": "טוען...",
+    "or": "או",
+    "login": {
+      "title": "התחברות",
+      "email": "אימייל",
+      "password": "סיסמה",
+      "submit": "התחבר",
+      "noAccount": "אין לך חשבון?",
+      "signUp": "הירשם כאן",
+      "fillAllFields": "אנא מלא את כל השדות",
+      "failedToSignIn": "נכשל בהתחברות"
+    },
+    "register": {
+      "title": "הרשמה",
+      "name": "שם מלא",
+      "email": "אימייל",
+      "password": "סיסמה",
+      "confirmPassword": "אשר סיסמה",
+      "submit": "הירשם",
+      "hasAccount": "יש לך כבר חשבון?",
+      "signIn": "התחבר כאן",
+      "fillAllFields": "אנא מלא את כל השדות",
+      "failedToSignUp": "נכשל בהרשמה"
+    }
   },
   "search": {
     "title": "חיפוש",
