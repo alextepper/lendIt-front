@@ -192,7 +192,6 @@ watch(() => language.currentLocale, (newLocale) => {
 
 /* Control buttons on mobile */
 .navbar-control-btn {
-  padding: 0.375rem 0.5rem;
   min-width: 38px;
   display: flex;
   align-items: center;
@@ -201,7 +200,6 @@ watch(() => language.currentLocale, (newLocale) => {
 
 @media (min-width: 576px) {
   .navbar-control-btn {
-    padding: 0.375rem 0.75rem;
     min-width: auto;
   }
 }

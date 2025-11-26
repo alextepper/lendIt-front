@@ -71,6 +71,14 @@ const photoInput = ref(null);
 const uploadingPhotos = ref(false);
 const editPhotos = ref([]); // Photos in edit mode (with id, url, position)
 const currentPhotoIndex = ref(0); // For carousel
+const fullscreenCarousel = ref(false); // Fullscreen carousel state
+
+// Swipe gesture handling
+const touchStartX = ref(0);
+const touchStartY = ref(0);
+const touchEndX = ref(0);
+const touchEndY = ref(0);
+const minSwipeDistance = 50; // Minimum distance for a swipe
 
 // Store original values for cancel
 const originalItem = ref(null);
@@ -725,6 +733,74 @@ watch(() => [displayPhotos.value.length, editMode.value], () => {
     currentPhotoIndex.value = 0;
   }
 });
+
+// Swipe gesture handlers
+function handleTouchStart(e) {
+  touchStartX.value = e.touches[0].clientX;
+  touchStartY.value = e.touches[0].clientY;
+}
+
+function handleTouchMove(e) {
+  touchEndX.value = e.touches[0].clientX;
+  touchEndY.value = e.touches[0].clientY;
+}
+
+function handleTouchEnd() {
+  if (!touchStartX.value || !touchEndX.value) return;
+  
+  const distanceX = touchStartX.value - touchEndX.value;
+  const distanceY = touchStartY.value - touchEndY.value;
+  
+  // Check if it's a horizontal swipe (more horizontal than vertical)
+  if (Math.abs(distanceX) > Math.abs(distanceY) && Math.abs(distanceX) > minSwipeDistance) {
+    if (distanceX > 0) {
+      // Swipe left - next photo
+      nextPhoto();
+    } else {
+      // Swipe right - previous photo
+      previousPhoto();
+    }
+  }
+  
+  // Reset
+  touchStartX.value = 0;
+  touchStartY.value = 0;
+  touchEndX.value = 0;
+  touchEndY.value = 0;
+}
+
+// Fullscreen carousel functions
+function openFullscreenCarousel() {
+  fullscreenCarousel.value = true;
+  document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeFullscreenCarousel() {
+  fullscreenCarousel.value = false;
+  document.body.style.overflow = ''; // Restore scrolling
+}
+
+// Keyboard navigation for fullscreen
+function handleFullscreenKeydown(e) {
+  if (!fullscreenCarousel.value) return;
+  
+  if (e.key === 'Escape') {
+    closeFullscreenCarousel();
+  } else if (e.key === 'ArrowLeft') {
+    previousPhoto();
+  } else if (e.key === 'ArrowRight') {
+    nextPhoto();
+  }
+}
+
+// Add keyboard listener when fullscreen is open
+watch(fullscreenCarousel, (isOpen) => {
+  if (isOpen) {
+    window.addEventListener('keydown', handleFullscreenKeydown);
+  } else {
+    window.removeEventListener('keydown', handleFullscreenKeydown);
+  }
+});
 </script>
 
 <template>
@@ -1018,12 +1094,19 @@ watch(() => [displayPhotos.value.length, editMode.value], () => {
           <div v-if="!isOwner || editMode" class="image-carousel-container mb-4">
             <div v-if="displayPhotos?.length > 0" class="image-carousel">
               <!-- Main Image Display -->
-              <div class="carousel-main">
+              <div 
+                class="carousel-main"
+                @touchstart="handleTouchStart"
+                @touchmove="handleTouchMove"
+                @touchend="handleTouchEnd"
+              >
                 <div class="ratio ratio-16x9 bg-light rounded">
                   <img
                     :src="getCarouselPhotoUrl(displayPhotos[currentPhotoIndex])"
-                    class="w-100 h-100 object-fit-cover rounded"
+                    class="w-100 h-100 object-fit-cover rounded carousel-image-clickable"
                     :alt="`${item.title} - Photo ${currentPhotoIndex + 1}`"
+                    @click="openFullscreenCarousel"
+                    style="cursor: pointer;"
                   />
                 </div>
                 <!-- Navigation Arrows (only if more than 1 photo) -->
@@ -1241,6 +1324,77 @@ watch(() => [displayPhotos.value.length, editMode.value], () => {
             <OwnerPanel v-if="item?.owner" :owner="item.owner" :item-id="item.id" />
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Fullscreen Carousel Modal -->
+    <div 
+      v-if="fullscreenCarousel && displayPhotos?.length > 0" 
+      class="fullscreen-carousel-modal"
+      @click.self="closeFullscreenCarousel"
+      @touchstart="handleTouchStart"
+      @touchmove="handleTouchMove"
+      @touchend="handleTouchEnd"
+    >
+      <div class="fullscreen-carousel-content">
+        <!-- Close Button -->
+        <button
+          class="fullscreen-close-btn"
+          @click="closeFullscreenCarousel"
+          aria-label="Close fullscreen"
+        >
+          <i class="bi bi-x-lg"></i>
+        </button>
+        
+        <!-- Main Image -->
+        <div class="fullscreen-image-container">
+          <img
+            :src="getCarouselPhotoUrl(displayPhotos[currentPhotoIndex])"
+            :alt="`${item.title} - Photo ${currentPhotoIndex + 1}`"
+            class="fullscreen-image"
+          />
+        </div>
+        
+        <!-- Navigation Arrows -->
+        <template v-if="displayPhotos.length > 1">
+          <button
+            class="fullscreen-nav-btn fullscreen-nav-prev"
+            @click="previousPhoto"
+            aria-label="Previous photo"
+          >
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <button
+            class="fullscreen-nav-btn fullscreen-nav-next"
+            @click="nextPhoto"
+            aria-label="Next photo"
+          >
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          
+          <!-- Photo Counter -->
+          <div class="fullscreen-counter">
+            {{ currentPhotoIndex + 1 }} / {{ displayPhotos.length }}
+          </div>
+          
+          <!-- Thumbnail Strip -->
+          <div class="fullscreen-thumbnails">
+            <button
+              v-for="(photo, index) in displayPhotos"
+              :key="index"
+              class="fullscreen-thumbnail-btn"
+              :class="{ active: index === currentPhotoIndex }"
+              @click="currentPhotoIndex = index"
+              :aria-label="`View photo ${index + 1}`"
+            >
+              <img
+                :src="getCarouselPhotoUrl(photo)"
+                :alt="`Thumbnail ${index + 1}`"
+                class="fullscreen-thumbnail-img"
+              />
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -1759,6 +1913,251 @@ watch(() => [displayPhotos.value.length, editMode.value], () => {
   .thumbnail-btn {
     width: 60px;
     height: 60px;
+  }
+}
+
+/* Fullscreen Carousel Styles */
+.fullscreen-carousel-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fullscreen-carousel-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.fullscreen-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10000;
+  backdrop-filter: blur(10px);
+}
+
+.fullscreen-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.fullscreen-image-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 90vw;
+  max-height: 80vh;
+  margin: 2rem 0;
+}
+
+.fullscreen-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.fullscreen-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10000;
+  backdrop-filter: blur(10px);
+}
+
+.fullscreen-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.fullscreen-nav-prev {
+  left: 2rem;
+}
+
+.fullscreen-nav-next {
+  right: 2rem;
+}
+
+.fullscreen-counter {
+  position: absolute;
+  bottom: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  z-index: 10000;
+  backdrop-filter: blur(10px);
+}
+
+.fullscreen-thumbnails {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 1rem;
+  backdrop-filter: blur(10px);
+  max-width: 90vw;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.fullscreen-thumbnails::-webkit-scrollbar {
+  height: 6px;
+}
+
+.fullscreen-thumbnails::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fullscreen-thumbnails::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.fullscreen-thumbnail-btn {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fullscreen-thumbnail-btn:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.fullscreen-thumbnail-btn.active {
+  border-color: white;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.fullscreen-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.carousel-image-clickable {
+  transition: transform 0.2s ease;
+}
+
+.carousel-image-clickable:hover {
+  transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+  .fullscreen-carousel-content {
+    padding: 1rem;
+  }
+  
+  .fullscreen-close-btn {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+  
+  .fullscreen-nav-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+  
+  .fullscreen-nav-prev {
+    left: 0.5rem;
+  }
+  
+  .fullscreen-nav-next {
+    right: 0.5rem;
+  }
+  
+  .fullscreen-counter {
+    bottom: 5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .fullscreen-thumbnails {
+    bottom: 0.5rem;
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+  
+  .fullscreen-thumbnail-btn {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .fullscreen-image-container {
+    max-height: 70vh;
+    margin: 1rem 0;
   }
 }
 </style>
