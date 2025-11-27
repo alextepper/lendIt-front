@@ -235,12 +235,12 @@ function handlePhotoUpload(event) {
 
   files.forEach(file => {
     if (!validTypes.includes(file.type)) {
-      ui.showToast('Invalid file type. Please upload JPEG, PNG, WebP, or GIF', 'danger');
+      ui.showToast(t('listing.invalidFileType'), 'danger');
       return;
     }
     
     if (file.size > maxSize) {
-      ui.showToast('File size too large. Maximum size is 5MB', 'danger');
+      ui.showToast(t('listing.fileTooLarge'), 'danger');
       return;
     }
 
@@ -305,7 +305,7 @@ async function uploadPhotos() {
     return form.photos.map(photo => photo.url || photo.publicUrl).filter(Boolean);
   } catch (error) {
     console.error('Photo upload error:', error);
-    ui.showToast(error?.response?.data?.message || 'Failed to upload photos', 'danger');
+    ui.showToast(error?.response?.data?.message || t('listing.photoUploadFailed'), 'danger');
     throw error;
   } finally {
     uploadingPhotos.value = false;
@@ -347,17 +347,17 @@ async function addPhotosToItem(itemId, photoUrls) {
 async function submit() {
   // Validation
   if (!form.title || !form.category) {
-    ui.showToast('Please fill in title and category', 'danger');
+    ui.showToast(t('listing.titleAndCategoryRequired'), 'danger');
     return;
   }
   
   if (!form.location && !form.address) {
-    ui.showToast('Please select a location', 'danger');
+    ui.showToast(t('listing.locationRequired'), 'danger');
     return;
   }
 
   if (!form.pricePerDay || form.pricePerDay <= 0) {
-    ui.showToast('Please enter a valid price per day', 'danger');
+    ui.showToast(t('listing.validPriceRequired'), 'danger');
     return;
   }
 
@@ -419,7 +419,7 @@ async function submit() {
         <div class="modal-header border-bottom">
           <h5 class="modal-title fw-bold">
             <i class="bi bi-plus-circle me-2"></i>
-            {{ listing ? 'Edit Listing' : 'Create New Listing' }}
+            {{ listing ? $t('listing.editListing') : $t('listing.createNewListing') }}
           </h5>
           <button class="btn-close" @click="close" aria-label="Close"></button>
         </div>
@@ -427,12 +427,12 @@ async function submit() {
           <!-- Title -->
           <div class="mb-3">
             <label class="form-label fw-semibold">
-              Title <span class="text-danger">*</span>
+              {{ $t('listing.title') }} <span class="text-danger">*</span>
             </label>
             <input 
               v-model="form.title" 
               class="form-control form-control-lg" 
-              placeholder="Enter item title"
+              :placeholder="$t('listing.enterItemTitle')"
             />
           </div>
 
@@ -440,16 +440,16 @@ async function submit() {
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label class="form-label fw-semibold">
-                Category <span class="text-danger">*</span>
+                {{ $t('listing.category') }} <span class="text-danger">*</span>
               </label>
               <select v-model="form.category" class="form-select form-select-lg">
-                <option value="">{{ $t('forms.chooseCategory', 'Choose category…') }}</option>
+                <option value="">{{ $t('forms.chooseCategory') }}</option>
                 <option v-for="cat in localizedCategories" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
               </select>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">
-                Location <span class="text-danger">*</span>
+                {{ $t('listing.location') }} <span class="text-danger">*</span>
               </label>
               <div class="position-relative">
                 <div class="input-group">
@@ -460,7 +460,7 @@ async function submit() {
                     v-model="locationSearchQuery"
                     type="text"
                     class="form-control form-select-lg"
-                    placeholder="Search for location..."
+                    :placeholder="$t('listing.searchForLocation')"
                     @input="searchLocationQuery(locationSearchQuery)"
                     @focus="showingSuggestions = locationSuggestions.length > 0"
                     @blur="handleLocationBlur"
@@ -476,7 +476,7 @@ async function submit() {
                   >
                     <i class="bi bi-geo-alt"></i>
                     <div class="flex-grow-1">
-                      <div class="fw-semibold small">{{ suggestion.display_name?.split(',')[0] || 'Location' }}</div>
+                      <div class="fw-semibold small">{{ suggestion.display_name?.split(',')[0] || $t('listing.location') }}</div>
                       <div class="text-muted" style="font-size: 0.75rem;">{{ suggestion.display_name || '' }}</div>
                     </div>
                   </div>
@@ -489,12 +489,12 @@ async function submit() {
           <div class="card bg-light p-3 mb-3">
             <h6 class="fw-semibold mb-3">
               <i class="bi bi-currency-exchange me-2"></i>
-              Pricing
+              {{ $t('listing.pricing') }}
             </h6>
             <div class="row g-3">
               <div class="col-md-4">
                 <label class="form-label fw-semibold">
-                  Price per Day <span class="text-danger">*</span>
+                  {{ $t('listing.pricePerDay') }} <span class="text-danger">*</span>
                 </label>
                 <div class="input-group">
                   <input 
@@ -510,9 +510,9 @@ async function submit() {
               </div>
               <div class="col-md-4">
                 <label class="form-label fw-semibold">
-                  Initial Price
+                  {{ $t('listing.initialPrice') }}
                   <i class="bi bi-question-circle text-muted ms-1" 
-                     title="One-time fee charged at the start of rental"></i>
+                     :title="$t('listing.initialPriceTooltip')"></i>
                 </label>
                 <div class="input-group">
                   <input 
@@ -528,9 +528,9 @@ async function submit() {
               </div>
               <div class="col-md-4">
                 <label class="form-label fw-semibold">
-                  Deposit
+                  {{ $t('listing.deposit') }}
                   <i class="bi bi-question-circle text-muted ms-1" 
-                     title="Security deposit (refundable)"></i>
+                     :title="$t('listing.depositTooltip')"></i>
                 </label>
                 <div class="input-group">
                   <input 
@@ -546,7 +546,7 @@ async function submit() {
               </div>
             </div>
             <div class="mt-2">
-              <label class="form-label fw-semibold">Currency</label>
+              <label class="form-label fw-semibold">{{ $t('listing.currency') }}</label>
               <select v-model="form.currency" class="form-select">
                 <option value="ILS">ILS (₪)</option>
                 <option value="USD">USD ($)</option>
@@ -560,7 +560,7 @@ async function submit() {
           <div class="mb-3">
             <label class="form-label fw-semibold">
               <i class="bi bi-images me-2"></i>
-              Photos
+              {{ $t('listing.photos') }}
             </label>
             <div class="photo-upload-section">
               <input 
@@ -578,11 +578,11 @@ async function submit() {
                 :disabled="uploadingPhotos"
               >
                 <i class="bi bi-camera me-2"></i>
-                {{ uploadingPhotos ? 'Uploading...' : 'Add Photos' }}
+                {{ uploadingPhotos ? $t('listing.uploading') : $t('listing.addPhotos') }}
               </button>
               <small class="text-muted d-block mt-1">
                 <i class="bi bi-info-circle me-1"></i>
-                Upload up to 10 photos (JPEG, PNG, WebP, GIF, max 5MB each)
+                {{ $t('listing.photoUploadInfo') }}
               </small>
               
               <!-- Photo Preview Grid -->
@@ -602,7 +602,7 @@ async function submit() {
                     <i class="bi bi-x-lg"></i>
                   </button>
                   <div v-if="index === 0" class="badge bg-primary photo-primary-badge">
-                    <i class="bi bi-star-fill me-1"></i>Primary
+                    <i class="bi bi-star-fill me-1"></i>{{ $t('listing.primary') }}
                   </div>
                 </div>
               </div>
@@ -611,14 +611,14 @@ async function submit() {
 
           <!-- Description -->
           <div class="mb-3">
-            <label class="form-label fw-semibold">Description</label>
+            <label class="form-label fw-semibold">{{ $t('listing.description') }}</label>
             <textarea 
               v-model="form.description" 
               rows="5" 
               class="form-control" 
-              placeholder="Describe your item, its condition, features, and any important details..."
+              :placeholder="$t('listing.descriptionPlaceholder')"
             />
-            <small class="text-muted">{{ form.description.length }} characters</small>
+            <small class="text-muted">{{ form.description.length }} {{ $t('listing.characters') }}</small>
           </div>
         </div>
         <div class="modal-footer border-top">
@@ -627,7 +627,7 @@ async function submit() {
             @click="close"
             :disabled="submitting"
           >
-            <i class="bi bi-x-lg me-1"></i>Cancel
+            <i class="bi bi-x-lg me-1"></i>{{ $t('listing.cancel') }}
           </button>
           <button 
             class="btn btn-primary" 
@@ -636,7 +636,7 @@ async function submit() {
           >
             <span v-if="submitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
             <i v-else class="bi bi-check-lg me-1"></i>
-            {{ submitting ? (listing ? 'Saving...' : 'Creating...') : (listing ? 'Save Changes' : 'Create Listing') }}
+            {{ submitting ? (listing ? $t('listing.saving') : $t('listing.creating')) : (listing ? $t('listing.saveChanges') : $t('listing.createListing')) }}
           </button>
         </div>
       </div>

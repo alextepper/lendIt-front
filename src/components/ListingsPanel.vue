@@ -93,7 +93,7 @@ async function remove(it) {
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h2 class="h6 mb-0">My Listings</h2>
     <button class="btn btn-primary btn-sm" @click="openNew">
-      <i class="bi bi-plus-lg me-1"></i>New
+      <i class="bi bi-plus-lg me-1"></i>{{ $t('dashboard.createListing') }}
     </button>
   </div>
 

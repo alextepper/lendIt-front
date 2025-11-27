@@ -223,13 +223,12 @@ watch(() => language.currentLocale, (newLocale) => {
 .language-dropdown,
 .theme-dropdown,
 .navbar-profile-menu {
-  left: auto;
     max-width: calc(100vw - 1rem);
     transform: translateX(0);
 }
 
 /* On small screens, position from right to prevent clipping */
-@media (max-width: 575.98px) {
+@media (max-width: 992px) {
   .language-dropdown,
   .theme-dropdown,
   .navbar-profile-menu {
