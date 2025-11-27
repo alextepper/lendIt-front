@@ -133,10 +133,61 @@ export const useAuthStore = defineStore("auth", {
 
       this.isRefreshing = true;
       try {
-        // Backend handles refresh via httpOnly cookies
-        const { data } = await http.post("/auth/refresh");
-        // Cookies are set automatically by backend
+        // Get refresh token from localStorage as fallback for cross-domain scenarios
+        // Backend will check cookies first, then body, then headers
+        const refreshToken = localStorage.getItem("refresh_token");
+
+        if (!refreshToken) {
+          console.warn(
+            "No refresh token found in localStorage - cookies may not be available in cross-domain scenario"
+          );
+        }
+
+        // Prepare request config with token in both body and header for maximum compatibility
+        const config = {};
+        const refreshPayload = {};
+
+        if (refreshToken) {
+          // Try both common field names in body
+          refreshPayload.refreshToken = refreshToken;
+          refreshPayload.refresh_token = refreshToken;
+
+          // Also add to Authorization header as fallback
+          config.headers = {
+            Authorization: `Bearer ${refreshToken}`,
+          };
+
+          console.log("Sending refresh token in body and Authorization header");
+        } else {
+          console.log(
+            "No refresh token in localStorage, relying on httpOnly cookies"
+          );
+        }
+
+        // Backend handles refresh via httpOnly cookies, but we also send token in body and headers
+        // as fallback for cross-domain scenarios where cookies aren't sent
+        const { data } = await http.post(
+          "/auth/refresh",
+          refreshPayload,
+          config
+        );
+        // Cookies are set automatically by backend (if same-domain)
+        // For cross-domain scenarios, backend may return tokens in response
         console.log("Token refreshed successfully", data);
+
+        // Update tokens in localStorage if backend returns them (for cross-domain scenarios)
+        if (data.accessToken || data.access_token) {
+          localStorage.setItem(
+            "access_token",
+            data.accessToken || data.access_token
+          );
+        }
+        if (data.refreshToken || data.refresh_token) {
+          localStorage.setItem(
+            "refresh_token",
+            data.refreshToken || data.refresh_token
+          );
+        }
 
         // Update user data from the refresh response
         if (data.user) {

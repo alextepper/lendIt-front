@@ -15,6 +15,26 @@ const http = axios.create({
   timeout: 5000, // 5 second timeout to prevent hanging requests
 });
 
+// Request interceptor: Add access token from localStorage to Authorization header
+// This is a fallback for mobile browsers where cross-domain cookies aren't sent
+http.interceptors.request.use(
+  (config) => {
+    // Get access token from localStorage as fallback for cross-domain scenarios
+    // Backend will check cookies first, then Authorization header
+    const accessToken = localStorage.getItem("access_token");
+    
+    if (accessToken && !config.headers.Authorization) {
+      // Only add if not already set (to avoid overriding explicit headers)
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Handle 401 with one-shot refresh logic
 let refreshing = null;
 http.interceptors.response.use(
