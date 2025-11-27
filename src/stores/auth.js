@@ -264,7 +264,7 @@ export const useAuthStore = defineStore("auth", {
       }
 
       // Build the Google OAuth URL - backendBaseURL should always be absolute at this point
-      const oauthUrl = `${backendBaseURL}/auth/google`;
+      const oauthUrl = `${backendBaseURL}auth/google`;
 
       // Build URL object for query params
       const url = new URL(oauthUrl);
