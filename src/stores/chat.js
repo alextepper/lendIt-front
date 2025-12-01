@@ -248,12 +248,10 @@ export const useChatStore = defineStore("chat", {
 
       // Handle connection status
       websocketService.on("connected", () => {
-        console.log("WebSocket connected");
         this.wsConnected = true;
       });
 
       websocketService.on("disconnected", () => {
-        console.log("WebSocket disconnected");
         this.wsConnected = false;
       });
 

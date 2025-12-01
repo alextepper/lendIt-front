@@ -71,11 +71,7 @@ function formatTime(dateString) {
 </script>
 
 <template>
-  <div class="conversations-list h-100 d-flex flex-column">
-    <div class="conversations-header p-3 border-bottom">
-      <h5 class="mb-0">{{ $t('messages.title') }}</h5>
-    </div>
-    
+  <div class="conversations-list h-100 d-flex flex-column">    
     <!-- Tabs -->
     <div class="border-bottom">
       <ul class="nav nav-tabs px-3 pt-2" style="border-bottom: none;">

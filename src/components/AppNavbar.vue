@@ -1,13 +1,24 @@
 <template>
-  <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom">
-    <div class="container-fluid container-lg">
+  <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom app-navbar">
+    <div class="container-fluid container">
       <router-link class="navbar-brand fw-semibold" to="/">{{ $t('app.title') }}</router-link>
 
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navMain"
+        ref="navToggler"
+      >
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <div class="collapse navbar-collapse" id="navMain">
+      <div
+        class="collapse navbar-collapse container"
+        id="navMain"
+        ref="navMain"
+        @click="handleNavClick"
+      >
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
             <router-link class="nav-link" to="/search">
@@ -147,6 +158,15 @@
     </div>
   </nav>
 
+  <!-- Backdrop for mobile nav / dropdowns -->
+  <transition name="navbar-fade">
+    <div
+      v-if="navOpen"
+      class="navbar-backdrop"
+      @click="closeNav"
+    ></div>
+  </transition>
+
   <!-- Debug log panel -->
   <div v-if="debugEnabled && showDebug" class="debug-log-panel">
     <div class="debug-log-header d-flex align-items-center justify-content-between">
@@ -184,7 +204,7 @@ import { useThemeStore } from '../stores/theme'
 import { useChatStore } from '../stores/chat'
 import { useLanguageStore } from '../stores/language'
 import { useDebugStore } from '../stores/debug'
-import { watch, ref, computed } from 'vue'
+import { watch, ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -194,6 +214,9 @@ const language = useLanguageStore()
 const debug = useDebugStore()
 
 const showDebug = ref(false)
+const navOpen = ref(false)
+const navMain = ref(null)
+const navToggler = ref(null)
 
 const debugEnabled = computed(() => {
   if (typeof window === 'undefined') return import.meta.env.DEV
@@ -244,6 +267,90 @@ async function copyLogs() {
   }
 }
 
+function handleNavClick(event) {
+  // Only auto-collapse on small screens
+  if (typeof window === 'undefined' || window.innerWidth >= 992) return
+  if (!navOpen.value) return
+
+  const target = event.target
+  if (!target) return
+
+  // Find closest actionable element inside the nav
+  const clickable = target.closest('.nav-link, .dropdown-item, .btn')
+
+  if (!clickable) return
+
+  // Don't collapse when clicking dropdown toggles (they manage their own open state)
+  if (
+    clickable.hasAttribute('data-bs-toggle') &&
+    clickable.getAttribute('data-bs-toggle') === 'dropdown'
+  ) {
+    return
+  }
+
+  // For normal nav links / buttons, close the nav (with animation) after click
+  closeNav()
+}
+
+function closeNav() {
+  // If nav isn't open, nothing to do
+  if (!navOpen.value) return
+
+  // Clear our open state so backdrop fades out
+  navOpen.value = false
+
+  // Prefer to trigger the same behavior as clicking the toggler,
+  // so we get the exact same Bootstrap collapse animation.
+  if (navToggler.value) {
+    const expanded = navToggler.value.getAttribute('aria-expanded') === 'true'
+    if (expanded) {
+      navToggler.value.click()
+      return
+    }
+  }
+
+  if (!navMain.value) return
+
+  // As a final fallback (if Bootstrap JS isn't active), just hide the collapse without animation
+  try {
+    navMain.value.classList.remove('show')
+    navMain.value.style.height = ''
+  } catch (e) {
+    console.error('Failed to manually close navbar collapse:', e)
+  }
+}
+
+onMounted(() => {
+  if (!navMain.value || typeof window === 'undefined') return
+
+  const el = navMain.value
+
+  const handleShown = () => {
+    navOpen.value = true
+  }
+  const handleHidden = () => {
+    navOpen.value = false
+  }
+
+  el.addEventListener('shown.bs.collapse', handleShown)
+  el.addEventListener('hidden.bs.collapse', handleHidden)
+
+  // Store handlers on element for cleanup
+  el._navShownHandler = handleShown
+  el._navHiddenHandler = handleHidden
+})
+
+onBeforeUnmount(() => {
+  if (!navMain.value) return
+  const el = navMain.value
+  if (el._navShownHandler) {
+    el.removeEventListener('shown.bs.collapse', el._navShownHandler)
+  }
+  if (el._navHiddenHandler) {
+    el.removeEventListener('hidden.bs.collapse', el._navHiddenHandler)
+  }
+})
+
 // Debug language changes
 watch(() => language.currentLocale, (newLocale) => {
   console.log('Language changed in navbar:', newLocale)
@@ -251,6 +358,32 @@ watch(() => language.currentLocale, (newLocale) => {
 </script>
 
 <style scoped>
+/* Navbar always above content */
+.app-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1040; /* Above page content and backdrop */
+}
+
+/* Backdrop when navbar is expanded on mobile */
+.navbar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1030; /* Below navbar but above page content */
+}
+
+/* Backdrop fade animation */
+.navbar-fade-enter-active,
+.navbar-fade-leave-active {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.navbar-fade-enter-from,
+.navbar-fade-leave-to {
+  opacity: 0;
+}
+
 /* Container adjustments for small screens */
 .container-fluid.container-lg {
   padding-left: 0.75rem;
@@ -385,6 +518,23 @@ watch(() => language.currentLocale, (newLocale) => {
     margin-top: 0.5rem;
     padding-top: 0.5rem;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  /* Make the collapsed menu overlay the page instead of pushing content down */
+  .app-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1040;
+  }
+
+  .app-navbar .navbar-collapse {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background-color: var(--bs-body-bg);
+    box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
   }
 }
 

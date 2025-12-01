@@ -36,45 +36,50 @@ function showConversations() {
 
 <template>
   <div class="messages-page">
-    <div class="row g-0">
-      <!-- Conversations Sidebar (Sticky) -->
-      <div
-        class="col-12 col-md-4 col-lg-3 conversations-sidebar"
-        :class="{
-          'd-none d-md-block': !showSidebarMobile && hasActive
-        }"
-      >
-        <ConversationsList @select="selectConv" />
-      </div>
-      
-      <!-- Chat Window (Sticky layout inside) -->
-      <div
-        class="col-12 col-md-8 col-lg-9 chat-column"
-        :class="{
-          'd-none d-md-block': showSidebarMobile && !hasActive
-        }"
-      >
-        <!-- Mobile: back button to conversations -->
+    <div class="messages-container container-fluid container-xl h-100">
+      <div class="row g-0 messages-card shadow-sm rounded-3 overflow-hidden">
+        <!-- Conversations Sidebar -->
+        <div
+          class="conversations-sidebar"
+          :class="{
+            'col-12 col-md-4 col-lg-3': hasActive,
+            'col-12': !hasActive,
+            'd-none d-md-block': !showSidebarMobile && hasActive
+          }"
+        >
+          <ConversationsList @select="selectConv" />
+        </div>
+        
+        <!-- Chat Window -->
         <div
           v-if="hasActive"
-          class="chat-mobile-header d-md-none d-flex align-items-center px-3 py-2 border-bottom"
+          class="col-12 col-md-8 col-lg-9 chat-column"
+          :class="{
+            'd-none d-md-block': showSidebarMobile
+          }"
         >
-          <button
-            type="button"
-            class="btn btn-link btn-sm px-0 me-2"
-            @click="showConversations"
+          <!-- Mobile: back button to conversations -->
+          <div
+            v-if="hasActive"
+            class="chat-mobile-header d-md-none d-flex align-items-center px-3 py-2 border-bottom"
           >
-            <i class="bi bi-arrow-left"></i>
-          </button>
-          <span class="fw-semibold">{{ $t('messages.chat') }}</span>
-        </div>
+            <button
+              type="button"
+              class="btn btn-link btn-sm px-0 me-2"
+              @click="showConversations"
+            >
+              <i class="bi bi-arrow-left"></i>
+            </button>
+            <span class="fw-semibold">{{ $t('messages.chat') }}</span>
+          </div>
 
-        <ChatWindow v-if="chat.activeId" />
-        <div v-else class="d-flex align-items-center justify-content-center h-100">
-          <div class="text-center text-secondary">
-            <i class="bi bi-chat-dots display-1 mb-3"></i>
-            <h5>{{ $t('messages.selectConversation') }}</h5>
-            <p class="text-muted">{{ $t('messages.chooseConversation') }}</p>
+          <ChatWindow v-if="chat.activeId" />
+          <div v-else class="d-flex align-items-center justify-content-center h-100">
+            <div class="text-center text-secondary p-4">
+              <i class="bi bi-chat-dots display-1 mb-3"></i>
+              <h5>{{ $t('messages.selectConversation') }}</h5>
+              <p class="text-muted mb-0">{{ $t('messages.chooseConversation') }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -90,7 +95,17 @@ function showConversations() {
   right: 0;
   bottom: 0;
   overflow: hidden;
-  background: #f8f9fa;
+  background: radial-gradient(circle at top left, #e9f2ff 0, #f8f9fa 45%, #fdfdfd 100%);
+}
+
+.messages-container {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.messages-card {
+  background: #ffffff;
+  height: 100%;
 }
 
 .conversations-sidebar {
@@ -134,16 +149,23 @@ function showConversations() {
 
 @media (max-width: 768px) {
   .messages-page {
-    /* On small screens, use a normal scrolling layout instead of fixed viewport.
-       This makes the page usable on phones where the fixed layout was cramped. */
-    position: relative;
+    /* On small screens, use the dynamic viewport height so the chat
+       fills the visible area and the input sticks above the keyboard. */
+    position: fixed;
     top: 56px;
     left: 0;
     right: 0;
     bottom: auto;
-    height: auto;
+    height: calc(100vh - 56px);
     min-height: calc(100vh - 56px);
-    overflow: visible;
+    overflow: hidden;
+  }
+
+  @supports (height: 100dvh) {
+    .messages-page {
+      height: calc(100dvh - 56px);
+      min-height: calc(100dvh - 56px);
+    }
   }
 
   .conversations-sidebar {

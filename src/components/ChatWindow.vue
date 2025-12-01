@@ -131,15 +131,13 @@ onMounted(scrollToBottom);
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 1rem;
-  background-color: var(--bs-light);
-  background-image: 
-    linear-gradient(45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(0, 0, 0, 0.02) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.02) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.02) 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  padding: 0.75rem 0.75rem 0.5rem;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.02) 0%,
+    rgba(0, 0, 0, 0) 40%,
+    rgba(0, 0, 0, 0.03) 100%
+  );
 }
 
 /* Custom scrollbar for messages */
@@ -172,14 +170,17 @@ onMounted(scrollToBottom);
 
 .message-row {
   gap: 0.5rem;
+  max-width: 100%;
 }
 
 .message-bubble {
   max-width: 70%;
   padding: 0.75rem 1rem;
   border-radius: 1rem;
-  background-color: white;
+  background-color: #ffffff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  word-wrap: break-word;
+  word-break: break-word;
 }
 
 .message-wrapper.message-self .message-bubble {
@@ -201,6 +202,7 @@ onMounted(scrollToBottom);
 .message-time {
   font-size: 0.75rem;
   opacity: 0.7;
+  text-align: right;
 }
 
 /* Chat Input - Sticky at bottom */
@@ -209,6 +211,7 @@ onMounted(scrollToBottom);
   bottom: 0;
   z-index: 10;
   padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   background-color: var(--bs-body-bg);
   border-top: 1px solid #dee2e6;
   flex-shrink: 0;
@@ -263,7 +266,7 @@ onMounted(scrollToBottom);
   }
 
   .chat-input {
-    padding: 0.5rem 0.75rem 0.75rem;
+    padding: 0.5rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
   }
 
   .input-group .form-control {

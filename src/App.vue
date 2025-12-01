@@ -5,7 +5,7 @@
   <AppNavbar />
 
   <main class="py-4">
-    <div class="container">
+    <div class="container-lg">
       <ErrorBoundary v-slot:fallback="{ error, reset }">
         <div class="alert alert-danger d-flex justify-content-between align-items-start">
           <div>
