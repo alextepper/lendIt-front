@@ -89,6 +89,16 @@ export const useAuthStore = defineStore("auth", {
           console.log("User authenticated with existing session");
           return; // Success! User is authenticated, no need to refresh
         } catch (fetchError) {
+          // If we're on the OAuth callback route, let the callback page handle tokens
+          // to avoid calling /auth/refresh before tokens are stored in localStorage.
+          const currentRoute = router.currentRoute.value;
+          if (currentRoute?.name === "oauth-callback") {
+            console.log(
+              "Initialization: on oauth-callback route, skipping automatic refresh"
+            );
+            return;
+          }
+
           // If /auth/me fails with 401, try to refresh token
           if (fetchError?.response?.status === 401 && this.refreshTokenValid) {
             try {
@@ -137,12 +147,6 @@ export const useAuthStore = defineStore("auth", {
         // Backend will check cookies first, then body, then headers
         const refreshToken = localStorage.getItem("refresh_token");
 
-        if (!refreshToken) {
-          console.warn(
-            "No refresh token found in localStorage - cookies may not be available in cross-domain scenario"
-          );
-        }
-
         // Prepare request config with token in both body and header for maximum compatibility
         const config = {};
         const refreshPayload = {};
@@ -159,9 +163,10 @@ export const useAuthStore = defineStore("auth", {
 
           console.log("Sending refresh token in body and Authorization header");
         } else {
-          console.log(
-            "No refresh token in localStorage, relying on httpOnly cookies"
+          console.warn(
+            "No refresh token found in localStorage - skipping /auth/refresh call"
           );
+          throw new Error("No refresh token available for refresh");
         }
 
         // Backend handles refresh via httpOnly cookies, but we also send token in body and headers
