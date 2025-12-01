@@ -17,6 +17,48 @@ import { useThemeStore } from "./stores/theme";
 import { useChatStore } from "./stores/chat";
 import { useLanguageStore } from "./stores/language";
 
+// Debug helper: mirror console output into alert() for mobile debugging.
+// Enabled in development or when URL contains ?debugAlerts=1
+if (
+  typeof window !== "undefined" &&
+  (import.meta.env.DEV ||
+    window.location.search.includes("debugAlerts=1"))
+) {
+  const originalLog = console.log;
+  const originalWarn = console.warn;
+  const originalError = console.error;
+  const originalInfo = console.info;
+
+  function toMessage(args) {
+    try {
+      return args
+        .map((a) =>
+          typeof a === "string" ? a : JSON.stringify(a, null, 2)
+        )
+        .join(" ");
+    } catch {
+      return args.join(" ");
+    }
+  }
+
+  console.log = (...args) => {
+    originalLog(...args);
+    alert("[log] " + toMessage(args));
+  };
+  console.warn = (...args) => {
+    originalWarn(...args);
+    alert("[warn] " + toMessage(args));
+  };
+  console.error = (...args) => {
+    originalError(...args);
+    alert("[error] " + toMessage(args));
+  };
+  console.info = (...args) => {
+    originalInfo(...args);
+    alert("[info] " + toMessage(args));
+  };
+}
+
 const app = createApp(App);
 const pinia = createPinia();
 app.use(pinia);
