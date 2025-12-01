@@ -251,14 +251,14 @@ async function onAvatarChange(ev) {
     </div>
 
     <!-- User Items Section -->
-    <div class="mt-4">
+    <!-- <div class="mt-4">
       <UserItems />
-    </div>
+    </div> -->
 
     <!-- User History Section -->
-    <div class="mt-4">
+    <!-- <div class="mt-4">
       <UserHistory />
-    </div>
+    </div> -->
   </div>
 </template>
 

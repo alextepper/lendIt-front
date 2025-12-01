@@ -607,6 +607,11 @@ onMounted(() => {
   background: #ffffff;
   transition: all 0.3s ease;
   cursor: pointer;
+  /* iOS Safari fixes */
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 48px; /* Better touch target on mobile */
+  box-sizing: border-box;
 }
 
 .date-input:focus {
@@ -929,6 +934,19 @@ onMounted(() => {
   .date-inputs {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+  
+  .date-input {
+    padding: 14px 16px;
+    font-size: 16px; /* Prevent iOS zoom on focus */
+    min-height: 48px;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  .date-label {
+    font-size: 12px;
+    margin-bottom: 6px;
   }
   
   .duration-content {

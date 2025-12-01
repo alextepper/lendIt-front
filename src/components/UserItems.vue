@@ -36,7 +36,7 @@ async function loadUserItems() {
 </script>
 
 <template>
-  <div class="card p-3">
+  <div>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h3 class="h6 mb-0">{{ t('dashboard.myItemsForRent') }}</h3>
       <router-link 

@@ -146,7 +146,7 @@ function getRoleText(role, isRental) {
 </script>
 
 <template>
-  <div class="card p-3">
+  <div>
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h3 class="h6 mb-0">{{ t('dashboard.rentalHistory') }}</h3>
       <div class="btn-group btn-group-sm">
@@ -288,9 +288,9 @@ function getRoleText(role, isRental) {
 
 .history-item:hover {
   background-color: rgba(0, 0, 0, 0.02);
-  margin: 0 -1rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  margin: 0 -0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
   border-radius: 0.375rem;
 }
 
@@ -305,12 +305,46 @@ function getRoleText(role, isRental) {
 }
 
 @media (max-width: 768px) {
-  .col-md-3 {
-    margin-top: 0.5rem;
+  .card {
+    padding: 0.75rem;
   }
-  
+
+  .history-item {
+    padding: 0.75rem 0;
+  }
+
+  .history-item:hover {
+    margin: 0 -0.25rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .row.g-3.align-items-center {
+    row-gap: 0.5rem;
+  }
+
+  .col-md-6,
+  .col-md-3 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .col-md-3 {
+    margin-top: 0.25rem;
+  }
+
   .text-md-end {
     text-align: left !important;
+  }
+
+  .btn-group-sm .btn {
+    font-size: 0.8rem;
+    padding-inline: 0.5rem;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
   }
 }
 </style>
