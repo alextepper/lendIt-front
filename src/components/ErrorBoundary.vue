@@ -23,7 +23,22 @@ export default {
     if (this.err) {
       return this.$slots.fallback
         ? this.$slots.fallback({ error: this.err, reset: this.reset })
-        : h("div", { class: "alert alert-danger" }, "Something went wrong.");
+        : h(
+            "div",
+            { class: "alert alert-danger" },
+            [
+              h("div", { class: "fw-semibold mb-1" }, "Something went wrong."),
+              h("div", { class: "small text-muted mb-1" }, String(this.err && (this.err.message || this.err))),
+              h(
+                "pre",
+                {
+                  class: "small mb-0",
+                  style: "white-space: pre-wrap; word-break: break-word;",
+                },
+                this.err && this.err.stack ? String(this.err.stack) : ""
+              ),
+            ]
+          );
     }
     return this.$slots.default?.();
   },
