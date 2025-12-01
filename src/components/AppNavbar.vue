@@ -152,6 +152,7 @@
     <div class="debug-log-header d-flex align-items-center justify-content-between">
       <span class="fw-semibold">Debug Logs</span>
       <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-secondary" @click="copyLogs">Copy</button>
         <button class="btn btn-sm btn-outline-secondary" @click="debug.clear()">Clear</button>
         <button class="btn btn-sm btn-outline-secondary" @click="showDebug = false">Close</button>
       </div>
@@ -210,6 +211,38 @@ const debugEnabled = computed(() => {
 })
 
 const reversedLogs = computed(() => [...debug.logs].reverse())
+
+async function copyLogs() {
+  try {
+    const text = debug.logs
+      .map((log) => {
+        const time = new Date(log.timestamp).toISOString()
+        return `[${time}] ${log.level.toUpperCase()}: ${log.message}`
+      })
+      .join('\n')
+
+    if (!text) {
+      return
+    }
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
+
+    console.info('Debug logs copied to clipboard')
+  } catch (e) {
+    console.error('Failed to copy debug logs', e)
+  }
+}
 
 // Debug language changes
 watch(() => language.currentLocale, (newLocale) => {
