@@ -25,35 +25,45 @@ app.use(router);
 app.use(i18n);
 
 // Debug helper: capture console output into Pinia store for in-app log viewer.
-// Enabled in development or when URL contains ?debugLogs=1
-if (
-  typeof window !== "undefined" &&
-  (import.meta.env.DEV ||
-    window.location.search.includes("debugLogs=1"))
-) {
-  const debug = useDebugStore();
+// Enabled in development, or when URL contains ?debugLogs=1 (persists in localStorage).
+if (typeof window !== "undefined") {
+  try {
+    const urlHasFlag = window.location.search.includes("debugLogs=1");
+    if (urlHasFlag) {
+      window.localStorage.setItem("debugLogs", "1");
+    }
 
-  const originalLog = console.log;
-  const originalWarn = console.warn;
-  const originalError = console.error;
-  const originalInfo = console.info;
+    const storedFlag = window.localStorage.getItem("debugLogs") === "1";
+    const debugLogsEnabled = import.meta.env.DEV || urlHasFlag || storedFlag;
 
-  console.log = (...args) => {
-    originalLog(...args);
-    debug.addLog("log", args);
-  };
-  console.warn = (...args) => {
-    originalWarn(...args);
-    debug.addLog("warn", args);
-  };
-  console.error = (...args) => {
-    originalError(...args);
-    debug.addLog("error", args);
-  };
-  console.info = (...args) => {
-    originalInfo(...args);
-    debug.addLog("info", args);
-  };
+    if (debugLogsEnabled) {
+      const debug = useDebugStore();
+
+      const originalLog = console.log;
+      const originalWarn = console.warn;
+      const originalError = console.error;
+      const originalInfo = console.info;
+
+      console.log = (...args) => {
+        originalLog(...args);
+        debug.addLog("log", args);
+      };
+      console.warn = (...args) => {
+        originalWarn(...args);
+        debug.addLog("warn", args);
+      };
+      console.error = (...args) => {
+        originalError(...args);
+        debug.addLog("error", args);
+      };
+      console.info = (...args) => {
+        originalInfo(...args);
+        debug.addLog("info", args);
+      };
+    }
+  } catch {
+    // If localStorage is not available, just skip debug wiring
+  }
 }
 
 const theme = useThemeStore();

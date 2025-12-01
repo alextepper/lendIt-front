@@ -194,11 +194,20 @@ const debug = useDebugStore()
 
 const showDebug = ref(false)
 
-const debugEnabled = true
-//     computed(() => {
-//       if (typeof window === 'undefined') return import.meta.env.DEV
-//       return import.meta.env.DEV || window.location.search.includes('debugLogs=1')
-// })
+const debugEnabled = computed(() => {
+  if (typeof window === 'undefined') return import.meta.env.DEV
+
+  try {
+    const urlHasFlag = window.location.search.includes('debugLogs=1')
+    const storedFlag =
+      typeof window !== 'undefined' &&
+      window.localStorage.getItem('debugLogs') === '1'
+
+    return import.meta.env.DEV || urlHasFlag || storedFlag
+  } catch {
+    return import.meta.env.DEV
+  }
+})
 
 const reversedLogs = computed(() => [...debug.logs].reverse())
 
