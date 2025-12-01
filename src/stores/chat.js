@@ -299,13 +299,38 @@ export const useChatStore = defineStore("chat", {
 
       // Add message to the thread if it's loaded
       if (this.messages[threadId]) {
-        // Check if message already exists (avoid duplicates)
-        const exists = this.messages[threadId].some((m) => m.id === message.id);
-        if (!exists) {
-          this.messages[threadId] = [
-            ...this.messages[threadId],
-            transformedMessage,
-          ];
+        // If this is our own message, try to reconcile with optimistic one instead of duplicating
+        if (transformedMessage.from_self) {
+          const idx = this.messages[threadId].findIndex(
+            (m) => m._optimistic && m.text === transformedMessage.text
+          );
+
+          if (idx !== -1) {
+            // Replace optimistic message with the real one from WebSocket
+            this.messages[threadId].splice(idx, 1, transformedMessage);
+          } else {
+            // Fallback – only add if not already present by id
+            const existsById = this.messages[threadId].some(
+              (m) => m.id === transformedMessage.id
+            );
+            if (!existsById) {
+              this.messages[threadId] = [
+                ...this.messages[threadId],
+                transformedMessage,
+              ];
+            }
+          }
+        } else {
+          // For messages from others, just avoid duplicates by id
+          const exists = this.messages[threadId].some(
+            (m) => m.id === transformedMessage.id
+          );
+          if (!exists) {
+            this.messages[threadId] = [
+              ...this.messages[threadId],
+              transformedMessage,
+            ];
+          }
         }
       }
 
