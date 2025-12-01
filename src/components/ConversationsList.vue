@@ -2,6 +2,7 @@
 import { computed, ref, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useChatStore } from '../stores/chat';
+import { getItemPhotoUrl } from '../utils/imageUtils';
 
 const { t } = useI18n();
 const chat = useChatStore();
@@ -42,6 +43,19 @@ onMounted(() => {
 
 function getDisplayName(conversation) {
   return conversation.name || conversation.otherUser?.username || t('messages.unknownUser');
+}
+
+function getItemImageUrl(item) {
+  if (!item) return null;
+  // Use the primary image from photos[0]?.url (position 0)
+  if (item.photos && item.photos.length > 0 && item.photos[0]?.url) {
+    return getItemPhotoUrl(item.photos[0]);
+  }
+  // Fallback to thumbnail if available
+  if (item.thumbnail) {
+    return getItemPhotoUrl(item.thumbnail);
+  }
+  return null;
 }
 
 async function handleArchive(conversationId, archived) {
@@ -128,12 +142,20 @@ function formatTime(dateString) {
           <div class="d-flex gap-3 align-items-start">
             <div class="position-relative" @click="emit('select', c.id)" style="cursor: pointer;">
               <img
-                :src="c.avatar || c.otherUser?.avatar || 'https://placehold.co/48x48'"
-                class="rounded-circle"
+                v-if="getItemImageUrl(c.item)"
+                :src="getItemImageUrl(c.item)"
+                class="rounded"
                 width="48"
                 height="48"
                 style="object-fit: cover;"
               />
+              <div 
+                v-else
+                class="rounded d-flex align-items-center justify-content-center bg-light position-relative"
+                style="width: 48px; height: 48px;"
+              >
+                <i class="bi bi-box text-muted"></i>
+              </div>
               <span 
                 v-if="c.unread" 
                 class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -144,18 +166,31 @@ function formatTime(dateString) {
             
             <div class="flex-grow-1 min-width-0" @click="emit('select', c.id)" style="cursor: pointer;">
               <div class="d-flex justify-content-between align-items-start mb-1">
-                <strong class="text-truncate me-2">{{ getDisplayName(c) }}</strong>
+                <strong class="text-truncate me-2">
+                  <span 
+                    v-if="c.item" 
+                    :class="activeTab === 'active' ? 'text-dark' : 'text-secondary'"
+                  >
+                    {{ c.item.title }}
+                  </span>
+                  <span 
+                    v-else
+                    :class="activeTab === 'active' ? 'text-dark' : 'text-secondary'"
+                  >
+                    {{ getDisplayName(c) }}
+                  </span>
+                </strong>
                 <small class="text-muted flex-shrink-0">{{ formatTime(c.last_at) }}</small>
               </div>
               
               <div class="small text-truncate" :class="c.unread ? 'fw-semibold' : 'text-muted'">
-                <span v-if="c.item" class="me-1">📦</span>
                 <span v-if="c.last_text">{{ c.last_text }}</span>
                 <span v-else class="fst-italic">{{ $t('messages.startConversation') }}</span>
               </div>
               
               <div v-if="c.item" class="small text-muted text-truncate mt-1">
-                {{ c.item.title }}
+                <i class="bi bi-person me-1"></i>
+                {{ getDisplayName(c) }}
               </div>
             </div>
 
@@ -306,5 +341,14 @@ function formatTime(dateString) {
   .archive-btn {
     opacity: 1;
   }
+}
+
+.item-link {
+  transition: color 0.2s ease;
+}
+
+.item-link:hover {
+  color: var(--bs-primary) !important;
+  text-decoration: underline !important;
 }
 </style>

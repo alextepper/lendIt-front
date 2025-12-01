@@ -1065,14 +1065,14 @@ watch(fullscreenCarousel, (isOpen) => {
                 <i class="bi bi-chat-dots"></i>
                 <span class="d-none d-lg-inline ms-1">{{ $t('item.message') }}</span>
               </button>
-              <button
+              <!-- <button
                 class="btn btn-sm btn-outline-danger"
                 type="button"
                 title="Report"
               >
                 <i class="bi bi-flag"></i>
                 <span class="d-none d-lg-inline ms-1">{{ $t('item.report') }}</span>
-              </button>
+              </button> -->
             </template>
             
             <!-- Share button (always visible) -->
@@ -1102,14 +1102,17 @@ watch(fullscreenCarousel, (isOpen) => {
                 @touchmove="handleTouchMove"
                 @touchend="handleTouchEnd"
               >
-                <div class="ratio ratio-16x9 bg-light rounded">
-                  <img
-                    :src="getCarouselPhotoUrl(displayPhotos[currentPhotoIndex])"
-                    class="w-100 h-100 object-fit-cover rounded carousel-image-clickable"
-                    :alt="`${item.title} - Photo ${currentPhotoIndex + 1}`"
-                    @click="openFullscreenCarousel"
-                    style="cursor: pointer;"
-                  />
+                <div class="ratio ratio-16x9 bg-light rounded carousel-image-wrapper">
+                  <transition name="carousel-fade" mode="out-in">
+                    <img
+                      :key="currentPhotoIndex"
+                      :src="getCarouselPhotoUrl(displayPhotos[currentPhotoIndex])"
+                      class="w-100 h-100 object-fit-cover rounded carousel-image-clickable carousel-image"
+                      :alt="`${item.title} - Photo ${currentPhotoIndex + 1}`"
+                      @click="openFullscreenCarousel"
+                      style="cursor: pointer;"
+                    />
+                  </transition>
                 </div>
                 <!-- Navigation Arrows (only if more than 1 photo) -->
                 <template v-if="displayPhotos.length > 1">
@@ -1755,6 +1758,43 @@ watch(fullscreenCarousel, (isOpen) => {
 .carousel-main {
   position: relative;
   margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.carousel-image-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.carousel-image-wrapper .ratio {
+  position: relative;
+}
+
+.carousel-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Carousel fade transition animation */
+.carousel-fade-enter-active {
+  transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+}
+
+.carousel-fade-leave-active {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.carousel-fade-enter-from {
+  opacity: 0;
+  transform: scale(1.05);
+}
+
+.carousel-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
 }
 
 .carousel-btn {

@@ -1,12 +1,30 @@
 <script setup>
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { nextTick, onMounted, ref, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useChatStore } from '../stores/chat';
+import { getItemPhotoUrl } from '../utils/imageUtils';
 
 const { t } = useI18n();
 const chat = useChatStore();
 const input = ref('');
 const messagesEnd = ref(null);
+
+const emit = defineEmits(['back']);
+
+// Get item image URL - uses primary image from item.photos[0]?.url
+const itemImageUrl = computed(() => {
+  if (!chat.activeConv?.item) return null;
+  const item = chat.activeConv.item;
+  // Use the primary image from photos[0]?.url (position 0)
+  if (item.photos && item.photos.length > 0 && item.photos[0]?.url) {
+    return getItemPhotoUrl(item.photos[0]);
+  }
+  // Fallback to thumbnail if available
+  if (item.thumbnail) {
+    return getItemPhotoUrl(item.thumbnail);
+  }
+  return null;
+});
 
 function scrollToBottom() {
   nextTick(() => messagesEnd.value?.scrollIntoView({ behavior: 'smooth' }));
@@ -38,18 +56,46 @@ onMounted(scrollToBottom);
   <div class="chat-window">
     <!-- Chat Header (Sticky) -->
     <div class="chat-header">
+      <!-- Mobile back button -->
+      <button
+        type="button"
+        class="btn btn-link btn-sm px-2 me-2 d-md-none chat-back-btn"
+        @click="emit('back')"
+        :aria-label="$t('messages.backToConversations')"
+      >
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      
       <img 
-        :src="chat.activeConv?.avatar || chat.activeConv?.otherUser?.avatar || 'https://placehold.co/48x48'" 
-        class="rounded-circle" 
-        width="48" 
+        v-if="itemImageUrl"
+        :src="itemImageUrl" 
+        class="rounded" 
+        width="48"
         height="48"
         style="object-fit: cover;"
       />
+      <div 
+        v-else
+        class="rounded d-flex align-items-center justify-content-center bg-light"
+        style="width: 48px; height: 48px;"
+      >
+        <i class="bi bi-box text-muted"></i>
+      </div>
       <div class="flex-grow-1">
-        <h6 class="mb-0">{{ chat.activeConv?.name || chat.activeConv?.otherUser?.username || $t('messages.chat') }}</h6>
+        <h6 class="mb-0">
+          <router-link
+            v-if="chat.activeConv?.item"
+            :to="{ name: 'item', params: { id: chat.activeConv.item.id } }"
+            class="text-decoration-none text-dark item-link"
+            @click.stop
+          >
+            {{ chat.activeConv.item.title }}
+          </router-link>
+          <span v-else>{{ chat.activeConv?.name || chat.activeConv?.otherUser?.username || $t('messages.chat') }}</span>
+        </h6>
         <div v-if="chat.activeConv?.item" class="small text-muted d-flex align-items-center">
-          <i class="bi bi-box-seam me-1"></i>
-          {{ chat.activeConv.item.title }}
+          <i class="bi bi-person me-1"></i>
+          {{ chat.activeConv?.name || chat.activeConv?.otherUser?.username || chat.activeConv?.userB?.username }}
         </div>
       </div>
       <button class="btn btn-outline-secondary btn-sm">
@@ -124,6 +170,20 @@ onMounted(scrollToBottom);
   border-bottom: 1px solid #dee2e6;
   min-height: 80px;
   flex-shrink: 0;
+}
+
+.chat-back-btn {
+  color: var(--bs-body-color);
+  text-decoration: none;
+  padding: 0.5rem;
+  margin: -0.5rem;
+  flex-shrink: 0;
+}
+
+.chat-back-btn:hover {
+  color: var(--bs-primary);
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 0.375rem;
 }
 
 /* Messages Area - Scrollable */
@@ -277,5 +337,14 @@ onMounted(scrollToBottom);
   .input-group .btn {
     padding: 0.6rem 1rem;
   }
+}
+
+.item-link {
+  transition: color 0.2s ease;
+}
+
+.item-link:hover {
+  color: var(--bs-primary) !important;
+  text-decoration: underline !important;
 }
 </style>

@@ -59,7 +59,7 @@ function showConversations() {
           }"
         >
           <!-- Mobile: back button to conversations -->
-          <div
+          <!-- <div
             v-if="hasActive"
             class="chat-mobile-header d-md-none d-flex align-items-center px-3 py-2 border-bottom"
           >
@@ -71,9 +71,9 @@ function showConversations() {
               <i class="bi bi-arrow-left"></i>
             </button>
             <span class="fw-semibold">{{ $t('messages.chat') }}</span>
-          </div>
+          </div> -->
 
-          <ChatWindow v-if="chat.activeId" />
+          <ChatWindow v-if="chat.activeId" @back="showConversations" />
           <div v-else class="d-flex align-items-center justify-content-center h-100">
             <div class="text-center text-secondary p-4">
               <i class="bi bi-chat-dots display-1 mb-3"></i>
