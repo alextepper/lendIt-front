@@ -21,13 +21,23 @@ async function submit() {
   error.value = null
   if (!form.email || !form.password) {
     error.value = t('auth.login.fillAllFields')
+    alert(error.value)
     return
   }
   submitting.value = true
   try {
     await auth.login(form)
   } catch (e) {
-    error.value = auth.error || t('auth.login.failedToSignIn')
+    const backendMessage = e?.response?.data?.message
+    const errorMessage = backendMessage || auth.error || e?.message || t('auth.login.failedToSignIn')
+    error.value = errorMessage
+
+    // Also show a browser alert so errors are visible on devices without devtools (e.g. mobile)
+    let alertText = errorMessage
+    if (backendMessage && backendMessage !== errorMessage) {
+      alertText += `\n\nDetails: ${backendMessage}`
+    }
+    alert(alertText)
   } finally {
     submitting.value = false
   }
