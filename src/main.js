@@ -16,54 +16,45 @@ import { useAuthStore } from "./stores/auth";
 import { useThemeStore } from "./stores/theme";
 import { useChatStore } from "./stores/chat";
 import { useLanguageStore } from "./stores/language";
-
-// Debug helper: mirror console output into alert() for mobile debugging.
-// Enabled in development or when URL contains ?debugAlerts=1
-if (
-  typeof window !== "undefined" &&
-  (import.meta.env.DEV ||
-    window.location.search.includes("debugAlerts=1"))
-) {
-  const originalLog = console.log;
-  const originalWarn = console.warn;
-  const originalError = console.error;
-  const originalInfo = console.info;
-
-  function toMessage(args) {
-    try {
-      return args
-        .map((a) =>
-          typeof a === "string" ? a : JSON.stringify(a, null, 2)
-        )
-        .join(" ");
-    } catch {
-      return args.join(" ");
-    }
-  }
-
-  console.log = (...args) => {
-    originalLog(...args);
-    alert("[log] " + toMessage(args));
-  };
-  console.warn = (...args) => {
-    originalWarn(...args);
-    alert("[warn] " + toMessage(args));
-  };
-  console.error = (...args) => {
-    originalError(...args);
-    alert("[error] " + toMessage(args));
-  };
-  console.info = (...args) => {
-    originalInfo(...args);
-    alert("[info] " + toMessage(args));
-  };
-}
+import { useDebugStore } from "./stores/debug";
 
 const app = createApp(App);
 const pinia = createPinia();
 app.use(pinia);
 app.use(router);
 app.use(i18n);
+
+// Debug helper: capture console output into Pinia store for in-app log viewer.
+// Enabled in development or when URL contains ?debugLogs=1
+if (
+  typeof window !== "undefined" &&
+  (import.meta.env.DEV ||
+    window.location.search.includes("debugLogs=1"))
+) {
+  const debug = useDebugStore();
+
+  const originalLog = console.log;
+  const originalWarn = console.warn;
+  const originalError = console.error;
+  const originalInfo = console.info;
+
+  console.log = (...args) => {
+    originalLog(...args);
+    debug.addLog("log", args);
+  };
+  console.warn = (...args) => {
+    originalWarn(...args);
+    debug.addLog("warn", args);
+  };
+  console.error = (...args) => {
+    originalError(...args);
+    debug.addLog("error", args);
+  };
+  console.info = (...args) => {
+    originalInfo(...args);
+    debug.addLog("info", args);
+  };
+}
 
 const theme = useThemeStore();
 theme.init();

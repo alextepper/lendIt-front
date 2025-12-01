@@ -30,6 +30,17 @@
         </ul>
 
         <div class="d-flex align-items-center gap-1 gap-sm-2 navbar-actions">
+          <!-- Debug log viewer toggle (dev / ?debugLogs=1 only) -->
+          <button
+            v-if="debugEnabled"
+            class="btn btn-outline-secondary btn-sm navbar-control-btn"
+            type="button"
+            @click="showDebug = !showDebug"
+            title="Show debug logs"
+          >
+            <i class="bi bi-bug"></i>
+          </button>
+
           <!-- Language switcher -->
           <div class="dropdown">
             <button class="btn btn-outline-secondary btn-sm dropdown-toggle navbar-control-btn" data-bs-toggle="dropdown" aria-expanded="false">
@@ -135,6 +146,34 @@
       </div>
     </div>
   </nav>
+
+  <!-- Debug log panel -->
+  <div v-if="debugEnabled && showDebug" class="debug-log-panel">
+    <div class="debug-log-header d-flex align-items-center justify-content-between">
+      <span class="fw-semibold">Debug Logs</span>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-secondary" @click="debug.clear()">Clear</button>
+        <button class="btn btn-sm btn-outline-secondary" @click="showDebug = false">Close</button>
+      </div>
+    </div>
+    <div class="debug-log-body">
+      <div
+        v-for="log in reversedLogs"
+        :key="log.id"
+        class="debug-log-entry"
+        :class="'debug-log-' + log.level"
+      >
+        <div class="debug-log-meta">
+          <span class="debug-log-time">{{ new Date(log.timestamp).toLocaleTimeString() }}</span>
+          <span class="debug-log-level text-uppercase ms-2">{{ log.level }}</span>
+        </div>
+        <pre class="debug-log-message mb-0">{{ log.message }}</pre>
+      </div>
+      <div v-if="!reversedLogs.length" class="text-muted small p-2">
+        No logs captured yet.
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -143,13 +182,24 @@ import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
 import { useChatStore } from '../stores/chat'
 import { useLanguageStore } from '../stores/language'
-import { watch } from 'vue'
+import { useDebugStore } from '../stores/debug'
+import { watch, ref, computed } from 'vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
 const theme = useThemeStore()
 const chat = useChatStore()
 const language = useLanguageStore()
+const debug = useDebugStore()
+
+const showDebug = ref(false)
+
+const debugEnabled = computed(() => {
+  if (typeof window === 'undefined') return import.meta.env.DEV
+  return import.meta.env.DEV || window.location.search.includes('debugLogs=1')
+})
+
+const reversedLogs = computed(() => [...debug.logs].reverse())
 
 // Debug language changes
 watch(() => language.currentLocale, (newLocale) => {
@@ -293,5 +343,66 @@ watch(() => language.currentLocale, (newLocale) => {
     padding-top: 0.5rem;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
+}
+
+/* Debug log panel */
+.debug-log-panel {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  max-width: 420px;
+  max-height: 60vh;
+  background-color: #fff;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+}
+
+.debug-log-header {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.debug-log-body {
+  padding: 0.5rem;
+  overflow-y: auto;
+}
+
+.debug-log-entry {
+  padding: 0.25rem 0.35rem;
+  border-radius: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.debug-log-log {
+  background-color: #f8f9fa;
+}
+
+.debug-log-warn {
+  background-color: #fff3cd;
+}
+
+.debug-log-error {
+  background-color: #f8d7da;
+}
+
+.debug-log-info {
+  background-color: #cff4fc;
+}
+
+.debug-log-meta {
+  font-size: 0.7rem;
+  color: #6c757d;
+}
+
+.debug-log-message {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
