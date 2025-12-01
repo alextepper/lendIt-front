@@ -201,6 +201,7 @@ function formatTime(dateString) {
 <style scoped>
 .conversations-list {
   background-color: var(--bs-body-bg);
+  height: 100%;
 }
 
 .conversations-header {
@@ -280,5 +281,34 @@ function formatTime(dateString) {
 
 .archive-btn:hover {
   color: var(--bs-primary) !important;
+}
+
+@media (max-width: 768px) {
+  .conversations-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .conversations-header h5 {
+    font-size: 1rem;
+  }
+
+  .nav-tabs .nav-link {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .conversation-item {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .conversation-item .rounded-circle {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Always show archive button on touch devices (no hover) */
+  .archive-btn {
+    opacity: 1;
+  }
 }
 </style>

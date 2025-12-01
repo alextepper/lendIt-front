@@ -65,10 +65,20 @@ onMounted(scrollToBottom);
         class="message-wrapper mb-3"
         :class="{ 'message-self': m.from_self }"
       >
-        <div class="message-bubble">
-          <div class="message-text">{{ m.text }}</div>
-          <div class="message-time">
-            {{ formatMessageTime(m.created_at) }}
+        <div
+          class="d-flex align-items-end message-row"
+          :class="{ 'flex-row-reverse': m.from_self }"
+        >
+          <img
+            class="message-avatar rounded-circle"
+            :src="m.sender?.avatar || (m.from_self ? chat.activeConv?.otherUser?.avatar : chat.activeConv?.avatar) || 'https://placehold.co/32x32'"
+            alt=""
+          />
+          <div class="message-bubble">
+            <div class="message-text">{{ m.text }}</div>
+            <div class="message-time">
+              {{ formatMessageTime(m.created_at) }}
+            </div>
           </div>
         </div>
       </div>
@@ -160,6 +170,10 @@ onMounted(scrollToBottom);
   justify-content: flex-end;
 }
 
+.message-row {
+  gap: 0.5rem;
+}
+
 .message-bubble {
   max-width: 70%;
   padding: 0.75rem 1rem;
@@ -171,6 +185,12 @@ onMounted(scrollToBottom);
 .message-wrapper.message-self .message-bubble {
   background-color: var(--bs-primary);
   color: white;
+}
+
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
 }
 
 .message-text {
@@ -223,16 +243,36 @@ onMounted(scrollToBottom);
 
 @media (max-width: 768px) {
   .chat-header {
-    min-height: 70px;
-    padding: 0.75rem;
+    min-height: 64px;
+    padding: 0.5rem 0.75rem;
+    gap: 0.75rem;
   }
-  
+
+  .chat-header img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .chat-header h6 {
+    font-size: 0.95rem;
+  }
+
   .message-bubble {
     max-width: 85%;
+    padding: 0.6rem 0.8rem;
   }
-  
+
   .chat-input {
-    padding: 0.75rem;
+    padding: 0.5rem 0.75rem 0.75rem;
+  }
+
+  .input-group .form-control {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .input-group .btn {
+    padding: 0.6rem 1rem;
   }
 }
 </style>
