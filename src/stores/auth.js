@@ -191,12 +191,59 @@ export const useAuthStore = defineStore("auth", {
 
       this.isRefreshing = true;
       try {
-        // Prepare request config with token in both body and header for maximum compatibility
+        // FIRST: try refresh using cookies only (no body / headers)
+        try {
+          const { data } = await http.post("/auth/refresh");
+          console.log("Token refreshed successfully using cookies only", data);
+
+          // Update tokens in localStorage if backend returns them
+          if (data.accessToken || data.access_token) {
+            localStorage.setItem(
+              "access_token",
+              data.accessToken || data.access_token
+            );
+          }
+          if (data.refreshToken || data.refresh_token) {
+            localStorage.setItem(
+              "refresh_token",
+              data.refreshToken || data.refresh_token
+            );
+          }
+
+          if (data.user) {
+            this.user = data.user;
+            this.status = "idle";
+          }
+
+          this.refreshTokenValid = true;
+
+          const currentRoute = router.currentRoute.value;
+          if (
+            currentRoute.name === "login" ||
+            currentRoute.path.includes("/login")
+          ) {
+            router.replace({ name: "home" });
+          }
+
+          return data;
+        } catch (cookieError) {
+          // If cookies-based refresh fails with 401/403, we'll try token-based below
+          if (
+            cookieError?.response?.status !== 401 &&
+            cookieError?.response?.status !== 403
+          ) {
+            // Non-auth error – rethrow
+            throw cookieError;
+          }
+          console.warn(
+            "Cookie-based refresh failed, trying token-based refresh if available"
+          );
+        }
+
+        // SECOND: fallback to token-based refresh from localStorage
         const config = {};
         const refreshPayload = {};
 
-        // Optional: include refresh token from localStorage for environments
-        // where cookies are not sent. If not present, rely solely on httpOnly cookies.
         const refreshToken = localStorage.getItem("refresh_token");
         if (refreshToken) {
           refreshPayload.refreshToken = refreshToken;
@@ -206,14 +253,16 @@ export const useAuthStore = defineStore("auth", {
             Authorization: `Bearer ${refreshToken}`,
           };
 
-          console.log("Sending refresh token in body and Authorization header");
-        } else {
           console.log(
-            "No refresh token in localStorage, relying on httpOnly cookies for /auth/refresh"
+            "Sending refresh token in body and Authorization header as fallback"
+          );
+        } else {
+          // No token to fallback to – let this fail and be handled below
+          console.warn(
+            "No refresh token in localStorage for token-based refresh"
           );
         }
 
-        // Backend handles refresh via httpOnly cookies; body/headers are just fallbacks
         const { data } = await http.post(
           "/auth/refresh",
           refreshPayload,
