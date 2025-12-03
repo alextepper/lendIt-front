@@ -10,7 +10,7 @@
         </div>
         
         <!-- Loading Text -->
-        <h1 class="loading-title">{{ $t('app.title') || 'LendIt' }}</h1>
+        <h1 class="loading-title">{{ $t('app.title') || 'Sharo' }}</h1>
         <p class="loading-subtitle">{{ $t('app.tagline') || 'Share what you have' }}</p>
         
         <!-- Animated Spinner -->

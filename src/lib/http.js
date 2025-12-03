@@ -2,40 +2,33 @@ import axios from "axios";
 import router from "../router";
 import { useAuthStore } from "../stores/auth";
 
-// Get API base URL from runtime config (set by nginx) or fallback to build-time env var
-// window.__API_BASE_URL__ is set by /config.js at runtime
-const apiBaseURL =
-  (typeof window !== "undefined" && window.__API_BASE_URL__) ||
-  import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.PROD ? "" : "/api"); // Dev fallback to Vite proxy
+// API base URL configuration
+//
+// In production the SPA is served from https://www.sharo-app.com and the backend
+// is exposed on the *same origin* under /api via a reverse proxy.
+//
+// We therefore use a relative base URL so all requests go to:
+//   https://www.sharo-app.com/api/...
+//
+// In development we optionally allow an absolute VITE_API_BASE_URL
+// (e.g. http://localhost:3000/api). If not provided, we also use "/api" and rely
+// on the Vite dev server proxy to forward /api to the backend.
+let apiBaseURL = "/api";
+
+if (import.meta.env.DEV && import.meta.env.VITE_API_BASE_URL) {
+  apiBaseURL = import.meta.env.VITE_API_BASE_URL;
+}
 
 const http = axios.create({
   baseURL: apiBaseURL,
-  withCredentials: true, // Important for cookie-based auth
+  // We rely on HttpOnly cookies for auth; this ensures cookies are sent with
+  // all API calls to the same-origin /api endpoints.
+  withCredentials: true,
   timeout: 5000, // 5 second timeout to prevent hanging requests
 });
 
-// Request interceptor: Add access token from localStorage to Authorization header
-// This is a fallback for mobile browsers where cross-domain cookies aren't sent
-http.interceptors.request.use(
-  (config) => {
-    // Get access token from localStorage as fallback for cross-domain scenarios
-    // Backend will check cookies first, then Authorization header
-    const accessToken = localStorage.getItem("access_token");
-    
-    if (accessToken && !config.headers.Authorization) {
-      // Only add if not already set (to avoid overriding explicit headers)
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
-    
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Handle 401 with one-shot refresh logic
+// Handle 401s with one-shot refresh logic and redirect to login when needed.
+// We do not deal with tokens directly here – everything comes from HttpOnly cookies.
 let refreshing = null;
 http.interceptors.response.use(
   (res) => res,
@@ -100,9 +93,6 @@ http.interceptors.response.use(
     // 1. Not a login/register/refresh/logout/me endpoint
     // 2. Not already refreshing
     // 3. Not currently logging out
-    // Note: We intentionally do NOT require a refresh token in localStorage because
-    // the backend can also rely purely on httpOnly cookies. If refresh cannot be
-    // performed, the /auth/refresh call will simply fail and we'll handle it below.
     const shouldTryRefresh =
       !isLoginOrRegister &&
       !isRefreshEndpoint &&
@@ -117,35 +107,30 @@ http.interceptors.response.use(
       shouldTryRefresh
     ) {
       try {
-        console.log("Attempting to refresh token due to 401 error...");
+        console.log("Attempting to refresh session due to 401 error...");
         if (!refreshing) {
           refreshing = auth.refresh().finally(() => {
             refreshing = null;
           });
         }
         await refreshing;
-        
-        console.log("Token refreshed successfully, retrying original request");
-        
-        // Update the Authorization header with the new access token
-        const newAccessToken = localStorage.getItem("access_token");
-        if (newAccessToken) {
-          original.headers = original.headers || {};
-          original.headers.Authorization = `Bearer ${newAccessToken}`;
-        }
-        
+
+        console.log("Session refreshed successfully, retrying original request");
+
         original._retryCount = retryCount + 1;
-        // Retry the original request with the new token
+        // Retry the original request – cookies now contain the refreshed session.
         return http(original);
       } catch (refreshError) {
-        console.warn("Token refresh failed:", refreshError);
-        // Only logout when refresh actually fails - this means the refresh token is invalid
-        // Don't logout if we just couldn't refresh for other reasons (network, etc.)
-        if (refreshError?.response?.status === 401 || refreshError?.response?.status === 403) {
-          console.warn("Refresh token is invalid (401/403), logging out user");
+        console.warn("Session refresh failed:", refreshError);
+        // If refresh fails with auth errors, clear local auth state and redirect to login.
+        if (
+          refreshError?.response?.status === 401 ||
+          refreshError?.response?.status === 403
+        ) {
+          console.warn(
+            "Refresh failed with 401/403, clearing auth state and redirecting to login"
+          );
           auth.logout();
-        } else {
-          console.warn("Refresh failed for non-auth reason, keeping user logged in:", refreshError.message);
         }
         return Promise.reject(error);
       }
