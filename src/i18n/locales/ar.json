@@ -274,7 +274,8 @@
     "startConversation": "ابدأ محادثة...",
     "loadingArchived": "جاري تحميل المحادثات المؤرشفة...",
     "chat": "محادثة",
-    "sendFailed": "فشل إرسال الرسالة"
+    "sendFailed": "فشل إرسال الرسالة",
+    "backToConversations": "العودة إلى المحادثات"
   },
   "forms": {
     "required": "هذا الحقل مطلوب",

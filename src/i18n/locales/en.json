@@ -246,7 +246,8 @@
     "startConversation": "Start a conversation...",
     "loadingArchived": "Loading archived conversations...",
     "chat": "Chat",
-    "sendFailed": "Failed to send"
+    "sendFailed": "Failed to send",
+    "backToConversations": "Back to conversations"
   },
   "forms": {
     "required": "This field is required",

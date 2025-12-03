@@ -325,7 +325,8 @@
     "startConversation": "התחל שיחה...",
     "loadingArchived": "טוען שיחות בארכיון...",
     "chat": "צ'אט",
-    "sendFailed": "שליחת ההודעה נכשלה"
+    "sendFailed": "שליחת ההודעה נכשלה",
+    "backToConversations": "חזרה לשיחות"
   },
   "forms": {
     "required": "שדה זה נדרש",

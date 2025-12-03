@@ -274,7 +274,8 @@
     "startConversation": "Начать разговор...",
     "loadingArchived": "Загрузка заархивированных разговоров...",
     "chat": "Чат",
-    "sendFailed": "Не удалось отправить"
+    "sendFailed": "Не удалось отправить",
+    "backToConversations": "Назад к разговорам"
   },
   "forms": {
     "required": "Это поле обязательно",

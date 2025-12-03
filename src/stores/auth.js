@@ -45,6 +45,21 @@ export const useAuthStore = defineStore("auth", {
           email: payload.email,
           password: payload.password,
         });
+        // If backend returns tokens, store them for environments (like mobile / cross-site)
+        // where cookies may not be sent reliably. Backend still also sets httpOnly cookies.
+        if (data?.accessToken || data?.access_token) {
+          localStorage.setItem(
+            "access_token",
+            data.accessToken || data.access_token
+          );
+        }
+        if (data?.refreshToken || data?.refresh_token) {
+          localStorage.setItem(
+            "refresh_token",
+            data.refreshToken || data.refresh_token
+          );
+        }
+
         // Reset refresh token validity on successful login
         this.refreshTokenValid = true;
 
@@ -59,13 +74,6 @@ export const useAuthStore = defineStore("auth", {
           router.replace(String(router.currentRoute.value.query.redirect));
         } else {
           router.replace({ name: "home" });
-        }
-
-        // As a safety net for any reactivity or cookie timing issues,
-        // force a full reload once navigation completes so the navbar
-        // and all stores see the authenticated state immediately.
-        if (typeof window !== "undefined") {
-          window.location.reload();
         }
 
         return true;
@@ -84,11 +92,7 @@ export const useAuthStore = defineStore("auth", {
         // - { id, email, ... }
         // - { user: { ... } }
         // - { data: { user: { ... } } }
-        const user =
-          data?.user ||
-          data?.data?.user ||
-          data?.data ||
-          data;
+        const user = data?.user || data?.data?.user || data?.data || data;
 
         if (!user || !user.id) {
           console.warn("Unexpected /auth/me response shape:", data);
@@ -161,7 +165,9 @@ export const useAuthStore = defineStore("auth", {
     async refresh() {
       // Don't attempt refresh if already refreshing
       if (this.isRefreshing) {
-        console.warn("Refresh already in progress, waiting for existing refresh...");
+        console.warn(
+          "Refresh already in progress, waiting for existing refresh..."
+        );
         // Wait for the existing refresh to complete
         return new Promise((resolve, reject) => {
           const checkInterval = setInterval(() => {
@@ -202,7 +208,9 @@ export const useAuthStore = defineStore("auth", {
 
           console.log("Sending refresh token in body and Authorization header");
         } else {
-          console.log("No refresh token in localStorage, relying on httpOnly cookies for /auth/refresh");
+          console.log(
+            "No refresh token in localStorage, relying on httpOnly cookies for /auth/refresh"
+          );
         }
 
         // Backend handles refresh via httpOnly cookies; body/headers are just fallbacks
@@ -250,7 +258,10 @@ export const useAuthStore = defineStore("auth", {
       } catch (error) {
         // If refresh fails with 401/403, mark token as invalid
         // But don't logout here - let the HTTP interceptor handle it
-        if (error?.response?.status === 401 || error?.response?.status === 403) {
+        if (
+          error?.response?.status === 401 ||
+          error?.response?.status === 403
+        ) {
           console.warn(
             "Token refresh failed with 401/403 - refresh token is invalid:",
             error.response?.data?.message || error.message
