@@ -152,8 +152,9 @@ export async function getBooking(bookingId) {
   }
 
   try {
-    const { data } = await http.get(`/bookings/${bookingId}`);
-    return data;
+    const response = await http.get(`/bookings/${bookingId}`);
+    // Backend returns { success: true, data: {...} }
+    return response.data?.data || response.data;
   } catch (error) {
     throw new Error(
       error?.response?.data?.message || "Failed to fetch booking"
@@ -161,6 +162,12 @@ export async function getBooking(bookingId) {
   }
 }
 
+/**
+ * Fetch bookings for the current user
+ * Uses GET /api/bookings?role=renter|owner
+ * Unified endpoint for both renter and owner views
+ * @param {Object} params - Query params { role: 'renter'|'owner', status, page, etc. }
+ */
 export async function fetchUserBookings(params = {}) {
   if (USE_MOCK) {
     // Mock user bookings
@@ -169,7 +176,7 @@ export async function fetchUserBookings(params = {}) {
     const mockBookings = [
       {
         id: "booking_1",
-        status: "ACTIVE",
+        status: "CONFIRMED",
         total: 150000, // ₪1,500
         from: "2024-12-15",
         to: "2024-12-18",
@@ -185,7 +192,7 @@ export async function fetchUserBookings(params = {}) {
       },
       {
         id: "booking_2",
-        status: "PENDING",
+        status: "PENDING_OWNER",
         total: 75000, // ₪750
         from: "2024-12-22",
         to: "2024-12-24",
@@ -201,7 +208,7 @@ export async function fetchUserBookings(params = {}) {
       },
       {
         id: "booking_3",
-        status: "CONFIRMED",
+        status: "AWAITING_PAYMENT",
         total: 200000, // ₪2,000
         from: "2024-12-28",
         to: "2025-01-02",
@@ -217,7 +224,7 @@ export async function fetchUserBookings(params = {}) {
       },
       {
         id: "booking_4",
-        status: "COMPLETED",
+        status: "CONFIRMED",
         total: 60000, // ₪600
         from: "2024-11-10",
         to: "2024-11-12",
@@ -233,7 +240,7 @@ export async function fetchUserBookings(params = {}) {
       },
       {
         id: "booking_5",
-        status: "COMPLETED",
+        status: "OWNER_DECLINED",
         total: 45000, // ₪450
         from: "2024-10-25",
         to: "2024-10-27",
@@ -246,22 +253,6 @@ export async function fetchUserBookings(params = {}) {
           thumbnail: "https://picsum.photos/300/200?random=5",
         },
         createdAt: "2024-10-20T11:45:00Z",
-      },
-      {
-        id: "booking_6",
-        status: "CANCELLED",
-        total: 30000, // ₪300
-        from: "2024-10-15",
-        to: "2024-10-17",
-        nights: 2,
-        guests: 1,
-        itemId: "item_6",
-        item: {
-          title: "Drone with Camera",
-          location: "Ashdod",
-          thumbnail: "https://picsum.photos/300/200?random=6",
-        },
-        createdAt: "2024-10-10T09:30:00Z",
       },
     ];
 
@@ -282,8 +273,12 @@ export async function fetchUserBookings(params = {}) {
   }
 
   try {
-    const { data } = await http.get("/me/bookings", { params });
-    return data;
+    const { data } = await http.get("/bookings", { params });
+    return {
+      bookings: data.bookings || data.items || data,
+      total: data.total || 0,
+      page: data.page || 1,
+    };
   } catch (error) {
     throw new Error(
       error?.response?.data?.message || "Failed to fetch bookings"

@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth';
 import { useUiStore } from '../stores/ui';
 import { getQuote } from '../services/orderService';
 import { checkBookingAvailability } from '../services/itemService';
+import { createBookingRequest } from '../services/bookingRequestService';
 
 const props = defineProps({
   item: { type: Object, required: true },
@@ -17,10 +18,12 @@ const ui = useUiStore();
 const router = useRouter();
 
 // Form state
-const step = ref(1); // 1=dates, 2=quote, 3=confirm
+const step = ref(1); // 1=dates, 2=quote, 3=notes
 const loading = ref(false);
+const submitting = ref(false);
 const dateFrom = ref('');
 const dateTo = ref('');
+const notes = ref('');
 const quote = ref(null);
 const availabilityError = ref('');
 
@@ -101,23 +104,40 @@ function formatPriceForBackend(amount) {
 }
 
 function goBack() {
-  if (step.value === 2) {
+  if (step.value === 3) {
+    step.value = 2;
+  } else if (step.value === 2) {
     step.value = 1;
     quote.value = null;
   }
 }
 
-function proceedToCheckout() {
-  // Navigate to checkout page with order details
-  router.push({
-    name: 'checkout',
-    query: {
+async function submitBookingRequest() {
+  if (!canProceed.value || submitting.value) return;
+  
+  submitting.value = true;
+  try {
+    const request = await createBookingRequest({
       itemId: props.item.id,
       from: dateFrom.value,
       to: dateTo.value,
-    }
-  });
-  emit('close');
+      notes: notes.value.trim() || undefined,
+    });
+    
+    ui.showToast('Booking request sent to owner. You\'ll be notified when they respond.', 'success');
+    emit('booking-created', request);
+    emit('close');
+  } catch (error) {
+    console.error('Failed to submit booking request:', error);
+    ui.showToast(error.message || 'Failed to send booking request', 'danger');
+  } finally {
+    submitting.value = false;
+  }
+}
+
+function proceedToNotes() {
+  if (!quote.value) return;
+  step.value = 3;
 }
 
 function formatDate(dateString) {
@@ -358,9 +378,83 @@ function formatDateRange(from, to) {
           <i class="bi bi-arrow-left me-2"></i>
           Back
         </button>
-        <button class="checkout-btn" @click="proceedToCheckout">
-          <i class="bi bi-credit-card me-2"></i>
-          Proceed to Checkout
+        <button class="checkout-btn" @click="proceedToNotes">
+          <i class="bi bi-arrow-right me-2"></i>
+          Continue
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Notes & Submit -->
+    <div v-if="step === 3 && quote" class="flow-step">
+      <!-- Header -->
+      <div class="step-header">
+        <div class="step-icon">
+          <i class="bi bi-chat-text"></i>
+        </div>
+        <div class="step-info">
+          <h3 class="step-title">Add Notes (Optional)</h3>
+          <p class="step-subtitle">Let the owner know about your rental needs</p>
+        </div>
+      </div>
+
+      <!-- Notes Input -->
+      <div class="date-selection">
+        <div class="mb-3">
+          <label class="date-label">Additional Notes</label>
+          <textarea
+            v-model="notes"
+            class="form-control"
+            rows="4"
+            placeholder="E.g., I need the item for a photography project, will handle with care..."
+            style="border-radius: 12px; padding: 12px; border: 2px solid #e2e8f0; font-size: 14px;"
+          ></textarea>
+        </div>
+
+        <!-- Summary Card -->
+        <div class="quote-card">
+          <div class="quote-header">
+            <h4 class="quote-title">
+              <i class="bi bi-calendar-check me-2"></i>
+              Request Summary
+            </h4>
+          </div>
+          <div class="quote-details">
+            <div class="quote-line">
+              <span class="quote-label">Dates</span>
+              <span class="quote-value">{{ formatDateRange(dateFrom, dateTo) }}</span>
+            </div>
+            <div class="quote-line">
+              <span class="quote-label">Duration</span>
+              <span class="quote-value">{{ days }} day{{ days !== 1 ? 's' : '' }}</span>
+            </div>
+            <div class="quote-divider"></div>
+            <div class="quote-total">
+              <span class="total-label">Estimated Total</span>
+              <span class="total-value">{{ formatCurrency(quote.total + (props.item.deposit || 0)) }}</span>
+            </div>
+            <div class="small text-muted mt-2">
+              <i class="bi bi-info-circle me-1"></i>
+              Final price may be adjusted by the owner
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="step-actions">
+        <button class="back-btn" @click="goBack">
+          <i class="bi bi-arrow-left me-2"></i>
+          Back
+        </button>
+        <button 
+          class="checkout-btn" 
+          :disabled="submitting"
+          @click="submitBookingRequest"
+        >
+          <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+          <i v-else class="bi bi-send me-2"></i>
+          {{ submitting ? 'Sending...' : 'Send Request' }}
         </button>
       </div>
     </div>

@@ -1,6 +1,6 @@
 <script setup>
 import { useI18n } from 'vue-i18n';
-const model = defineModel({ type: String, default: 'profile' }); // 'profile' | 'listings' | 'rentals'
+const model = defineModel({ type: String, default: 'profile' }); // 'profile' | 'listings' | 'rentals' | 'booking-requests'
 const { t } = useI18n();
 </script>
 
@@ -19,6 +19,11 @@ const { t } = useI18n();
     <li class="nav-item">
       <button class="nav-link" :class="{ active: model === 'rentals' }" @click="model = 'rentals'">
         <i class="bi bi-bag-check"></i> {{ t('dashboard.myRentals') }}
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" :class="{ active: model === 'booking-requests' }" @click="model = 'booking-requests'">
+        <i class="bi bi-inbox"></i> Booking Requests
       </button>
     </li>
   </ul>

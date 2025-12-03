@@ -96,14 +96,18 @@ http.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Allow refresh even if auth.user is currently null (e.g. initial load),
-    // as long as we haven't marked the refresh token invalid yet and not already refreshing
+    // Allow refresh if:
+    // 1. Not a login/register/refresh/logout/me endpoint
+    // 2. Not already refreshing
+    // 3. Not currently logging out
+    // Note: We intentionally do NOT require a refresh token in localStorage because
+    // the backend can also rely purely on httpOnly cookies. If refresh cannot be
+    // performed, the /auth/refresh call will simply fail and we'll handle it below.
     const shouldTryRefresh =
       !isLoginOrRegister &&
       !isRefreshEndpoint &&
       !isLogoutEndpoint &&
       !isMeEndpoint &&
-      auth.refreshTokenValid &&
       !auth.isRefreshing &&
       !auth.isLoggingOut;
 
@@ -113,18 +117,36 @@ http.interceptors.response.use(
       shouldTryRefresh
     ) {
       try {
+        console.log("Attempting to refresh token due to 401 error...");
         if (!refreshing) {
           refreshing = auth.refresh().finally(() => {
             refreshing = null;
           });
         }
         await refreshing;
+        
+        console.log("Token refreshed successfully, retrying original request");
+        
+        // Update the Authorization header with the new access token
+        const newAccessToken = localStorage.getItem("access_token");
+        if (newAccessToken) {
+          original.headers = original.headers || {};
+          original.headers.Authorization = `Bearer ${newAccessToken}`;
+        }
+        
         original._retryCount = retryCount + 1;
+        // Retry the original request with the new token
         return http(original);
       } catch (refreshError) {
         console.warn("Token refresh failed:", refreshError);
-        // Always logout when refresh fails - this means the refresh token is invalid
-        auth.logout();
+        // Only logout when refresh actually fails - this means the refresh token is invalid
+        // Don't logout if we just couldn't refresh for other reasons (network, etc.)
+        if (refreshError?.response?.status === 401 || refreshError?.response?.status === 403) {
+          console.warn("Refresh token is invalid (401/403), logging out user");
+          auth.logout();
+        } else {
+          console.warn("Refresh failed for non-auth reason, keeping user logged in:", refreshError.message);
+        }
         return Promise.reject(error);
       }
     }

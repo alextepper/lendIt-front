@@ -12,6 +12,7 @@ const Dashboard = () => import("../views/Dashboard.vue");
 const MyBookings = () => import("../views/MyBookings.vue");
 const Messages = () => import("../views/Messages.vue");
 const Settings = () => import("../views/Settings.vue");
+const Notifications = () => import("../views/Notifications.vue");
 const Checkout = () => import("../views/Checkout.vue");
 const OrderCheckout = () => import("../views/OrderCheckout.vue");
 const BookingCheckout = () => import("../views/BookingCheckout.vue");
@@ -72,6 +73,12 @@ const router = createRouter({
       path: "/settings",
       name: "settings",
       component: Settings,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/notifications",
+      name: "notifications",
+      component: Notifications,
       meta: { requiresAuth: true },
     },
     {

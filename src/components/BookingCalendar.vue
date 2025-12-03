@@ -1,34 +1,50 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import DatePicker from 'vue-datepicker-next';
 import 'vue-datepicker-next/index.css';
 import OrderDetailsModal from './OrderDetailsModal.vue';
 import { useUiStore } from '../stores/ui';
 import http from '../lib/http';
 import { Modal } from 'bootstrap';
+import { fetchAllBookings } from '../services/bookingRequestService';
 
 const props = defineProps({
   itemId: { type: String, required: true },
-  bookings: { type: Array, default: () => [] }, // Array of booking objects
+  bookings: { type: Array, default: () => [] }, // Array of booking objects (optional, will fetch if not provided)
   loading: { type: Boolean, default: false },
+  item: { type: Object, default: null }, // Item object with blockedDates property
 });
 
 const emit = defineEmits(['refresh', 'view-booking']);
 
 const ui = useUiStore();
+const router = useRouter();
+
+// Internal state for fetched bookings
+const fetchedBookings = ref([]);
+const internalLoading = ref(false);
 
 // Modal state
 const showOrderModal = ref(false);
 const selectedOrder = ref(null);
 
+// Hover tooltip state
+const hoveredDate = ref(null);
+const hoveredBookings = ref([]);
+const tooltipPosition = ref({ x: 0, y: 0 });
+
 // Blocking modal state
 const showBlockingModal = ref(false);
+const editingBlockedDate = ref(null); // ID of blocked date being edited, null for new
 const blockingForm = ref({
   startDate: '',
   endDate: '',
   reason: ''
 });
 const blockingLoading = ref(false);
+const deletingBlockId = ref(null);
+const showBlockedDatesList = ref(false);
 
 // Current month being viewed
 const currentMonth = ref(new Date());
@@ -36,16 +52,99 @@ const currentMonth = ref(new Date());
 // Week days
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// Get all bookings (from props or fetched)
+const allBookings = computed(() => {
+  // Use props.bookings if provided, otherwise use fetchedBookings
+  const bookings = props.bookings.length > 0 ? props.bookings : fetchedBookings.value;
+  
+  // Filter bookings for this item and only confirmed/active bookings
+  return bookings.filter(booking => {
+    // Check if booking is for this item
+    const bookingItemId = booking.itemId || booking.item?.id;
+    if (bookingItemId !== props.itemId) return false;
+    
+    // Only show confirmed/active bookings as unavailable
+    // Hide declined/cancelled bookings
+    const status = booking.status;
+    return status === 'CONFIRMED' || 
+           status === 'AWAITING_PAYMENT' || 
+           status === 'IN_PROGRESS' ||
+           status === 'PAID' ||
+           status === 'HANDED_OVER';
+  });
+});
+
+// Computed property for blocked dates from item.blockedDates
+const blockedDatesByDate = computed(() => {
+  const blockedMap = {};
+  const blockedDates = localBlockedDates.value;
+  
+  blockedDates.forEach(blockedRange => {
+    // Handle the structure: { id, from, to, reason, createdAt, updatedAt }
+    let from, to;
+    
+    if (blockedRange && typeof blockedRange === 'object') {
+      // Object with from/to properties (the actual structure from backend)
+      if (blockedRange.from && blockedRange.to) {
+        from = blockedRange.from;
+        to = blockedRange.to;
+      } else if (typeof blockedRange === 'string') {
+        // Single date string (fallback)
+        from = to = blockedRange;
+      } else {
+        return;
+      }
+    } else if (typeof blockedRange === 'string') {
+      // Single date string (fallback)
+      from = to = blockedRange;
+    } else {
+      return;
+    }
+    
+    // Parse dates (handle YYYY-MM-DD format)
+    const start = new Date(from);
+    const end = new Date(to);
+    
+    // Set time to midnight to avoid timezone issues
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+    
+    // Add all dates in the blocked range (inclusive)
+    const currentDate = new Date(start);
+    while (currentDate <= end) {
+      const dateStr = formatDate(currentDate);
+      blockedMap[dateStr] = {
+        blocked: true,
+        reason: blockedRange.reason || null,
+        id: blockedRange.id || null
+      };
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  });
+  
+  return blockedMap;
+});
+
 // Computed properties
 const bookingsByDate = computed(() => {
   const bookingsMap = {};
-  props.bookings.forEach(booking => {
-    const startDate = new Date(booking.startDate);
-    const endDate = new Date(booking.endDate);
+  allBookings.value.forEach(booking => {
+    // Handle both startDate/endDate and from/to formats
+    const startDate = booking.startDate || booking.from || booking.start;
+    const endDate = booking.endDate || booking.to || booking.end;
+    
+    if (!startDate || !endDate) return;
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
     
     // Add all dates in the booking range
-    const currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
+    const currentDate = new Date(start);
+    while (currentDate <= end) {
       const dateStr = formatDate(currentDate);
       if (!bookingsMap[dateStr]) {
         bookingsMap[dateStr] = [];
@@ -121,13 +220,69 @@ function getBookingsForDate(date) {
   return bookingsByDate.value[dateStr] || [];
 }
 
+// Fetch bookings for the item
+async function loadBookings() {
+  // If bookings are provided via props, don't fetch
+  if (props.bookings.length > 0) {
+    return;
+  }
+  
+  internalLoading.value = true;
+  try {
+    // Fetch all bookings and filter by itemId
+    const response = await fetchAllBookings({
+      limit: 100, // Get enough bookings to cover calendar
+    });
+    
+    const bookings = response.bookings || response.items || response || [];
+    
+    // Filter bookings for this item
+    fetchedBookings.value = bookings.filter(booking => {
+      const bookingItemId = booking.itemId || booking.item?.id;
+      return bookingItemId === props.itemId;
+    });
+  } catch (error) {
+    console.error('Failed to fetch bookings for calendar:', error);
+    ui.showToast('Failed to load bookings', 'danger');
+    fetchedBookings.value = [];
+  } finally {
+    internalLoading.value = false;
+  }
+}
+
 // Handle date click
 function onDateClick(date) {
   const bookings = getBookingsForDate(date);
   if (bookings.length > 0) {
-    // Show the first booking's order details
-    showOrderDetails(bookings[0]);
+    // Redirect to booking list/dashboard instead of showing modal
+    // Navigate to dashboard with booking-requests tab active
+    router.push({
+      name: 'dashboard',
+      query: { tab: 'booking-requests' }
+    });
   }
+}
+
+// Handle date hover
+function onDateHover(event, date) {
+  const bookings = getBookingsForDate(date);
+  if (bookings.length > 0) {
+    hoveredDate.value = date;
+    hoveredBookings.value = bookings;
+    
+    // Calculate tooltip position
+    const rect = event.currentTarget.getBoundingClientRect();
+    tooltipPosition.value = {
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    };
+  }
+}
+
+// Handle date hover out
+function onDateHoverOut() {
+  hoveredDate.value = null;
+  hoveredBookings.value = [];
 }
 
 // Show order details modal
@@ -136,17 +291,17 @@ function showOrderDetails(booking) {
   selectedOrder.value = {
     id: booking.id,
     itemId: props.itemId,
-    renterId: booking.renter?.id,
-    ownerId: booking.owner?.id,
-    start: booking.startDate,
-    end: booking.endDate,
-    priceTotal: booking.priceTotal,
-    currency: booking.currency,
+    renterId: booking.renterId || booking.renter?.id || booking.counterparty?.id,
+    ownerId: booking.ownerId || booking.owner?.id,
+    start: booking.startDate || booking.from || booking.start,
+    end: booking.endDate || booking.to || booking.end,
+    priceTotal: booking.totalAmount || booking.priceTotal || booking.total,
+    currency: booking.currency || 'ILS',
     status: booking.status,
     createdAt: booking.createdAt,
     updatedAt: booking.updatedAt,
     item: booking.item,
-    renter: booking.renter,
+    renter: booking.renter || booking.counterparty,
     owner: booking.owner
   };
   showOrderModal.value = true;
@@ -165,8 +320,29 @@ function handleOrderUpdate() {
   closeOrderModal();
 }
 
-// Show blocking modal
-function showBlockingForm() {
+// Show blocking modal (for new or edit)
+function showBlockingForm(blockedDate = null) {
+  editingBlockedDate.value = blockedDate ? blockedDate.id : null;
+  
+  if (blockedDate) {
+    // Edit mode - populate form with existing data
+    blockingForm.value = {
+      startDate: blockedDate.from,
+      endDate: blockedDate.to,
+      reason: blockedDate.reason || ''
+    };
+  } else {
+    // New mode - reset form
+    blockingForm.value = {
+      startDate: '',
+      endDate: '',
+      reason: ''
+    };
+  }
+  
+  // Close the blocked dates list modal
+  showBlockedDatesList.value = false;
+  
   showBlockingModal.value = true;
   
   // Use Bootstrap Modal
@@ -181,6 +357,7 @@ function showBlockingForm() {
 // Close blocking modal
 function closeBlockingModal() {
   showBlockingModal.value = false;
+  editingBlockedDate.value = null;
   blockingForm.value = {
     startDate: '',
     endDate: '',
@@ -195,7 +372,7 @@ function closeBlockingModal() {
   }
 }
 
-// Submit blocking request
+// Submit blocking request (create or update)
 async function submitBlocking() {
   if (!blockingForm.value.startDate || !blockingForm.value.endDate) {
     ui.showToast('Please select both start and end dates', 'warning');
@@ -210,21 +387,101 @@ async function submitBlocking() {
   blockingLoading.value = true;
 
   try {
-    const response = await http.post('/orders/blocking', {
-      itemId: props.itemId,
-      start: new Date(blockingForm.value.startDate).toISOString(),
-      end: new Date(blockingForm.value.endDate).toISOString(),
-      blockingReason: blockingForm.value.reason || undefined
-    });
+    // Format dates as YYYY-MM-DD strings
+    const fromDate = new Date(blockingForm.value.startDate);
+    const toDate = new Date(blockingForm.value.endDate);
+    
+    const from = `${fromDate.getFullYear()}-${String(fromDate.getMonth() + 1).padStart(2, '0')}-${String(fromDate.getDate()).padStart(2, '0')}`;
+    const to = `${toDate.getFullYear()}-${String(toDate.getMonth() + 1).padStart(2, '0')}-${String(toDate.getDate()).padStart(2, '0')}`;
+    
+    let response;
+    if (editingBlockedDate.value) {
+      // Update existing blocked date
+      response = await http.patch(`/items/${props.itemId}/calendar/block/${editingBlockedDate.value}`, {
+        from,
+        to,
+        reason: blockingForm.value.reason || undefined
+      });
+      
+      // Update in local array
+      const index = localBlockedDates.value.findIndex(bd => bd.id === editingBlockedDate.value);
+      if (index !== -1) {
+        const updatedBlock = response.data || {
+          id: editingBlockedDate.value,
+          from,
+          to,
+          reason: blockingForm.value.reason || null
+        };
+        localBlockedDates.value[index] = updatedBlock;
+      }
+      
+      ui.showToast('Blocked date range updated successfully', 'success');
+    } else {
+      // Create new blocked date
+      response = await http.post(`/items/${props.itemId}/calendar/block`, {
+        from,
+        to,
+        reason: blockingForm.value.reason || undefined
+      });
+      
+      // Add to local array immediately
+      const newBlock = response.data || {
+        id: `temp-${Date.now()}`,
+        from,
+        to,
+        reason: blockingForm.value.reason || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      localBlockedDates.value.push(newBlock);
+      
+      ui.showToast('Date range blocked successfully', 'success');
+    }
 
-    ui.showToast('Date range blocked successfully', 'success');
     closeBlockingModal();
-    emit('refresh');
+    emit('refresh', {
+      month: currentMonth.value.toISOString().slice(0, 7), // YYYY-MM format
+      itemId: props.itemId
+    });
   } catch (error) {
     console.error('Failed to block date range:', error);
     ui.showToast(error?.response?.data?.message || 'Failed to block date range', 'danger');
   } finally {
     blockingLoading.value = false;
+  }
+}
+
+// Delete blocked date
+async function deleteBlockedDate(blockedDateId) {
+  if (!confirm('Are you sure you want to delete this blocked date range?')) {
+    return;
+  }
+
+  deletingBlockId.value = blockedDateId;
+
+  // Optimistically remove from UI
+  const index = localBlockedDates.value.findIndex(bd => bd.id === blockedDateId);
+  const removedBlock = index !== -1 ? { ...localBlockedDates.value[index] } : null;
+  if (index !== -1) {
+    localBlockedDates.value.splice(index, 1);
+  }
+
+  try {
+    await http.delete(`/items/${props.itemId}/calendar/block/${blockedDateId}`);
+    ui.showToast('Blocked date range deleted successfully', 'success');
+    emit('refresh', {
+      month: currentMonth.value.toISOString().slice(0, 7),
+      itemId: props.itemId
+    });
+  } catch (error) {
+    // Revert optimistic update on error
+    if (removedBlock && index !== -1) {
+      localBlockedDates.value.splice(index, 0, removedBlock);
+    }
+    console.error('Failed to delete blocked date range:', error);
+    ui.showToast(error?.response?.data?.message || 'Failed to delete blocked date range', 'danger');
+  } finally {
+    deletingBlockId.value = null;
   }
 }
 
@@ -251,21 +508,71 @@ function goToOctober2025() {
 
 // Watch for month changes to refresh data
 watch(currentMonth, () => {
+  loadBookings();
   emit('refresh', {
     month: currentMonth.value.toISOString().slice(0, 7), // YYYY-MM format
     itemId: props.itemId
   });
 });
 
+// Watch for itemId changes
+watch(() => props.itemId, () => {
+  loadBookings();
+});
+
+// Local copy of blocked dates for optimistic updates
+const localBlockedDates = ref([]);
+
+// Watch props.item.blockedDates and sync with local copy
+watch(() => props.item?.blockedDates, (newBlockedDates) => {
+  if (Array.isArray(newBlockedDates)) {
+    localBlockedDates.value = [...newBlockedDates];
+  } else {
+    localBlockedDates.value = [];
+  }
+}, { immediate: true, deep: true });
+
+// Computed property for active blocked dates (only future/current dates)
+const activeBlockedDates = computed(() => {
+  const blockedDates = localBlockedDates.value;
+  if (!blockedDates || blockedDates.length === 0) {
+    return [];
+  }
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  return blockedDates.filter(blockedRange => {
+    if (!blockedRange || !blockedRange.to) return false;
+    const endDate = new Date(blockedRange.to);
+    endDate.setHours(0, 0, 0, 0);
+    // Only show if end date is today or in the future
+    return endDate >= today;
+  }).sort((a, b) => {
+    // Sort by start date (earliest first)
+    const aStart = new Date(a.from);
+    const bStart = new Date(b.from);
+    return aStart - bStart;
+  });
+});
+
 // Statistics
-const totalBookings = computed(() => props.bookings.length);
+const totalBookings = computed(() => allBookings.value.length);
 const totalDaysBooked = computed(() => {
   const uniqueDates = new Set();
-  props.bookings.forEach(booking => {
-    const startDate = new Date(booking.startDate);
-    const endDate = new Date(booking.endDate);
-    const currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
+  allBookings.value.forEach(booking => {
+    const startDate = booking.startDate || booking.from || booking.start;
+    const endDate = booking.endDate || booking.to || booking.end;
+    
+    if (!startDate || !endDate) return;
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+    
+    const currentDate = new Date(start);
+    while (currentDate <= end) {
       uniqueDates.add(formatDate(currentDate));
       currentDate.setDate(currentDate.getDate() + 1);
     }
@@ -277,25 +584,57 @@ const currentMonthBookings = computed(() => {
   const monthStart = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth(), 1);
   const monthEnd = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + 1, 0);
   
-  return props.bookings.filter(booking => {
-    const bookingStart = new Date(booking.startDate);
-    const bookingEnd = new Date(booking.endDate);
+  return allBookings.value.filter(booking => {
+    const startDate = booking.startDate || booking.from || booking.start;
+    const endDate = booking.endDate || booking.to || booking.end;
+    
+    if (!startDate || !endDate) return false;
+    
+    const bookingStart = new Date(startDate);
+    const bookingEnd = new Date(endDate);
+    
+    if (Number.isNaN(bookingStart.getTime()) || Number.isNaN(bookingEnd.getTime())) return false;
+    
     return (bookingStart <= monthEnd && bookingEnd >= monthStart);
   });
 });
 
 // Helper function to get customer name
 function getCustomerName(booking) {
+  // Check counterparty first (new API structure)
+  if (booking.counterparty) {
+    return booking.counterparty.displayName || 
+           booking.counterparty.username || 
+           booking.counterparty.name || 
+           'Unknown Customer';
+  }
+  
+  // Fallback to renter (old API structure)
   if (booking.renter) {
     if (booking.renter.firstName && booking.renter.lastName) {
       return `${booking.renter.firstName} ${booking.renter.lastName}`;
     } else if (booking.renter.username) {
       return booking.renter.username;
+    } else if (booking.renter.displayName) {
+      return booking.renter.displayName;
     } else if (booking.renter.email) {
       return booking.renter.email.split('@')[0];
     }
   }
   return booking.customerName || 'Unknown Customer';
+}
+
+// Format currency for display
+function formatCurrency(amount, currency = 'ILS') {
+  if (!amount && amount !== 0) return '';
+  // Backend sends in cents
+  const amountInCents = typeof amount === 'number' ? amount : parseInt(amount);
+  return new Intl.NumberFormat('he-IL', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amountInCents / 100);
 }
 
 // Generate calendar dates for the current month
@@ -370,19 +709,28 @@ function getDayClasses(dateObj) {
     classes.push('today');
   }
   
+  const dateStr = formatDate(dateObj.date);
+  
+  // Check if this date is blocked (from item.blockedDates)
+  const blockedInfo = blockedDatesByDate.value[dateStr];
+  const isBlocked = blockedInfo && blockedInfo.blocked;
+  
   // Check if this date has bookings
   const bookings = getBookingsForDate(dateObj.date);
   if (bookings.length > 0) {
     classes.push('has-bookings');
     
     // Check if it's a start date, end date, or middle date
-    const dateStr = formatDate(dateObj.date);
-    const isStartDate = bookings.some(booking => 
-      formatDate(new Date(booking.startDate)) === dateStr
-    );
-    const isEndDate = bookings.some(booking => 
-      formatDate(new Date(booking.endDate)) === dateStr
-    );
+    const isStartDate = bookings.some(booking => {
+      const startDate = booking.startDate || booking.from || booking.start;
+      if (!startDate) return false;
+      return formatDate(new Date(startDate)) === dateStr;
+    });
+    const isEndDate = bookings.some(booking => {
+      const endDate = booking.endDate || booking.to || booking.end;
+      if (!endDate) return false;
+      return formatDate(new Date(endDate)) === dateStr;
+    });
     
     if (isStartDate && isEndDate) {
       classes.push('booking-single-day');
@@ -393,6 +741,9 @@ function getDayClasses(dateObj) {
     } else {
       classes.push('booking-middle');
     }
+  } else if (isBlocked) {
+    // Blocked dates (no bookings, but blocked by owner)
+    classes.push('blocked-date');
   } else if (dateObj.isCurrentMonth) {
     // Available dates in current month
     classes.push('available');
@@ -401,8 +752,11 @@ function getDayClasses(dateObj) {
   return classes;
 }
 
-onMounted(() => {
-  // Load initial data
+onMounted(async () => {
+  // Load bookings for the item
+  await loadBookings();
+  
+  // Emit refresh event for parent component
   emit('refresh', {
     month: currentMonth.value.toISOString().slice(0, 7),
     itemId: props.itemId
@@ -442,18 +796,18 @@ watch(() => currentMonth.value, (newMonth) => {
           <div class="header-actions">
             <button 
               class="btn btn-outline-warning btn-sm me-2"
-              @click="showBlockingForm"
+              @click="showBlockedDatesList = !showBlockedDatesList"
               :disabled="loading"
             >
               <i class="bi bi-calendar-x me-1"></i>
-              Block Dates
+              {{ showBlockedDatesList ? 'Hide Blocked Dates' : 'Block Dates' }}
             </button>
             <button 
               class="btn btn-outline-primary btn-sm"
-              @click="emit('refresh', { month: currentMonth.toISOString().slice(0, 7), itemId })"
-              :disabled="loading"
+              @click="loadBookings"
+              :disabled="loading || internalLoading"
             >
-              <i class="bi bi-arrow-clockwise me-1" :class="{ 'spinning': loading }"></i>
+              <i class="bi bi-arrow-clockwise me-1" :class="{ 'spinning': loading || internalLoading }"></i>
               Refresh
             </button>
           </div>
@@ -531,10 +885,15 @@ watch(() => currentMonth.value, (newMonth) => {
                 class="calendar-day"
                 :class="getDayClasses(date)"
                 @click="onDateClick(date.date)"
+                @mouseenter="onDateHover($event, date.date)"
+                @mouseleave="onDateHoverOut"
               >
                 <div class="day-number">{{ date.day }}</div>
                 <div v-if="getBookingsForDate(date.date).length > 0" class="day-bookings">
                   <span class="booking-indicator"></span>
+                  <span v-if="getBookingsForDate(date.date).length > 1" class="booking-count">
+                    {{ getBookingsForDate(date.date).length }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -567,6 +926,10 @@ watch(() => currentMonth.value, (newMonth) => {
           <span class="legend-color today"></span>
           <span>Today</span>
         </div>
+        <div class="legend-item">
+          <span class="legend-color blocked-date"></span>
+          <span>Blocked</span>
+        </div>
       </div>
 
       <!-- Recent Bookings -->
@@ -581,7 +944,7 @@ watch(() => currentMonth.value, (newMonth) => {
           >
             <div class="booking-info">
               <div class="booking-dates">
-                {{ formatDisplayDate(booking.startDate) }} - {{ formatDisplayDate(booking.endDate) }}
+                {{ formatDisplayDate(booking.startDate || booking.from || booking.start) }} - {{ formatDisplayDate(booking.endDate || booking.to || booking.end) }}
               </div>
               <div class="booking-customer">
                 <i class="bi bi-person me-1"></i>
@@ -604,7 +967,123 @@ watch(() => currentMonth.value, (newMonth) => {
         <p class="text-muted">This item has no bookings for the selected month.</p>
       </div>
 
+      <!-- Blocked Dates Modal -->
+      <div v-if="showBlockedDatesList" class="blocked-dates-modal-overlay" @click.self="showBlockedDatesList = false">
+        <div class="blocked-dates-modal">
+          <div class="blocked-dates-modal-header">
+            <h5 class="blocked-dates-modal-title">
+              <i class="bi bi-calendar-x me-2"></i>
+              Blocked Dates ({{ activeBlockedDates.length }})
+            </h5>
+            <button 
+              type="button"
+              class="btn-close"
+              @click="showBlockedDatesList = false"
+              aria-label="Close"
+            ></button>
+          </div>
+          
+          <div class="blocked-dates-modal-body">
+            <div class="d-flex justify-content-end mb-3">
+              <button 
+                class="btn btn-sm btn-warning"
+                @click="showBlockingForm()"
+              >
+                <i class="bi bi-plus-circle me-1"></i>
+                Add Block
+              </button>
+            </div>
+            
+            <div v-if="activeBlockedDates.length === 0" class="text-muted text-center py-5">
+              <i class="bi bi-calendar-check display-6 d-block mb-2"></i>
+              <p class="mb-0">No active blocked dates</p>
+            </div>
+            
+            <div v-else class="blocked-dates-list">
+              <div 
+                v-for="blockedDate in activeBlockedDates" 
+                :key="blockedDate.id"
+                class="blocked-date-item"
+              >
+                <div class="blocked-date-info">
+                  <div class="blocked-date-range">
+                    <i class="bi bi-calendar-range me-2"></i>
+                    <strong>{{ formatDisplayDate(blockedDate.from) }} - {{ formatDisplayDate(blockedDate.to) }}</strong>
+                  </div>
+                  <div v-if="blockedDate.reason" class="blocked-date-reason text-muted small">
+                    <i class="bi bi-chat-quote me-1"></i>
+                    {{ blockedDate.reason }}
+                  </div>
+                </div>
+                <div class="blocked-date-actions">
+                  <button
+                    class="btn btn-sm btn-outline-primary me-2"
+                    @click="showBlockingForm(blockedDate)"
+                    :disabled="blockingLoading"
+                  >
+                    <i class="bi bi-pencil"></i>
+                    Edit
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    @click="deleteBlockedDate(blockedDate.id)"
+                    :disabled="deletingBlockId === blockedDate.id"
+                  >
+                    <span v-if="deletingBlockId === blockedDate.id" class="spinner-border spinner-border-sm me-1"></span>
+                    <i v-else class="bi bi-trash"></i>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Debug Section (remove in production) -->
+    </div>
+  </div>
+
+  <!-- Booking Hover Tooltip -->
+  <div
+    v-if="hoveredDate && hoveredBookings.length > 0"
+    class="booking-tooltip"
+    :style="{
+      left: tooltipPosition.x + 'px',
+      top: tooltipPosition.y + 'px',
+      transform: 'translateX(-50%) translateY(-100%)'
+    }"
+    @mouseenter.stop
+    @mouseleave="onDateHoverOut"
+  >
+    <div class="tooltip-arrow"></div>
+    <div class="tooltip-content">
+      <div v-for="(booking, index) in hoveredBookings" :key="booking.id" class="tooltip-booking">
+        <div class="tooltip-header">
+          <strong>{{ getCustomerName(booking) }}</strong>
+          <span class="badge badge-sm" :class="`bg-${getStatusColor(booking.status)}`">
+            {{ booking.status }}
+          </span>
+        </div>
+        <div class="tooltip-dates">
+          <i class="bi bi-calendar3 me-1"></i>
+          {{ formatDisplayDate(booking.startDate || booking.from || booking.start) }} - 
+          {{ formatDisplayDate(booking.endDate || booking.to || booking.end) }}
+        </div>
+        <div v-if="booking.totalAmount || booking.priceTotal || booking.total" class="tooltip-price">
+          <i class="bi bi-currency-dollar me-1"></i>
+          {{ formatCurrency(booking.totalAmount || booking.priceTotal || booking.total, booking.currency || 'ILS') }}
+        </div>
+        <router-link
+          :to="{ name: 'booking-checkout', params: { bookingId: booking.id } }"
+          class="tooltip-link"
+          @click.stop
+        >
+          <i class="bi bi-box-arrow-up-right me-1"></i>
+          View Booking Details
+        </router-link>
+        <div v-if="index < hoveredBookings.length - 1" class="tooltip-divider"></div>
+      </div>
     </div>
   </div>
 
@@ -631,7 +1110,7 @@ watch(() => currentMonth.value, (newMonth) => {
         <div class="modal-header">
           <h5 class="modal-title" id="blockingModalLabel">
             <i class="bi bi-calendar-x me-2"></i>
-            Block Date Range
+            {{ editingBlockedDate ? 'Edit Blocked Date Range' : 'Block Date Range' }}
           </h5>
           <button 
             type="button" 
@@ -691,7 +1170,7 @@ watch(() => currentMonth.value, (newMonth) => {
           >
             <span v-if="blockingLoading" class="spinner-border spinner-border-sm me-2"></span>
             <i v-else class="bi bi-calendar-x me-1"></i>
-            {{ blockingLoading ? 'Blocking...' : 'Block Dates' }}
+            {{ blockingLoading ? (editingBlockedDate ? 'Updating...' : 'Blocking...') : (editingBlockedDate ? 'Update Dates' : 'Block Dates') }}
           </button>
         </div>
       </div>
@@ -922,6 +1401,7 @@ function getStatusColor(status) {
   justify-content: center;
   align-items: center;
   flex-grow: 1;
+  position: relative;
 }
 
 .booking-indicator {
@@ -1022,6 +1502,21 @@ function getStatusColor(status) {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
+/* Blocked Dates */
+.calendar-day.blocked-date {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+}
+
+.calendar-day.blocked-date .day-number {
+  color: #92400e;
+  font-weight: 600;
+}
+
+.calendar-day.blocked-date:hover {
+  background: #fde68a;
+}
+
 
 /* Legend */
 .calendar-legend {
@@ -1066,6 +1561,10 @@ function getStatusColor(status) {
 
 .legend-color.today {
   background: #2196f3;
+}
+
+.legend-color.blocked-date {
+  background: #f59e0b;
 }
 
 /* Recent Bookings */
@@ -1261,6 +1760,221 @@ function getStatusColor(status) {
   .month-buttons {
     flex-direction: column;
     gap: 4px;
+  }
+}
+
+/* Booking Tooltip */
+.booking-tooltip {
+  position: fixed;
+  z-index: 1050;
+  pointer-events: auto;
+  margin-top: -8px;
+}
+
+.tooltip-arrow {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #1f2937;
+}
+
+.tooltip-content {
+  background: #1f2937;
+  color: white;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 250px;
+  max-width: 350px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip-booking {
+  margin-bottom: 8px;
+}
+
+.tooltip-booking:last-child {
+  margin-bottom: 0;
+}
+
+.tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.tooltip-header strong {
+  color: white;
+  font-size: 14px;
+}
+
+.tooltip-header .badge {
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.tooltip-dates,
+.tooltip-price {
+  font-size: 12px;
+  color: #d1d5db;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.tooltip-link {
+  display: inline-flex;
+  align-items: center;
+  color: #60a5fa;
+  text-decoration: none;
+  font-size: 12px;
+  margin-top: 6px;
+  transition: color 0.2s;
+}
+
+.tooltip-link:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+.tooltip-divider {
+  height: 1px;
+  background: #374151;
+  margin: 8px 0;
+}
+
+/* Blocked Dates Modal */
+.blocked-dates-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.blocked-dates-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  max-width: 700px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.blocked-dates-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.blocked-dates-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #92400e;
+  margin: 0;
+}
+
+.blocked-dates-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.blocked-dates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.blocked-date-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.blocked-date-item:hover {
+  background: #fde68a;
+  border-color: #d97706;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.blocked-date-info {
+  flex-grow: 1;
+}
+
+.blocked-date-range {
+  font-size: 14px;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+
+.blocked-date-reason {
+  font-size: 12px;
+  color: #78350f;
+  margin-top: 4px;
+}
+
+.blocked-date-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .blocked-date-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .blocked-date-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 </style>

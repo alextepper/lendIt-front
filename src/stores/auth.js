@@ -47,8 +47,11 @@ export const useAuthStore = defineStore("auth", {
         });
         // Reset refresh token validity on successful login
         this.refreshTokenValid = true;
-        // Backend sets httpOnly cookies, so we just fetch user profile
+
+        // Always call /auth/me after login to ensure auth.user is populated
+        // and all components (like the navbar) react immediately.
         await this.fetchMe();
+
         this.status = "idle";
 
         // Go home or intended route
@@ -57,6 +60,14 @@ export const useAuthStore = defineStore("auth", {
         } else {
           router.replace({ name: "home" });
         }
+
+        // As a safety net for any reactivity or cookie timing issues,
+        // force a full reload once navigation completes so the navbar
+        // and all stores see the authenticated state immediately.
+        if (typeof window !== "undefined") {
+          window.location.reload();
+        }
+
         return true;
       } catch (e) {
         this.status = "error";
@@ -68,9 +79,24 @@ export const useAuthStore = defineStore("auth", {
       this.status = "loading";
       try {
         const { data } = await http.get("/auth/me");
-        this.user = data;
+
+        // Support multiple backend response shapes:
+        // - { id, email, ... }
+        // - { user: { ... } }
+        // - { data: { user: { ... } } }
+        const user =
+          data?.user ||
+          data?.data?.user ||
+          data?.data ||
+          data;
+
+        if (!user || !user.id) {
+          console.warn("Unexpected /auth/me response shape:", data);
+        }
+
+        this.user = user;
         this.status = "idle";
-        return data;
+        return user;
       } catch (e) {
         console.warn("Failed to fetch user:", e);
         this.user = null;
@@ -133,44 +159,53 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async refresh() {
-      // Don't attempt refresh if we know the token is invalid or already refreshing
-      if (!this.refreshTokenValid || this.isRefreshing) {
-        console.warn(
-          "Refresh token is invalid or refresh already in progress, skipping refresh attempt"
-        );
-        throw new Error("Refresh token invalid or already refreshing");
+      // Don't attempt refresh if already refreshing
+      if (this.isRefreshing) {
+        console.warn("Refresh already in progress, waiting for existing refresh...");
+        // Wait for the existing refresh to complete
+        return new Promise((resolve, reject) => {
+          const checkInterval = setInterval(() => {
+            if (!this.isRefreshing) {
+              clearInterval(checkInterval);
+              // If refresh succeeded, user should be set
+              if (this.user) {
+                resolve({ user: this.user });
+              } else {
+                reject(new Error("Previous refresh failed"));
+              }
+            }
+          }, 100);
+          // Timeout after 5 seconds
+          setTimeout(() => {
+            clearInterval(checkInterval);
+            reject(new Error("Refresh timeout"));
+          }, 5000);
+        });
       }
 
       this.isRefreshing = true;
       try {
-        // Get refresh token from localStorage as fallback for cross-domain scenarios
-        // Backend will check cookies first, then body, then headers
-        const refreshToken = localStorage.getItem("refresh_token");
-
         // Prepare request config with token in both body and header for maximum compatibility
         const config = {};
         const refreshPayload = {};
 
+        // Optional: include refresh token from localStorage for environments
+        // where cookies are not sent. If not present, rely solely on httpOnly cookies.
+        const refreshToken = localStorage.getItem("refresh_token");
         if (refreshToken) {
-          // Try both common field names in body
           refreshPayload.refreshToken = refreshToken;
           refreshPayload.refresh_token = refreshToken;
 
-          // Also add to Authorization header as fallback
           config.headers = {
             Authorization: `Bearer ${refreshToken}`,
           };
 
           console.log("Sending refresh token in body and Authorization header");
         } else {
-          console.warn(
-            "No refresh token found in localStorage - skipping /auth/refresh call"
-          );
-          throw new Error("No refresh token available for refresh");
+          console.log("No refresh token in localStorage, relying on httpOnly cookies for /auth/refresh");
         }
 
-        // Backend handles refresh via httpOnly cookies, but we also send token in body and headers
-        // as fallback for cross-domain scenarios where cookies aren't sent
+        // Backend handles refresh via httpOnly cookies; body/headers are just fallbacks
         const { data } = await http.post(
           "/auth/refresh",
           refreshPayload,
@@ -213,12 +248,22 @@ export const useAuthStore = defineStore("auth", {
 
         return data;
       } catch (error) {
-        // If refresh fails, mark token as invalid immediately
-        console.warn(
-          "Token refresh failed:",
-          error.response?.data?.message || error.message
-        );
-        this.refreshTokenValid = false;
+        // If refresh fails with 401/403, mark token as invalid
+        // But don't logout here - let the HTTP interceptor handle it
+        if (error?.response?.status === 401 || error?.response?.status === 403) {
+          console.warn(
+            "Token refresh failed with 401/403 - refresh token is invalid:",
+            error.response?.data?.message || error.message
+          );
+          this.refreshTokenValid = false;
+        } else {
+          // For other errors (network, etc.), don't mark as invalid
+          // The token might still be valid, just couldn't refresh due to network issues
+          console.warn(
+            "Token refresh failed (non-auth error):",
+            error.response?.data?.message || error.message
+          );
+        }
         this.user = null;
         this.status = "error";
         // Don't call this.logout() here to avoid infinite loops

@@ -68,10 +68,29 @@ export const useChatStore = defineStore("chat", {
           // If no lastMessage but messages array exists, get the most recent one
           if (!lastMsg && thread.messages && thread.messages.length > 0) {
             // Sort by createdAt descending and take first
-            lastMsg = thread.messages.sort(
-              (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-            )[0];
+            lastMsg = thread.messages
+              .slice() // avoid mutating original
+              .sort(
+                (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+              )[0];
             console.log("🔍 Found last message from messages array:", lastMsg);
+          }
+
+          // Compute unread count from messages:
+          // "if the last message is not from the user and readAt is null then you can use it as a counter"
+          // Generalized to: count all messages from others with readAt === null.
+          let unread = 0;
+          if (currentUserId && Array.isArray(thread.messages)) {
+            unread = thread.messages.filter(
+              (m) =>
+                m.senderId !== currentUserId &&
+                (m.readAt === null || m.readAt === undefined)
+            ).length;
+          }
+
+          // Fallback to backend-provided unreadCount if messages array is missing
+          if (!unread && (thread.unreadCount || thread.unreadCount === 0)) {
+            unread = thread.unreadCount || 0;
           }
 
           return {
@@ -80,7 +99,7 @@ export const useChatStore = defineStore("chat", {
             avatar: otherUser?.avatar || null,
             last_text: lastMsg?.text || null,
             last_at: lastMsg?.createdAt || thread.createdAt,
-            unread: thread.unreadCount || 0,
+            unread,
             item: thread.item,
             otherUser: otherUser,
           };

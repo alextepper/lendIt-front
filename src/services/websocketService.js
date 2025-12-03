@@ -95,6 +95,22 @@ class WebSocketService {
         this.emit("thread_update", data);
       });
 
+      // Booking events
+      this.socket.on("booking_created", (data) => {
+        console.log("📅 Booking created:", data);
+        this.emit("booking_created", data);
+      });
+
+      this.socket.on("booking_updated", (data) => {
+        console.log("📅 Booking updated:", data);
+        this.emit("booking_updated", data);
+      });
+
+      this.socket.on("booking_status_changed", (data) => {
+        console.log("📅 Booking status changed:", data);
+        this.emit("booking_status_changed", data);
+      });
+
       // Connection error
       this.socket.on("connect_error", (error) => {
         console.error("❌ Socket.IO connection error:", error.message);

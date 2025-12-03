@@ -1273,6 +1273,7 @@ watch(fullscreenCarousel, (isOpen) => {
           <div v-if="isOwner" class="mt-3 mt-md-4">
             <BookingCalendar
               :item-id="item.id"
+              :item="item"
               :bookings="bookings"
               :loading="loadingBookings"
               @refresh="handleBookingRefresh"

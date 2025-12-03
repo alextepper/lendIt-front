@@ -21,20 +21,23 @@
       >
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <router-link class="nav-link" to="/search">
+            <router-link class="nav-link ms-3" to="/search">
               <i class="bi bi-search"></i> {{ $t('nav.search') }}
             </router-link>
           </li>
-          <li v-if="auth.isAuthed" class="nav-item">
-            <router-link class="nav-link" to="/my/bookings">
-              <i class="bi bi-calendar-check"></i> {{ $t('nav.myBookings') }}
+          <li v-if="auth.isAuthed" class="nav-item ms-3">
+            <router-link class="nav-link position-relative" to="/dashboard?tab=booking-requests">
+              <i class="bi bi-calendar-check"></i> Booking Requests
+              <span v-if="pendingBookingsCount > 0" class="position-absolute top-10 start-0 translate-middle badge rounded-pill bg-warning" style="font-size: 0.7rem; padding: 0.25em 0.5em;">
+                {{ pendingBookingsCount > 99 ? '99+' : pendingBookingsCount }}
+              </span>
             </router-link>
           </li>
-          <li v-if="auth.isAuthed" class="nav-item">
+          <li v-if="auth.isAuthed" class="nav-item ms-3">
             <router-link class="nav-link position-relative" to="/messages">
               <i class="bi bi-chat-dots"></i> {{ $t('nav.messages') }}
-              <span v-if="chat.unreadTotal" class="position-absolute top-10 start-100 translate-middle badge rounded-pill bg-danger">
-                {{ chat.unreadTotal }}
+              <span v-if="chat.unreadTotal > 0" class="position-absolute top-10 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.25em 0.5em;">
+                {{ chat.unreadTotal > 99 ? '99+' : chat.unreadTotal }}
               </span>
             </router-link>
           </li>
@@ -90,6 +93,8 @@
               <li><button class="dropdown-item" @click="theme.setMode('dark')"><i class="bi bi-moon me-2"></i>{{ $t('nav.theme.dark') }}</button></li>
             </ul>
           </div>
+
+          <NotificationsBell class="d-none d-sm-inline-flex" />
 
           <template v-if="!auth.isAuthed">
             <router-link class="btn btn-outline-primary btn-sm" to="/login">{{ $t('nav.login') }}</router-link>
@@ -205,6 +210,9 @@ import { useChatStore } from '../stores/chat'
 import { useLanguageStore } from '../stores/language'
 import { useDebugStore } from '../stores/debug'
 import { watch, ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import NotificationsBell from './NotificationsBell.vue'
+import { fetchAllBookings } from '../services/bookingRequestService'
+import websocketService from '../services/websocketService'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -217,6 +225,15 @@ const showDebug = ref(false)
 const navOpen = ref(false)
 const navMain = ref(null)
 const navToggler = ref(null)
+const pendingBookingsCount = ref(0)
+let bookingsRefreshInterval = null
+
+// Store WebSocket listener callbacks for cleanup
+const bookingWebSocketCallbacks = {
+  booking_created: null,
+  booking_updated: null,
+  booking_status_changed: null
+}
 
 const debugEnabled = computed(() => {
   if (typeof window === 'undefined') return import.meta.env.DEV
@@ -338,6 +355,16 @@ onMounted(() => {
   // Store handlers on element for cleanup
   el._navShownHandler = handleShown
   el._navHiddenHandler = handleHidden
+
+  // Load conversations if authenticated to get unread count
+  if (auth.isAuthed && chat && typeof chat.loadConversations === 'function') {
+    // Only load if conversations haven't been loaded yet
+    if (!chat.conversations.length) {
+      chat.loadConversations().catch(() => {
+        // Ignore errors
+      })
+    }
+  }
 })
 
 onBeforeUnmount(() => {
@@ -348,6 +375,136 @@ onBeforeUnmount(() => {
   }
   if (el._navHiddenHandler) {
     el.removeEventListener('hidden.bs.collapse', el._navHiddenHandler)
+  }
+})
+
+// Load pending bookings count
+async function loadPendingBookingsCount() {
+  if (!auth.isAuthed || !auth.user) {
+    pendingBookingsCount.value = 0
+    return
+  }
+
+  try {
+    const response = await fetchAllBookings()
+    const bookings = response.bookings || response.items || []
+    const userId = auth.user.id
+
+    // Count bookings requiring attention
+    const count = bookings.filter(booking => {
+      // Check if user is owner and booking needs approval
+      const isOwner = booking.role === 'owner' || 
+                     booking.ownerId === userId ||
+                     booking.item?.ownerId === userId ||
+                     booking.item?.owner?.id === userId
+      
+      // Check if user is renter and booking needs payment
+      const isRenter = booking.role === 'renter' ||
+                      booking.renterId === userId ||
+                      booking.renter?.id === userId ||
+                      booking.counterparty?.id === userId
+
+      // Owner needs to approve PENDING_OWNER bookings
+      if (isOwner && booking.status === 'PENDING_OWNER') {
+        return true
+      }
+
+      // Renter needs to pay for AWAITING_PAYMENT bookings
+      if (isRenter && booking.status === 'AWAITING_PAYMENT') {
+        return true
+      }
+
+      return false
+    }).length
+
+    pendingBookingsCount.value = count
+  } catch (error) {
+    console.error('Failed to load pending bookings count:', error)
+    pendingBookingsCount.value = 0
+  }
+}
+
+// Watch for auth changes and load count
+watch(() => auth.isAuthed, (isAuthed) => {
+  // Clear existing interval
+  if (bookingsRefreshInterval) {
+    clearInterval(bookingsRefreshInterval)
+    bookingsRefreshInterval = null
+  }
+
+  if (isAuthed) {
+    loadPendingBookingsCount()
+    
+    // Set up WebSocket listeners for real-time booking updates
+    setupBookingWebSocketListeners()
+    
+    // Fallback: Refresh count every 5 minutes (only when page is visible)
+    // This is just a safety net in case WebSocket events are missed
+    bookingsRefreshInterval = setInterval(() => {
+      if (auth.isAuthed && !document.hidden) {
+        loadPendingBookingsCount()
+      } else if (!auth.isAuthed) {
+        clearInterval(bookingsRefreshInterval)
+        bookingsRefreshInterval = null
+      }
+    }, 300000) // 5 minutes - much less frequent since WebSocket handles real-time updates
+    
+    // Load chat conversations to get unread count
+    if (chat && typeof chat.loadConversations === 'function') {
+      // Only load if conversations haven't been loaded yet
+      if (!chat.conversations.length) {
+        chat.loadConversations().catch(() => {
+          // Ignore errors
+        })
+      }
+    }
+  } else {
+    pendingBookingsCount.value = 0
+  }
+}, { immediate: true })
+
+// Watch for chat unreadTotal changes to ensure badge updates
+watch(() => chat.unreadTotal, (newTotal) => {
+  console.log('Chat unreadTotal changed:', newTotal)
+  // The badge will automatically update via reactivity
+}, { immediate: true })
+
+// Also watch for conversations to be loaded and recalculate unread
+watch(() => chat.conversations, (conversations) => {
+  console.log('Chat conversations updated, unreadTotal:', chat.unreadTotal)
+}, { deep: true })
+
+// Handle page visibility changes - pause polling when tab is hidden
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      // Page is hidden - pause polling (interval will check visibility)
+      // No need to clear, just let it skip when hidden
+    } else {
+      // Page is visible - refresh immediately and resume polling
+      if (auth.isAuthed) {
+        loadPendingBookingsCount()
+      }
+    }
+  })
+}
+
+// Cleanup interval and WebSocket listeners on unmount
+onBeforeUnmount(() => {
+  if (bookingsRefreshInterval) {
+    clearInterval(bookingsRefreshInterval)
+    bookingsRefreshInterval = null
+  }
+  
+  // Remove WebSocket listeners
+  if (bookingWebSocketCallbacks.booking_created) {
+    websocketService.off('booking_created', bookingWebSocketCallbacks.booking_created)
+  }
+  if (bookingWebSocketCallbacks.booking_updated) {
+    websocketService.off('booking_updated', bookingWebSocketCallbacks.booking_updated)
+  }
+  if (bookingWebSocketCallbacks.booking_status_changed) {
+    websocketService.off('booking_status_changed', bookingWebSocketCallbacks.booking_status_changed)
   }
 })
 
