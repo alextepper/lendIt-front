@@ -15,70 +15,43 @@ const { t } = useI18n();
 const loading = ref(false);
 const error = ref(null);
 
-// Get API base URL - for OAuth we need the actual backend URL, not the proxy path
-function getBackendBaseURL() {
-  // Check if we're in development mode first
-  const isDev = import.meta.env.DEV || import.meta.env.MODE === 'development' || (typeof window !== "undefined" && window.location.hostname === 'localhost' && window.location.port === '5173');
-  
-  // In development, always use localhost:4000 unless explicitly overridden with absolute URL
-  if (isDev) {
-    // Priority 1: Check for explicit absolute URL in env var (overrides dev default)
-    if (import.meta.env.VITE_API_BASE_URL) {
-      const envURL = import.meta.env.VITE_API_BASE_URL;
-      if (envURL.startsWith('http://') || envURL.startsWith('https://')) {
-        return envURL;
-      }
-    }
-    // Priority 2: Development default - always use backend directly
-    return 'http://localhost:4000';
+function handleGoogleSignIn(event) {
+  // Prevent any form submission or default behavior
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
   }
   
-  // Production mode
-  // Priority 1: Runtime config (set by nginx in production)
-  if (typeof window !== "undefined" && window.__API_BASE_URL__) {
-    const runtimeURL = window.__API_BASE_URL__;
-    // If it's an absolute URL, use it directly
-    if (runtimeURL.startsWith('http://') || runtimeURL.startsWith('https://')) {
-      return runtimeURL;
-    }
-  }
-  
-  // Priority 2: Environment variable (absolute URL)
-  if (import.meta.env.VITE_API_BASE_URL) {
-    const envURL = import.meta.env.VITE_API_BASE_URL;
-    // If it's an absolute URL, use it directly
-    if (envURL.startsWith('http://') || envURL.startsWith('https://')) {
-      return envURL;
-    }
-  }
-  
-  // Priority 3: Production fallback - use current origin with /api
-  return `${window.location.origin}/api`;
-}
-
-function handleGoogleSignIn() {
   loading.value = true;
   error.value = null;
   
   try {
-    const backendBaseURL = getBackendBaseURL();
+    // Use relative URL for OAuth - same origin as the frontend
+    // In production: https://www.sharo-app.com/api/auth/google
+    // In development: Vite proxy forwards /api/auth/google to backend
+    const oauthUrl = '/api/auth/google';
     
-    // Build the Google OAuth URL - backendBaseURL should always be absolute at this point
-    const oauthUrl = `${backendBaseURL}auth/google`;
-    
-    // Build URL object for query params
-    const url = new URL(oauthUrl);
+    // Build full URL with query params
+    let fullUrl = oauthUrl;
+    const params = new URLSearchParams();
     
     // Add return URL if provided
     if (props.returnUrl) {
-      url.searchParams.set('return_url', props.returnUrl);
+      params.set('return_url', props.returnUrl);
     } else if (router.currentRoute.value.query.redirect) {
       // Use redirect query param if available
-      url.searchParams.set('return_url', String(router.currentRoute.value.query.redirect));
+      params.set('return_url', String(router.currentRoute.value.query.redirect));
     }
     
+    // Append query string if we have params
+    if (params.toString()) {
+      fullUrl += '?' + params.toString();
+    }
+    
+    console.log('Redirecting to Google OAuth:', fullUrl);
+    
     // Redirect to backend Google OAuth endpoint
-    window.location.href = url.toString();
+    window.location.href = fullUrl;
   } catch (err) {
     error.value = t('auth.googleSignInFailed');
     loading.value = false;
@@ -92,7 +65,7 @@ function handleGoogleSignIn() {
     <button
       type="button"
       class="btn btn-outline-secondary w-100 google-sign-in-button"
-      @click="handleGoogleSignIn"
+      @click.prevent="handleGoogleSignIn"
       :disabled="loading"
     >
       <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>

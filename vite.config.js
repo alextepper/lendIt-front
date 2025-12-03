@@ -9,13 +9,13 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': {
-        target: process.env.VITE_API_BASE_URL || 'http://localhost:4000',
+      "/api": {
+        target: process.env.VITE_API_BASE_URL,
         changeOrigin: true,
         secure: false,
         // Remove /api prefix when forwarding to backend
         // Frontend uses /api/auth/me -> backend receives /auth/me
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },
