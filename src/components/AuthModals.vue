@@ -1,123 +1,125 @@
 <template>
   <!-- Login Modal -->
-  <div
-    v-if="showLoginModal"
-    class="modal fade show"
-    id="loginModal"
-    tabindex="-1"
-    :style="{ display: 'block' }"
-    @click.self="closeModals"
-  >
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title">{{ $t('auth.login.title') }}</h5>
-          <button
-            type="button"
-            class="btn-close"
-            @click="closeModals"
-            aria-label="Close"
-          ></button>
-        </div>
-        <div class="modal-body">
-          <div v-if="error" class="alert alert-danger">{{ error }}</div>
+  <template v-if="showLoginModal">
+    <div class="modal-backdrop fade show" @click="closeModals"></div>
+    <div
+      class="modal fade show"
+      id="loginModal"
+      tabindex="-1"
+      :style="{ display: 'block' }"
+      @click.self="closeModals"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h5 class="modal-title">{{ $t('auth.login.title') }}</h5>
+            <button
+              type="button"
+              class="btn-close"
+              @click="closeModals"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-          <form @submit.prevent="submit" novalidate>
-            <!-- Google Sign In Button -->
-            <div class="mb-3">
-              <GoogleSignInButton :return-url="redirectPath" />
-            </div>
-            
-            <!-- Divider -->
-            <div class="divider mb-3">
-              <span class="divider-text">{{ $t('auth.or') }}</span>
-            </div>
+            <form @submit.prevent="submit" novalidate>
+              <!-- Google Sign In Button -->
+              <div class="mb-3">
+                <GoogleSignInButton :return-url="redirectPath" />
+              </div>
+              
+              <!-- Divider -->
+              <div class="divider mb-3">
+                <span class="divider-text">{{ $t('auth.or') }}</span>
+              </div>
 
-            <div class="mb-3">
-              <label class="form-label">{{ $t('auth.login.email') }}</label>
-              <input v-model="loginForm.email" class="form-control" type="email" required />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">{{ $t('auth.login.password') }}</label>
-              <input v-model="loginForm.password" class="form-control" type="password" minlength="6" required />
-            </div>
-            <button class="btn btn-primary w-100" :disabled="submitting" type="submit">
-              <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-              {{ $t('auth.login.submit') }}
-            </button>
-          </form>
+              <div class="mb-3">
+                <label class="form-label">{{ $t('auth.login.email') }}</label>
+                <input v-model="loginForm.email" class="form-control" type="email" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">{{ $t('auth.login.password') }}</label>
+                <input v-model="loginForm.password" class="form-control" type="password" minlength="6" required />
+              </div>
+              <button class="btn btn-primary w-100" :disabled="submitting" type="submit">
+                <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+                {{ $t('auth.login.submit') }}
+              </button>
+            </form>
 
-          <p class="small mt-3 text-center">
-            {{ $t('auth.login.noAccount') }}
-            <a href="#" @click.prevent="switchToRegister">{{ $t('auth.login.signUp') }}</a>
-          </p>
+            <p class="small mt-3 text-center">
+              {{ $t('auth.login.noAccount') }}
+              <a href="#" @click.prevent="switchToRegister">{{ $t('auth.login.signUp') }}</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
-    <div class="modal-backdrop fade show" @click="closeModals"></div>
-  </div>
+  </template>
 
   <!-- Register Modal -->
-  <div
-    v-if="showRegisterModal"
-    class="modal fade show"
-    id="registerModal"
-    tabindex="-1"
-    :style="{ display: 'block' }"
-    @click.self="closeModals"
-  >
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title">{{ $t('auth.register.title') }}</h5>
-          <button
-            type="button"
-            class="btn-close"
-            @click="closeModals"
-            aria-label="Close"
-          ></button>
-        </div>
-        <div class="modal-body">
-          <div v-if="error" class="alert alert-danger">{{ error }}</div>
+  <template v-if="showRegisterModal">
+    <div class="modal-backdrop fade show" @click="closeModals"></div>
+    <div
+      class="modal fade show"
+      id="registerModal"
+      tabindex="-1"
+      :style="{ display: 'block' }"
+      @click.self="closeModals"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h5 class="modal-title">{{ $t('auth.register.title') }}</h5>
+            <button
+              type="button"
+              class="btn-close"
+              @click="closeModals"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-          <form @submit.prevent="submit" novalidate>
-            <!-- Google Sign In Button -->
-            <div class="mb-3">
-              <GoogleSignInButton :return-url="redirectPath" />
-            </div>
-            
-            <!-- Divider -->
-            <div class="divider mb-3">
-              <span class="divider-text">{{ $t('auth.or') }}</span>
-            </div>
+            <form @submit.prevent="submit" novalidate>
+              <!-- Google Sign In Button -->
+              <div class="mb-3">
+                <GoogleSignInButton :return-url="redirectPath" />
+              </div>
+              
+              <!-- Divider -->
+              <div class="divider mb-3">
+                <span class="divider-text">{{ $t('auth.or') }}</span>
+              </div>
 
-            <div class="mb-3">
-              <label class="form-label">{{ $t('auth.register.name') }}</label>
-              <input v-model="registerForm.name" class="form-control" type="text" required />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">{{ $t('auth.register.email') }}</label>
-              <input v-model="registerForm.email" class="form-control" type="email" required />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">{{ $t('auth.register.password') }}</label>
-              <input v-model="registerForm.password" class="form-control" type="password" minlength="6" required />
-            </div>
-            <button class="btn btn-primary w-100" :disabled="submitting" type="submit">
-              <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-              {{ $t('auth.register.submit') }}
-            </button>
-          </form>
+              <div class="mb-3">
+                <label class="form-label">{{ $t('auth.register.name') }}</label>
+                <input v-model="registerForm.name" class="form-control" type="text" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">{{ $t('auth.register.email') }}</label>
+                <input v-model="registerForm.email" class="form-control" type="email" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">{{ $t('auth.register.password') }}</label>
+                <input v-model="registerForm.password" class="form-control" type="password" minlength="6" required />
+              </div>
+              <button class="btn btn-primary w-100" :disabled="submitting" type="submit">
+                <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+                {{ $t('auth.register.submit') }}
+              </button>
+            </form>
 
-          <p class="small mt-3 text-center">
-            {{ $t('auth.register.hasAccount') }}
-            <a href="#" @click.prevent="switchToLogin">{{ $t('auth.register.signIn') }}</a>
-          </p>
+            <p class="small mt-3 text-center">
+              {{ $t('auth.register.hasAccount') }}
+              <a href="#" @click.prevent="switchToLogin">{{ $t('auth.register.signIn') }}</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
-    <div class="modal-backdrop fade show" @click="closeModals"></div>
-  </div>
+  </template>
 </template>
 
 <script setup>
@@ -233,10 +235,24 @@ async function submit() {
 
 .modal-backdrop {
   z-index: 1040;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .modal {
-  z-index: 1050;
+  z-index: 1055;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.modal.show {
+  display: block !important;
 }
 </style>
 
