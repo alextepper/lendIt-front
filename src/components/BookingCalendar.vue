@@ -320,6 +320,15 @@ function handleOrderUpdate() {
   closeOrderModal();
 }
 
+// Navigate to booking details page
+function goToBookingDetails(booking) {
+  if (!booking || !booking.id) return;
+  router.push({
+    name: 'booking-details',
+    params: { bookingId: booking.id }
+  });
+}
+
 // Show blocking modal (for new or edit)
 function showBlockingForm(blockedDate = null) {
   editingBlockedDate.value = blockedDate ? blockedDate.id : null;
@@ -942,7 +951,7 @@ watch(() => currentMonth.value, (newMonth) => {
             v-for="booking in currentMonthBookings.slice(0, 5)" 
             :key="booking.id"
             class="booking-item"
-            @click="showOrderDetails(booking)"
+            @click="goToBookingDetails(booking)"
           >
             <div class="booking-info">
               <div class="booking-dates">

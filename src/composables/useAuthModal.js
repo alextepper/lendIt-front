@@ -37,11 +37,12 @@ export function useAuthModal() {
     showLoginModal.value = false
     showRegisterModal.value = false
     redirectPath.value = null
-    // Remove modal from query
+    // Remove modal and redirect from query, but stay on current path
     const query = { ...route.query }
     delete query.modal
     delete query.redirect
-    router.replace({ query })
+    // Explicitly use current path to prevent any redirects
+    router.replace({ path: route.path, query })
   }
 
   function switchToRegister() {

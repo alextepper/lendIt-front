@@ -174,7 +174,12 @@ async function submit() {
     try {
       await auth.login(loginForm)
       // Close modal on success - navbar will update automatically
-      // closeModals() will remove query params including redirect
+      // Remove query params BEFORE closing modal to prevent any redirects
+      const currentPath = route.path
+      const query = { ...route.query }
+      delete query.modal
+      delete query.redirect
+      router.replace({ path: currentPath, query })
       closeModals()
       // Don't redirect - just stay on current page
     } catch (e) {
@@ -191,7 +196,12 @@ async function submit() {
     try {
       await auth.register(registerForm)
       // Close modal on success - navbar will update automatically
-      // closeModals() will remove query params including redirect
+      // Remove query params BEFORE closing modal to prevent any redirects
+      const currentPath = route.path
+      const query = { ...route.query }
+      delete query.modal
+      delete query.redirect
+      router.replace({ path: currentPath, query })
       closeModals()
       // Don't redirect - just stay on current page
     } catch (e) {
