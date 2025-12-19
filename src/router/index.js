@@ -155,7 +155,8 @@ router.beforeEach(async (to, from, next) => {
     // Show login modal instead of navigating to login page
     return next({ path: to.path, query: { ...to.query, modal: 'login', redirect: to.fullPath } });
   }
-  if (to.meta.guestOnly && auth.isAuthed) {
+  // Don't redirect from OAuth callback - let it handle its own redirect
+  if (to.meta.guestOnly && auth.isAuthed && to.name !== 'oauth-callback') {
     return next({ name: "home" });
   }
   
