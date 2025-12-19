@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
-import { fetchListings, fetchCategories } from '../services/listingsService';
+import { fetchListings } from '../services/listingsService';
 import ItemCard from '../components/ItemCard.vue';
 import PaginationBar from '../components/PaginationBar.vue';
 import SearchMap from '../components/SearchMap.vue';
@@ -31,7 +31,6 @@ const { state, setPatch, setPage, reset } = useQuerySync({
   radiusKm: '',
 });
 
-const categories = ref([]);
 const data = ref({ items: [], page: 1, per_page: 12, total: 0, total_pages: 1 });
 const loading = ref(false);
 const error = ref(null);
@@ -59,12 +58,6 @@ const radiusValue = computed({
 
 // Fetch meta and initialize location
 onMounted(async () => {
-  try {
-    categories.value = await fetchCategories();
-  } catch (e) {
-    // non-blocking
-  }
-  
   // If URL already has lat/lng (e.g. shared link), respect that
   if (state.value.lat && state.value.lng) {
     useManualLocation();
@@ -553,10 +546,12 @@ function formatPrice(amount) {
 
         <div class="mb-3">
           <label class="form-label">{{ $t('search.category') }}</label>
-          <select v-model="state.category" class="form-select">
-            <option value="">{{ $t('search.any') }}</option>
-            <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
-          </select>
+          <input 
+            v-model="state.category" 
+            class="form-control" 
+            type="text"
+            :placeholder="$t('search.category')"
+          />
         </div>
 
         

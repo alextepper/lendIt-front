@@ -1,7 +1,6 @@
 <script setup>
 import { reactive, ref, watch, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { fetchCategories } from '../services/listingsService';
 import { useUiStore } from '../stores/ui';
 import http from '../lib/http';
 
@@ -145,17 +144,8 @@ function resetForm() {
 }
 
 onMounted(async () => {
-  try {
-    const backendCategories = await fetchCategories();
-    // Merge backend categories with default categories, removing duplicates
-    const allCategories = [...new Set([...defaultCategories, ...(backendCategories || [])])];
-    // Sort alphabetically for better UX
-    cats.list = allCategories.sort();
-  } catch (error) {
-    // If backend fails, use default categories
-    console.warn('Failed to fetch categories from backend, using defaults:', error);
-    cats.list = [...defaultCategories].sort();
-  }
+  // Use default categories only
+  cats.list = [...defaultCategories].sort();
   locs.list = []; // Locations removed - using geocoding instead
 });
 
