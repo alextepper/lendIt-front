@@ -22,12 +22,9 @@
         @click="handleNavClick"
       >
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <router-link class="nav-link position-relative" to="/search">
+          <li class="nav-item ms-3">
+            <router-link class="nav-link" to="/search">
               <i class="bi bi-search"></i> {{ $t('nav.search') }}
-              <span v-if="pendingBookingsCount > 0" class="position-absolute top-10 start-0 translate-middle badge rounded-pill bg-warning" style="font-size: 0.7rem; padding: 0.25em 0.5em;">
-                {{ pendingBookingsCount > 99 ? '99+' : pendingBookingsCount }}
-              </span>
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item ms-3">
@@ -99,7 +96,7 @@
             </ul>
           </div>
 
-          <NotificationsBell class="d-none d-sm-inline-flex" />
+          <!-- <NotificationsBell class="d-none d-sm-inline-flex" /> -->
 
           <template v-if="!auth.isAuthed">
             <button class="btn btn-outline-primary btn-sm" @click="openLoginModal">{{ $t('nav.login') }}</button>
@@ -122,7 +119,7 @@
                   height="40"
                 />
               </button>
-              <ul class="dropdown-menu navbar-profile-menu">
+              <ul class="dropdown-menu dropdown-menu-end navbar-profile-menu">
                 <li class="dropdown-header">
                   <div class="d-flex align-items-center">
                     <img 
@@ -617,14 +614,27 @@ watch(() => language.currentLocale, (newLocale) => {
     transform: translateX(0);
 }
 
+/* Ensure dropdowns don't overflow viewport */
+.navbar-profile-menu {
+    right: 0;
+    left: auto;
+    margin-right: 0.5rem;
+    /* Ensure menu doesn't overflow viewport */
+    max-width: min(300px, calc(100vw - 1rem));
+    /* If menu would overflow, adjust position */
+    position: absolute;
+}
+
 /* On small screens, position from right to prevent clipping */
 @media (max-width: 992px) {
   .language-dropdown,
   .theme-dropdown,
   .navbar-profile-menu {
     left: auto;
+    right: 0;
     max-width: calc(100vw - 1rem);
     transform: translateX(0);
+    margin-right: 0.5rem;
   }
 }
 

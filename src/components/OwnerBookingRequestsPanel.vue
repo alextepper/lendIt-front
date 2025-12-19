@@ -15,6 +15,7 @@
           <option value="AWAITING_PAYMENT">{{ $t('bookingRequests.awaitingPayment') }}</option>
           <option value="CONFIRMED">{{ $t('bookingRequests.confirmed') }}</option>
           <option value="OWNER_DECLINED">{{ $t('bookingRequests.declined') }}</option>
+          <option value="CANCELLED">{{ $t('bookingRequests.cancelled') }}</option>
         </select>
       </div>
     </div>
@@ -439,6 +440,7 @@ function getStatusBadgeClass(status) {
     AWAITING_PAYMENT: 'bg-info',
     CONFIRMED: 'bg-success',
     OWNER_DECLINED: 'bg-danger',
+    CANCELLED: 'bg-secondary',
   };
   return classes[status] || 'bg-secondary';
 }
