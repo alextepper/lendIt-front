@@ -399,8 +399,8 @@ export const useAuthStore = defineStore("auth", {
         // Ignore any errors - we've already cleared local state
       }
 
-      // Navigate to home page
-      router.replace({ name: "home" });
+      // Don't redirect - stay on current page
+      // The navbar will update reactively to show login/register buttons
 
       // Reset logout flag after a short delay
       setTimeout(() => {

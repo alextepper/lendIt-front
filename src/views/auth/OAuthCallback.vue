@@ -56,24 +56,36 @@ onMounted(async () => {
         }
       }
       
-      // If no return URL, try to get from redirect query param or use current path
+      // If no return URL, try to get from redirect query param or use home
       if (!returnUrl) {
-        returnUrl = route.query.redirect || route.path || '/';
+        returnUrl = route.query.redirect || '/';
       }
       
-      // Ensure returnUrl is a valid path (not external URL)
+      // Ensure returnUrl is a valid path (not external URL) and not the callback route itself
       if (returnUrl && returnUrl.startsWith('/')) {
-        // Remove modal and redirect query params to avoid reopening modals
-        const url = new URL(returnUrl, window.location.origin);
-        url.searchParams.delete('modal');
-        url.searchParams.delete('redirect');
-        returnUrl = url.pathname + (url.search ? url.search : '');
+        // Don't redirect to the callback route itself
+        if (returnUrl.includes('/auth/callback')) {
+          returnUrl = '/';
+        } else {
+          // Remove modal and redirect query params to avoid reopening modals
+          try {
+            const url = new URL(returnUrl, window.location.origin);
+            url.searchParams.delete('modal');
+            url.searchParams.delete('redirect');
+            returnUrl = url.pathname + (url.search ? url.search : '');
+          } catch (e) {
+            // If URL parsing fails, just use the pathname part
+            const pathMatch = returnUrl.match(/^([^?#]+)/);
+            returnUrl = pathMatch ? pathMatch[1] : '/';
+          }
+        }
       } else {
         // Fallback to home if returnUrl is invalid
         returnUrl = '/';
       }
       
       // Redirect to intended destination (stay on same page)
+      console.log('OAuth callback redirecting to:', returnUrl);
       router.replace(returnUrl);
     } catch (fetchError) {
       console.error('Failed to handle OAuth callback:', fetchError);

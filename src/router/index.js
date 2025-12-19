@@ -151,12 +151,19 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
+  // Special handling for OAuth callback - allow it to complete even if user becomes authenticated
+  if (to.name === 'oauth-callback') {
+    // Allow navigation to OAuth callback regardless of auth state
+    // The callback component will handle its own redirect
+    return next();
+  }
+  
   if (to.meta.requiresAuth && !auth.isAuthed) {
     // Show login modal instead of navigating to login page
     return next({ path: to.path, query: { ...to.query, modal: 'login', redirect: to.fullPath } });
   }
-  // Don't redirect from OAuth callback - let it handle its own redirect
-  if (to.meta.guestOnly && auth.isAuthed && to.name !== 'oauth-callback') {
+  // Don't redirect from guest-only routes if user is authenticated (except OAuth callback which is handled above)
+  if (to.meta.guestOnly && auth.isAuthed) {
     return next({ name: "home" });
   }
   
