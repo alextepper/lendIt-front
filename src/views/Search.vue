@@ -601,7 +601,7 @@ function formatPrice(amount) {
           <input v-model="state.q" class="form-control" :placeholder="$t('search.placeholder')" />
         </div>
 
-        <div class="mb-3">
+        <!-- <div class="mb-3">
           <label class="form-label">{{ $t('search.category') }}</label>
           <input 
             v-model="state.category" 
@@ -609,7 +609,7 @@ function formatPrice(amount) {
             type="text"
             :placeholder="$t('search.category')"
           />
-        </div>
+        </div> -->
 
         
 
