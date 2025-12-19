@@ -132,7 +132,7 @@ function closeReviewModal() {
         </select>
         
         <!-- Write Review Button -->
-        <button 
+        <!-- <button 
           v-if="auth.isAuthed && canReview" 
           class="btn btn-sm btn-outline-primary" 
           @click="showReviewModal"
@@ -145,7 +145,7 @@ function closeReviewModal() {
           @click="openLoginModal(`/item/${props.item.id}`)"
         >
           Sign in to review
-        </button>
+        </button> -->
       </div>
     </div>
 

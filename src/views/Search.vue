@@ -79,7 +79,24 @@ const resultsLabel = computed(() => {
   return `Showing ${start}–${end} of ${t}`;
 });
 
+// Debounce search to prevent duplicate calls
+let searchTimeout = null;
+let isSearching = false;
+
 async function runSearch() {
+  // Clear any pending search
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+  
+  // If already searching, queue the next search
+  if (isSearching) {
+    searchTimeout = setTimeout(() => runSearch(), 200);
+    return;
+  }
+  
+  isSearching = true;
   loading.value = true;
   error.value = null;
   ui.setLoading(true);
@@ -104,6 +121,15 @@ async function runSearch() {
   } finally {
     loading.value = false;
     ui.setLoading(false);
+    isSearching = false;
+    
+    // Execute queued search if any
+    if (searchTimeout) {
+      const timeout = searchTimeout;
+      searchTimeout = null;
+      clearTimeout(timeout);
+      runSearch();
+    }
   }
 }
 
@@ -196,14 +222,19 @@ async function getCurrentLocation() {
     // Prevent watch from triggering duplicate search
     isSettingLocation = true;
     
-    // Update state
-    setPatch({ lat, lng, radiusKm: radius });
+    // Update state - only set radiusKm if it's not already set to avoid triggering watch
+    if (state.value.radiusKm) {
+      setPatch({ lat, lng });
+    } else {
+      setPatch({ lat, lng, radiusKm: radius });
+    }
     
     // Wait a bit for state to update, then trigger search
     await new Promise(resolve => setTimeout(resolve, 150));
     
     // Reset flag and trigger search
     isSettingLocation = false;
+    lastSearchedLocation = `${lat.toFixed(6)},${lng.toFixed(6)}`;
     runSearch();
     
     // Try to get address from coordinates (reverse geocoding) - non-blocking
@@ -286,13 +317,20 @@ watch(() => [state.value.lat, state.value.lng], ([lat, lng], [oldLat, oldLng]) =
   if (lat && lng && (lat !== oldLat || lng !== oldLng) && !isSettingLocation) {
     useManualLocation();
     // Trigger search when location is manually set
-    runSearch();
+    const locationKey = `${parseFloat(lat).toFixed(6)},${parseFloat(lng).toFixed(6)}`;
+    if (lastSearchedLocation !== locationKey) {
+      lastSearchedLocation = locationKey;
+      runSearch();
+    }
   }
 });
 
 // Watch for radius changes and trigger search
 let radiusTimeout = null;
 watch(() => state.value.radiusKm, (newRadius, oldRadius) => {
+  // Don't trigger if location is being set (to avoid duplicate searches)
+  if (isSettingLocation) return;
+  
   if (state.value.lat && state.value.lng && newRadius != null && newRadius !== '' && newRadius !== oldRadius) {
     // Clear previous timeout
     if (radiusTimeout) clearTimeout(radiusTimeout);
@@ -412,11 +450,23 @@ function clearLocationSearch() {
   showingSuggestions.value = false;
 }
 
+// Track last location to prevent duplicate searches
+let lastSearchedLocation = null;
+
 // Handle location change from map drag
 function handleLocationChanged(newLocation) {
   if (newLocation && newLocation.lat && newLocation.lng) {
+    // Check if this is the same location we just searched (e.g., address update)
+    const locationKey = `${newLocation.lat.toFixed(6)},${newLocation.lng.toFixed(6)}`;
+    const isAddressUpdate = lastSearchedLocation === locationKey;
+    
     // Update current location
     currentLocation.value = { ...newLocation };
+    
+    // If this is just an address update (same coordinates), don't search again
+    if (isAddressUpdate) {
+      return;
+    }
     
     // Prevent watch from triggering duplicate search
     isSettingLocation = true;
@@ -427,6 +477,7 @@ function handleLocationChanged(newLocation) {
     // Wait for state to update, then trigger search
     window.setTimeout(() => {
       isSettingLocation = false;
+      lastSearchedLocation = locationKey;
       runSearch();
     }, 150);
   }

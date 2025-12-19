@@ -292,6 +292,8 @@ function updateMarkers() {
         }
         
         // Try to get address for new location (non-blocking)
+        // Don't emit again - just update the address silently
+        // The parent component will handle address updates separately
         fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${newPos.lat}&lon=${newPos.lng}&zoom=18&addressdetails=1&accept-language=en`
         )
@@ -299,6 +301,7 @@ function updateMarkers() {
           .then(data => {
             if (data && data.display_name) {
               newLocation.address = data.display_name;
+              // Only emit if address was successfully fetched, but parent should ignore duplicate coordinates
               emit('location-changed', newLocation);
             }
           })
