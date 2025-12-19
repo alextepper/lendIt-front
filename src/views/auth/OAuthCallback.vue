@@ -43,10 +43,37 @@ onMounted(async () => {
     try {
       await auth.handleOAuthCallback(accessToken, refreshToken);
 
-      // Get return URL or default to dashboard
-      const returnUrl = route.query.return_url || '/dashboard';
+      // Get return URL from query params (decoded) or use current page
+      let returnUrl = route.query.return_url;
       
-      // Redirect to intended destination
+      // Decode if it was encoded
+      if (returnUrl) {
+        try {
+          returnUrl = decodeURIComponent(returnUrl);
+        } catch (e) {
+          // If decoding fails, use as-is
+          console.warn('Failed to decode return_url:', e);
+        }
+      }
+      
+      // If no return URL, try to get from redirect query param or use current path
+      if (!returnUrl) {
+        returnUrl = route.query.redirect || route.path || '/';
+      }
+      
+      // Ensure returnUrl is a valid path (not external URL)
+      if (returnUrl && returnUrl.startsWith('/')) {
+        // Remove modal and redirect query params to avoid reopening modals
+        const url = new URL(returnUrl, window.location.origin);
+        url.searchParams.delete('modal');
+        url.searchParams.delete('redirect');
+        returnUrl = url.pathname + (url.search ? url.search : '');
+      } else {
+        // Fallback to home if returnUrl is invalid
+        returnUrl = '/';
+      }
+      
+      // Redirect to intended destination (stay on same page)
       router.replace(returnUrl);
     } catch (fetchError) {
       console.error('Failed to handle OAuth callback:', fetchError);

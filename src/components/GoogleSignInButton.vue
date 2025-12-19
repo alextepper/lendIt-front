@@ -35,13 +35,14 @@ function handleGoogleSignIn(event) {
     let fullUrl = oauthUrl;
     const params = new URLSearchParams();
     
-    // Add return URL if provided
-    if (props.returnUrl) {
-      params.set('return_url', props.returnUrl);
-    } else if (router.currentRoute.value.query.redirect) {
-      // Use redirect query param if available
-      params.set('return_url', String(router.currentRoute.value.query.redirect));
-    }
+    // Always pass the current page URL as return_url so user stays on the same page after OAuth
+    const currentPath = router.currentRoute.value.fullPath;
+    const returnUrl = props.returnUrl || 
+                     router.currentRoute.value.query.redirect || 
+                     currentPath;
+    
+    // Encode the return URL to preserve it through the OAuth flow
+    params.set('return_url', encodeURIComponent(returnUrl));
     
     // Append query string if we have params
     if (params.toString()) {

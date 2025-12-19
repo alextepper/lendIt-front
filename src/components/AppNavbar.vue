@@ -616,16 +616,27 @@ watch(() => language.currentLocale, (newLocale) => {
 
 /* Ensure dropdowns don't overflow viewport */
 .navbar-profile-menu {
+    /* LTR: align to right */
     right: 0;
     left: auto;
     margin-right: 0.5rem;
+    margin-left: 0;
     /* Ensure menu doesn't overflow viewport */
     max-width: min(300px, calc(100vw - 1rem));
     /* If menu would overflow, adjust position */
     position: absolute;
 }
 
-/* On small screens, position from right to prevent clipping */
+/* RTL: align to left */
+.rtl .navbar-profile-menu,
+[dir="rtl"] .navbar-profile-menu {
+    right: auto;
+    left: 0;
+    margin-right: 0;
+    margin-left: 0.5rem;
+}
+
+/* On small screens, position from right to prevent clipping (LTR) */
 @media (max-width: 992px) {
   .language-dropdown,
   .theme-dropdown,
@@ -635,6 +646,20 @@ watch(() => language.currentLocale, (newLocale) => {
     max-width: calc(100vw - 1rem);
     transform: translateX(0);
     margin-right: 0.5rem;
+    margin-left: 0;
+  }
+  
+  /* RTL: position from left on small screens */
+  .rtl .language-dropdown,
+  .rtl .theme-dropdown,
+  .rtl .navbar-profile-menu,
+  [dir="rtl"] .language-dropdown,
+  [dir="rtl"] .theme-dropdown,
+  [dir="rtl"] .navbar-profile-menu {
+    left: 0;
+    right: auto;
+    margin-left: 0.5rem;
+    margin-right: 0;
   }
 }
 
