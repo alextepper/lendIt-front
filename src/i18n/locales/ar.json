@@ -320,6 +320,63 @@
     "myRentals": "إيجاراتي",
     "itemsRentingOut": "العناصر التي أؤجرها"
   },
+  "bookingRequests": {
+    "title": "طلبات الحجز",
+    "navTitle": "طلبات الحجز",
+    "description": "راجع وأدر طلبات الحجز لعناصرك.",
+    "noRequestsFound": "لم يتم العثور على طلبات حجز.",
+    "filter": "تصفية",
+    "all": "الكل",
+    "pending": "قيد الانتظار",
+    "awaitingPayment": "في انتظار الدفع",
+    "confirmed": "مؤكد",
+    "declined": "مرفوض",
+    "days": "أيام",
+    "notes": "ملاحظات",
+    "rental": "إيجار",
+    "deposit": "إيداع",
+    "totalAmount": "المبلغ الإجمالي",
+    "approve": "موافقة",
+    "decline": "رفض",
+    "goToPayment": "انتقل إلى الدفع",
+    "youAreRenter": "أنت مستأجر",
+    "youAreOwner": "أنت مالك",
+    "approveModal": {
+      "title": "الموافقة على طلب الحجز",
+      "renter": "المستأجر",
+      "dates": "التواريخ",
+      "rentalPrice": "سعر الإيجار",
+      "adjustRentalPrice": "تعديل سعر الإيجار (اختياري)",
+      "adjustDepositAmount": "تعديل مبلغ الإيداع (اختياري)",
+      "adjustTotalAmount": "تعديل المبلغ الإجمالي (اختياري)",
+      "leaveEmptyToKeepOriginal": "اتركه فارغًا للاحتفاظ بـ {field} الأصلي",
+      "current": "الحالي",
+      "cancel": "إلغاء",
+      "approveRequest": "الموافقة على الطلب",
+      "approving": "جاري الموافقة..."
+    },
+    "rejectModal": {
+      "title": "رفض طلب الحجز",
+      "reason": "السبب (اختياري)",
+      "reasonPlaceholder": "مثلاً، العنصر غير متاح لهذه التواريخ، أو تقييم المستأجر منخفض...",
+      "cancel": "إلغاء",
+      "rejectRequest": "رفض الطلب",
+      "rejecting": "جاري الرفض..."
+    },
+    "status": {
+      "PENDING_OWNER": "قيد الانتظار",
+      "AWAITING_PAYMENT": "في انتظار الدفع",
+      "CONFIRMED": "مؤكد",
+      "OWNER_DECLINED": "مرفوض"
+    },
+    "messages": {
+      "approved": "تمت الموافقة على طلب الحجز. سيتم إشعار المستأجر بالدفع.",
+      "declined": "تم رفض طلب الحجز. سيتم إشعار المستأجر.",
+      "failedToLoad": "فشل تحميل طلبات الحجز.",
+      "failedToApprove": "فشل الموافقة على الطلب.",
+      "failedToDecline": "فشل رفض الطلب."
+    }
+  },
   "dashboard": {
     "title": "لوحة التحكم",
     "profile": "الملف الشخصي",

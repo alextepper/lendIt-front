@@ -23,7 +23,7 @@ const { t } = useI18n();
     </li>
     <li class="nav-item">
       <button class="nav-link" :class="{ active: model === 'booking-requests' }" @click="model = 'booking-requests'">
-        <i class="bi bi-inbox"></i> Booking Requests
+        <i class="bi bi-inbox"></i> {{ t('bookingRequests.navTitle') }}
       </button>
     </li>
   </ul>

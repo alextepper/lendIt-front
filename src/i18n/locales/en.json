@@ -321,6 +321,63 @@
     "myRentals": "My Rentals",
     "itemsRentingOut": "Items I'm Renting Out"
   },
+  "bookingRequests": {
+    "title": "Booking Requests",
+    "navTitle": "Booking Requests",
+    "description": "Review and manage booking requests for your items.",
+    "noRequestsFound": "No booking requests found.",
+    "filter": "Filter",
+    "all": "All",
+    "pending": "Pending",
+    "awaitingPayment": "Awaiting Payment",
+    "confirmed": "Confirmed",
+    "declined": "Declined",
+    "days": "days",
+    "notes": "Notes",
+    "rental": "Rental",
+    "deposit": "Deposit",
+    "totalAmount": "Total Amount",
+    "approve": "Approve",
+    "decline": "Decline",
+    "goToPayment": "Go to payment",
+    "youAreRenter": "You are renter",
+    "youAreOwner": "You are owner",
+    "approveModal": {
+      "title": "Approve Booking Request",
+      "renter": "Renter",
+      "dates": "Dates",
+      "rentalPrice": "Rental Price",
+      "adjustRentalPrice": "Adjust Rental Price (Optional)",
+      "adjustDepositAmount": "Adjust Deposit Amount (Optional)",
+      "adjustTotalAmount": "Adjust Total Amount (Optional)",
+      "leaveEmptyToKeepOriginal": "Leave empty to keep original {field}",
+      "current": "Current",
+      "cancel": "Cancel",
+      "approveRequest": "Approve Request",
+      "approving": "Approving..."
+    },
+    "rejectModal": {
+      "title": "Reject Booking Request",
+      "reason": "Reason (Optional)",
+      "reasonPlaceholder": "E.g., Item not available for these dates, or low renter rating...",
+      "cancel": "Cancel",
+      "rejectRequest": "Reject Request",
+      "rejecting": "Rejecting..."
+    },
+    "status": {
+      "PENDING_OWNER": "Pending",
+      "AWAITING_PAYMENT": "Awaiting Payment",
+      "CONFIRMED": "Confirmed",
+      "OWNER_DECLINED": "Declined"
+    },
+    "messages": {
+      "approved": "Booking request approved. Renter will be notified to pay.",
+      "declined": "Booking request declined. Renter will be notified.",
+      "failedToLoad": "Failed to load booking requests.",
+      "failedToApprove": "Failed to approve request.",
+      "failedToDecline": "Failed to decline request."
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "profile": "Profile",

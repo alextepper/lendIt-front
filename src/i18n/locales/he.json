@@ -399,5 +399,62 @@
     "findItemsToRent": "מצא פריטים להשכרה",
     "myRentals": "ההשכרות שלי",
     "itemsRentingOut": "פריטים שאני משכיר"
+  },
+  "bookingRequests": {
+    "title": "בקשות הזמנה",
+    "navTitle": "בקשות הזמנה",
+    "description": "סקור ונהל בקשות הזמנה לפריטים שלך.",
+    "noRequestsFound": "לא נמצאו בקשות הזמנה.",
+    "filter": "סינון",
+    "all": "הכל",
+    "pending": "ממתין",
+    "awaitingPayment": "ממתין לתשלום",
+    "confirmed": "אושר",
+    "declined": "נדחה",
+    "days": "ימים",
+    "notes": "הערות",
+    "rental": "השכרה",
+    "deposit": "פיקדון",
+    "totalAmount": "סכום כולל",
+    "approve": "אשר",
+    "decline": "דחה",
+    "goToPayment": "עבור לתשלום",
+    "youAreRenter": "אתה שוכר",
+    "youAreOwner": "אתה בעלים",
+    "approveModal": {
+      "title": "אשר בקשות הזמנה",
+      "renter": "שוכר",
+      "dates": "תאריכים",
+      "rentalPrice": "מחיר השכרה",
+      "adjustRentalPrice": "התאם מחיר השכרה (אופציונלי)",
+      "adjustDepositAmount": "התאם סכום פיקדון (אופציונלי)",
+      "adjustTotalAmount": "התאם סכום כולל (אופציונלי)",
+      "leaveEmptyToKeepOriginal": "השאר ריק כדי לשמור על {field} המקורי",
+      "current": "נוכחי",
+      "cancel": "בטל",
+      "approveRequest": "אשר בקשה",
+      "approving": "מאשר..."
+    },
+    "rejectModal": {
+      "title": "דחה בקשות הזמנה",
+      "reason": "סיבה (אופציונלי)",
+      "reasonPlaceholder": "למשל, הפריט לא זמין לתאריכים אלה, או דירוג שוכר נמוך...",
+      "cancel": "בטל",
+      "rejectRequest": "דחה בקשה",
+      "rejecting": "דוחה..."
+    },
+    "status": {
+      "PENDING_OWNER": "ממתין",
+      "AWAITING_PAYMENT": "ממתין לתשלום",
+      "CONFIRMED": "אושר",
+      "OWNER_DECLINED": "נדחה"
+    },
+    "messages": {
+      "approved": "בקשות הזמנה אושרה. השוכר יקבל הודעה לשלם.",
+      "declined": "בקשות הזמנה נדחתה. השוכר יקבל הודעה.",
+      "failedToLoad": "נכשל בטעינת בקשות הזמנה.",
+      "failedToApprove": "נכשל באישור הבקשה.",
+      "failedToDecline": "נכשל בדחיית הבקשה."
+    }
   }
 }

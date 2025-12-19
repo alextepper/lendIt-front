@@ -29,7 +29,7 @@
           </li>
           <li v-if="auth.isAuthed" class="nav-item ms-3">
             <router-link class="nav-link position-relative" to="/dashboard?tab=booking-requests">
-              <i class="bi bi-calendar-check"></i> Booking Requests
+              <i class="bi bi-calendar-check"></i> {{ $t('bookingRequests.navTitle') }}
               <span v-if="pendingBookingsCount > 0" class="position-absolute top-10 start-0 translate-middle badge rounded-pill bg-warning" style="font-size: 0.7rem; padding: 0.25em 0.5em;">
                 {{ pendingBookingsCount > 99 ? '99+' : pendingBookingsCount }}
               </span>
