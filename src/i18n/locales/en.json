@@ -368,7 +368,8 @@
       "PENDING_OWNER": "Pending",
       "AWAITING_PAYMENT": "Awaiting Payment",
       "CONFIRMED": "Confirmed",
-      "OWNER_DECLINED": "Declined"
+      "OWNER_DECLINED": "Declined",
+      "CANCELLED": "Cancelled"
     },
     "messages": {
       "approved": "Booking request approved. Renter will be notified to pay.",

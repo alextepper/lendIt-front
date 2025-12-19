@@ -367,7 +367,8 @@
       "PENDING_OWNER": "В ожидании",
       "AWAITING_PAYMENT": "Ожидает оплаты",
       "CONFIRMED": "Подтверждено",
-      "OWNER_DECLINED": "Отклонено"
+      "OWNER_DECLINED": "Отклонено",
+      "CANCELLED": "Отменено"
     },
     "messages": {
       "approved": "Запрос на бронирование одобрен. Арендатор будет уведомлен об оплате.",

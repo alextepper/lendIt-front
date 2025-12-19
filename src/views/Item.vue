@@ -7,7 +7,6 @@ import { useAuthStore } from '../stores/auth';
 import { fetchItem, fetchItemCalendar, updateAvailability, checkBookingAvailability } from '../services/itemService';
 import { updateListing, deleteListing, toggleListingActive } from '../services/listingsService';
 import { fetchBookingCalendarData } from '../services/bookingCalendarService';
-import { fetchItemReviews } from '../services/reviewsService';
 import BookingCard from '../components/BookingCard.vue';
 import BookingFlow from '../components/BookingFlow.vue';
 import OwnerPanel from '../components/OwnerPanel.vue';
@@ -40,8 +39,8 @@ const updatingAvailability = ref(false);
 const bookings = ref([]);
 const loadingBookings = ref(false);
 
-// Reviews data
-const reviews = ref([]);
+// Reviews data - use from item response
+const reviews = computed(() => item.value?.reviews || []);
 const loadingReviews = ref(false);
 const reviewsError = ref(null);
 
@@ -189,8 +188,7 @@ async function load() {
       }
     }
     
-    // Load reviews for the item
-    await loadReviews();
+    // Reviews are already in item.reviews, no need to fetch separately
   } catch (e) {
     error.value = e?.response?.data?.message || e.message || t('item.failedToLoad');
   } finally {
@@ -690,23 +688,10 @@ function handleViewBooking(data) {
   ui.showToast(`Viewing booking for ${data.date.toLocaleDateString()}`, 'info');
 }
 
-async function loadReviews() {
-  if (!item.value?.id) return;
-  
-  console.log('Loading reviews for item:', item.value.id);
-  loadingReviews.value = true;
-  reviewsError.value = null;
-  
-  try {
-    const reviewsData = await fetchItemReviews(item.value.id);
-    console.log('Reviews data received:', reviewsData);
-    reviews.value = reviewsData;
-  } catch (error) {
-    console.error('Failed to load reviews:', error);
-    reviewsError.value = error?.response?.data?.message || 'Failed to load reviews';
-  } finally {
-    loadingReviews.value = false;
-  }
+// Reviews are loaded from item response, no separate API call needed
+function handleReviewsRefresh() {
+  // Emit refresh to parent to reload item data
+  load();
 }
 
 // Location search functions
@@ -1432,9 +1417,9 @@ watch(fullscreenCarousel, (isOpen) => {
               :item="item" 
               :can-review="!isOwner"
               :reviews="reviews"
-              :loading="loadingReviews"
-              :error="reviewsError"
-              @refresh="loadReviews"
+              :loading="false"
+              :error="null"
+              @refresh="handleReviewsRefresh"
             />
           </div>
         </div>

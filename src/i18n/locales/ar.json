@@ -367,7 +367,8 @@
       "PENDING_OWNER": "قيد الانتظار",
       "AWAITING_PAYMENT": "في انتظار الدفع",
       "CONFIRMED": "مؤكد",
-      "OWNER_DECLINED": "مرفوض"
+      "OWNER_DECLINED": "مرفوض",
+      "CANCELLED": "ملغي"
     },
     "messages": {
       "approved": "تمت الموافقة على طلب الحجز. سيتم إشعار المستأجر بالدفع.",

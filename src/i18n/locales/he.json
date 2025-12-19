@@ -447,7 +447,8 @@
       "PENDING_OWNER": "ממתין",
       "AWAITING_PAYMENT": "ממתין לתשלום",
       "CONFIRMED": "אושר",
-      "OWNER_DECLINED": "נדחה"
+      "OWNER_DECLINED": "נדחה",
+      "CANCELLED": "בוטל"
     },
     "messages": {
       "approved": "בקשות הזמנה אושרה. השוכר יקבל הודעה לשלם.",

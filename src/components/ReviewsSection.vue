@@ -4,10 +4,8 @@ import StarRating from './StarRating.vue';
 import ReviewItem from './ReviewItem.vue';
 import ReviewModal from './ReviewModal.vue';
 import { 
-  fetchAggregate, 
   fetchReviews, 
-  createReview,
-  fetchItemReviews 
+  createReview
 } from '../services/reviewsService';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
@@ -28,7 +26,6 @@ const ui = useUiStore();
 const auth = useAuthStore();
 const { openLoginModal } = useAuthModal();
 
-const agg = ref({ avg: 0, count: 0, breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } });
 const data = ref({ items: [], page: 1, total_pages: 1 });
 const internalLoading = ref(true);
 const showModal = ref(false);
@@ -48,13 +45,14 @@ const sortOptions = [
 const selectedSort = ref('NEWEST');
 
 async function load(page = 1) {
+  // Only load if reviews are not provided via props
+  if (props.reviews !== null) {
+    return;
+  }
+  
   internalLoading.value = true;
   try {
-    const [a, r] = await Promise.all([
-      fetchAggregate(props.item.id),
-      fetchReviews(props.item.id, { page, per_page: 6 })
-    ]);
-    agg.value = a;
+    const r = await fetchReviews(props.item.id, { page, per_page: 6 });
     data.value = r;
   } finally { 
     internalLoading.value = false; 
@@ -164,7 +162,7 @@ function closeReviewModal() {
       <div class="col-md-8">
         <div v-for="s in [5, 4, 3, 2, 1]" :key="s" class="d-flex align-items-center gap-2 small">
           <span style="width: 20px">{{ s }}</span>
-          <div class="progress flex-grow-1" role="progressbar" :aria-valuenow="item.ratingHistogram?.[s] || 0" aria-valuemin="0" :aria-valuemax="agg.count || 1">
+          <div class="progress flex-grow-1" role="progressbar" :aria-valuenow="item.ratingHistogram?.[s] || 0" aria-valuemin="0" :aria-valuemax="item.ratingCount || 1">
             <div class="progress-bar" :style="{ width: ((item.ratingHistogram?.[s] || 0) / (item.ratingCount || 1)) * 100 + '%' }"></div>
           </div>
           <span class="text-secondary" style="width: 28px">{{ item.ratingHistogram?.[s] || 0 }}</span>
