@@ -231,6 +231,12 @@ function closeBookingModal() {
 }
 
 function showOwnerModal() {
+  // Redirect to login if not authenticated
+  if (!auth.isAuthed) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } });
+    return;
+  }
+  
   const modalEl = document.getElementById('ownerModal');
   if (modalEl) {
     const modal = new Modal(modalEl);
