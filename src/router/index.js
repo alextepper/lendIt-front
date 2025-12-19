@@ -123,8 +123,14 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
 
-  // Wait for auth initialization if not yet done
-  if (!auth.initialized) {
+  // Only initialize auth if:
+  // 1. Route requires authentication, OR
+  // 2. We have a refresh token (user might be logged in), OR
+  // 3. We're already initialized
+  const hasRefreshToken = localStorage.getItem("refresh_token");
+  const shouldInitialize = to.meta.requiresAuth || hasRefreshToken || auth.initialized;
+
+  if (!auth.initialized && shouldInitialize) {
     await auth.initialize();
   }
 

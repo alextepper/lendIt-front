@@ -130,6 +130,19 @@ export const useAuthStore = defineStore("auth", {
 
       this.status = "initializing";
       try {
+        // Check if we have a refresh token before attempting to fetch user
+        // This prevents unnecessary API calls for unauthenticated users
+        const hasRefreshToken = localStorage.getItem("refresh_token");
+
+        // If no refresh token and no cookies, skip initialization
+        // User is definitely not logged in
+        if (!hasRefreshToken) {
+          console.log("No refresh token found, skipping auth initialization");
+          this.initialized = true;
+          this.status = "idle";
+          return;
+        }
+
         // First, try to fetch user with existing cookies (if any)
         // This avoids unnecessary refresh requests when user already has valid session
         try {
@@ -162,14 +175,25 @@ export const useAuthStore = defineStore("auth", {
                   "User not authenticated after refresh:",
                   secondFetchError.message
                 );
+                // Clear invalid refresh token
+                localStorage.removeItem("refresh_token");
+                localStorage.removeItem("access_token");
               }
             } catch (refreshError) {
               // Refresh failed - user is not logged in
               console.log("No valid refresh token during initialization");
+              // Clear invalid refresh token
+              localStorage.removeItem("refresh_token");
+              localStorage.removeItem("access_token");
             }
           } else {
             // Not a 401 or refresh token is invalid - user is not authenticated
             console.log("User not authenticated:", fetchError.message);
+            // Clear invalid refresh token if it exists
+            if (hasRefreshToken) {
+              localStorage.removeItem("refresh_token");
+              localStorage.removeItem("access_token");
+            }
           }
         }
       } catch (e) {
