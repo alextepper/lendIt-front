@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 import DashboardTabs from '../components/DashboardTabs.vue';
 import ProfilePanel from '../components/ProfilePanel.vue';
 import ListingsPanel from '../components/ListingsPanel.vue';
-import RentalsPanel from '../components/RentalsPanel.vue';
+// import RentalsPanel from '../components/RentalsPanel.vue';
 import OwnerBookingRequestsPanel from '../components/OwnerBookingRequestsPanel.vue';
 import { useI18n } from 'vue-i18n';
 
@@ -39,9 +39,9 @@ watch(() => route.query.tab, (newTab) => {
     <ListingsPanel />
   </div>
 
-  <div v-show="tab === 'rentals'">
+  <!-- <div v-show="tab === 'rentals'">
     <RentalsPanel />
-  </div>
+  </div> -->
 
   <div v-show="tab === 'booking-requests'">
     <OwnerBookingRequestsPanel />
