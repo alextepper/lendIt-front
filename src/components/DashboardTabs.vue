@@ -16,11 +16,11 @@ const { t } = useI18n();
         <i class="bi bi-box-seam"></i> {{ t('dashboard.myListings') }}
       </button>
     </li>
-    <li class="nav-item">
+    <!-- <li class="nav-item">
       <button class="nav-link" :class="{ active: model === 'rentals' }" @click="model = 'rentals'">
         <i class="bi bi-bag-check"></i> {{ t('dashboard.myRentals') }}
       </button>
-    </li>
+    </li> -->
     <li class="nav-item">
       <button class="nav-link" :class="{ active: model === 'booking-requests' }" @click="model = 'booking-requests'">
         <i class="bi bi-inbox"></i> {{ t('bookingRequests.navTitle') }}

@@ -903,7 +903,7 @@ watch(() => currentMonth.value, (newMonth) => {
         </div>
 
       <!-- Legend -->
-      <div class="calendar-legend">
+      <!-- <div class="calendar-legend">
         <div class="legend-item">
           <span class="legend-color available"></span>
           <span>Available</span>
@@ -932,7 +932,7 @@ watch(() => currentMonth.value, (newMonth) => {
           <span class="legend-color blocked-date"></span>
           <span>Blocked</span>
         </div>
-      </div>
+      </div> -->
 
       <!-- Recent Bookings -->
       <div v-if="currentMonthBookings.length > 0" class="recent-bookings">

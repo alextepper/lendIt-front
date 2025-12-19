@@ -16,6 +16,7 @@ const Notifications = () => import("../views/Notifications.vue");
 const Checkout = () => import("../views/Checkout.vue");
 const OrderCheckout = () => import("../views/OrderCheckout.vue");
 const BookingCheckout = () => import("../views/BookingCheckout.vue");
+const BookingDetails = () => import("../views/BookingDetails.vue");
 const CheckoutSuccess = () => import("../views/CheckoutSuccess.vue");
 const CheckoutFailure = () => import("../views/CheckoutFailure.vue");
 const UserProfile = () => import("../views/UserProfile.vue");
@@ -98,6 +99,12 @@ const router = createRouter({
       path: "/checkout/:bookingId",
       name: "booking-checkout",
       component: BookingCheckout,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/bookings/:bookingId",
+      name: "booking-details",
+      component: BookingDetails,
       meta: { requiresAuth: true },
     },
     {

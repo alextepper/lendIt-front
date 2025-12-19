@@ -174,6 +174,7 @@ async function submit() {
     try {
       await auth.login(loginForm)
       // Close modal on success - navbar will update automatically
+      // closeModals() will remove query params including redirect
       closeModals()
       // Don't redirect - just stay on current page
     } catch (e) {
@@ -190,6 +191,7 @@ async function submit() {
     try {
       await auth.register(registerForm)
       // Close modal on success - navbar will update automatically
+      // closeModals() will remove query params including redirect
       closeModals()
       // Don't redirect - just stay on current page
     } catch (e) {
