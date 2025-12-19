@@ -84,9 +84,26 @@ onMounted(async () => {
         returnUrl = '/';
       }
       
-      // Redirect to intended destination (stay on same page)
-      console.log('OAuth callback redirecting to:', returnUrl);
-      router.replace(returnUrl);
+      // Check if this was opened in a popup
+      const isPopup = route.query.popup === 'true' || window.opener !== null;
+      
+      if (isPopup && window.opener) {
+        // We're in a popup - send message to parent window and close
+        window.opener.postMessage({
+          type: 'oauth-success',
+          returnUrl: returnUrl
+        }, window.location.origin);
+        
+        // Show success message briefly before closing
+        loading.value = false;
+        setTimeout(() => {
+          window.close();
+        }, 1000);
+      } else {
+        // Normal flow - redirect to intended destination
+        console.log('OAuth callback redirecting to:', returnUrl);
+        router.replace(returnUrl);
+      }
     } catch (fetchError) {
       console.error('Failed to handle OAuth callback:', fetchError);
       error.value = auth.error || t('auth.failedToFetchUser');

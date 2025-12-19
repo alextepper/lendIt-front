@@ -51,6 +51,8 @@
     "signInWithGoogle": "Sign in with Google",
     "googleSigningIn": "Signing in...",
     "googleSignInFailed": "Failed to initiate Google sign in",
+    "popupClosed": "Login popup was closed",
+    "popupBlocked": "Popup was blocked. Please allow popups for this site."
     "oauthError": "OAuth error: {error}",
     "missingTokens": "Missing authentication tokens",
     "failedToFetchUser": "Failed to fetch user information",

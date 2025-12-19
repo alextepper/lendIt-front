@@ -44,15 +44,69 @@ function handleGoogleSignIn(event) {
     // Encode the return URL to preserve it through the OAuth flow
     params.set('return_url', encodeURIComponent(returnUrl));
     
+    // Add popup flag to indicate this should be handled as popup
+    params.set('popup', 'true');
+    
     // Append query string if we have params
     if (params.toString()) {
       fullUrl += '?' + params.toString();
     }
     
-    console.log('Redirecting to Google OAuth:', fullUrl);
+    console.log('Opening Google OAuth in popup:', fullUrl);
     
-    // Redirect to backend Google OAuth endpoint
-    window.location.href = fullUrl;
+    // Open OAuth in a popup window
+    const popup = window.open(
+      fullUrl,
+      'google-oauth',
+      'width=500,height=600,scrollbars=yes,resizable=yes'
+    );
+    
+    if (!popup) {
+      // Popup was blocked - fallback to full page redirect
+      console.warn('Popup blocked, falling back to full page redirect');
+      window.location.href = fullUrl;
+      return;
+    }
+    
+    // Listen for messages from the popup
+    const messageListener = (event) => {
+      // Security: Only accept messages from same origin
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+      
+      if (event.data.type === 'oauth-success') {
+        // OAuth completed successfully
+        window.removeEventListener('message', messageListener);
+        popup.close();
+        loading.value = false;
+        
+        // Reload page or refresh auth state
+        // The tokens are in cookies, so we just need to refresh the auth state
+        window.location.reload();
+      } else if (event.data.type === 'oauth-error') {
+        // OAuth failed
+        window.removeEventListener('message', messageListener);
+        popup.close();
+        loading.value = false;
+        error.value = event.data.error || t('auth.googleSignInFailed');
+      }
+    };
+    
+    window.addEventListener('message', messageListener);
+    
+    // Check if popup was closed manually
+    const checkClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkClosed);
+        window.removeEventListener('message', messageListener);
+        loading.value = false;
+        if (!error.value) {
+          error.value = t('auth.popupClosed');
+        }
+      }
+    }, 1000);
+    
   } catch (err) {
     error.value = t('auth.googleSignInFailed');
     loading.value = false;
