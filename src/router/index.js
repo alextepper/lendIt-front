@@ -24,7 +24,7 @@ const NotFound = () => import("../views/NotFound.vue");
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: "/", name: "home", component: Home },
+    { path: "/", name: "home", component: Search },
     {
       path: "/login",
       name: "login",
@@ -43,6 +43,7 @@ const router = createRouter({
       component: OAuthCallback,
       meta: { guestOnly: true },
     },
+    { path: "/home", name: "home-old", component: Home },
     { path: "/search", name: "search", component: Search },
     { path: "/item/:id", name: "item", component: Item, props: true },
     {
