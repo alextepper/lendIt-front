@@ -28,7 +28,7 @@
           />
           <div>
             <div class="fw-semibold">{{ booking.item?.title }}</div>
-            <div class="small text-muted">{{ booking.item?.category || booking.item?.tags?.join(', ') || 'N/A' }}</div>
+            <div class="small text-muted">{{ booking.item?.category || booking.item?.tags?.join(', ') || '' }}</div>
           </div>
         </div>
       </div>
@@ -59,7 +59,7 @@
       <div class="card-body">
         <h6 class="card-title">
           <i class="bi bi-people me-2"></i>
-          Participants
+          Renter
         </h6>
         <div class="row g-2">
           <!-- <div class="col-6">
@@ -69,7 +69,6 @@
             </div>
           </div> -->
           <div class="col-6">
-            <div class="small text-muted">Renter</div>
             <div class="fw-semibold">
               {{ booking.renter?.username || booking.renter?.displayName || booking.renter?.name || booking.counterparty?.username || booking.counterparty?.displayName || 'Unknown' }}
             </div>

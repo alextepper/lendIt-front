@@ -107,29 +107,69 @@ const cancelling = ref(false);
 
 const isOwner = computed(() => {
   if (!auth.user || !booking.value) return false;
+  
+  // Check role field first (new API structure)
+  if (booking.value.role === 'owner') return true;
+  if (booking.value.role === 'renter') return false;
+  
+  // Fallback to checking ownerId (old API structure)
   const userId = auth.user.id;
   const ownerId = booking.value.ownerId || 
+                  booking.value.owner_id ||
                   booking.value.owner?.id || 
                   booking.value.item?.ownerId || 
+                  booking.value.item?.owner_id ||
                   booking.value.item?.owner?.id;
   return ownerId === userId;
 });
 
 const isRenter = computed(() => {
   if (!auth.user || !booking.value) return false;
+  
+  // Check role field first (new API structure)
+  if (booking.value.role === 'renter') return true;
+  if (booking.value.role === 'owner') return false;
+  
+  // Fallback to checking renterId (old API structure)
   const userId = auth.user.id;
   const renterId = booking.value.renterId || 
+                   booking.value.renter_id ||
                    booking.value.renter?.id ||
                    booking.value.counterparty?.id;
   return renterId === userId;
 });
 
 const canCancel = computed(() => {
-  if (!booking.value) return false;
+  if (!booking.value || !auth.user) return false;
+  
+  // Check if user is owner or renter
+  const userIsParticipant = isOwner.value || isRenter.value;
+  
   // Can cancel if status is PENDING_OWNER, AWAITING_PAYMENT, or CONFIRMED
   const cancellableStatuses = ['PENDING_OWNER', 'AWAITING_PAYMENT', 'CONFIRMED', 'PENDING'];
-  return (isOwner.value || isRenter.value) && 
-         cancellableStatuses.includes(booking.value.status);
+  const status = booking.value.status;
+  const canCancelStatus = cancellableStatuses.includes(status);
+  
+  // Debug logging
+  console.log('canCancel check:', {
+    status,
+    canCancelStatus,
+    isOwner: isOwner.value,
+    isRenter: isRenter.value,
+    userIsParticipant,
+    booking: {
+      id: booking.value.id,
+      role: booking.value.role,
+      ownerId: booking.value.ownerId,
+      renterId: booking.value.renterId,
+      owner: booking.value.owner,
+      renter: booking.value.renter,
+      counterparty: booking.value.counterparty
+    },
+    authUser: auth.user?.id
+  });
+  
+  return userIsParticipant && canCancelStatus;
 });
 
 async function loadBooking() {
