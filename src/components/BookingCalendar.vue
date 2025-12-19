@@ -508,7 +508,11 @@ function goToOctober2025() {
 
 // Watch for month changes to refresh data
 watch(currentMonth, () => {
-  loadBookings();
+  // Only load bookings if not provided via props
+  if (props.bookings.length === 0) {
+    loadBookings();
+  }
+  // Always emit refresh to let parent know month changed
   emit('refresh', {
     month: currentMonth.value.toISOString().slice(0, 7), // YYYY-MM format
     itemId: props.itemId
@@ -753,14 +757,12 @@ function getDayClasses(dateObj) {
 }
 
 onMounted(async () => {
-  // Load bookings for the item
+  // Load bookings for the item (only if not provided via props)
   await loadBookings();
   
-  // Emit refresh event for parent component
-  emit('refresh', {
-    month: currentMonth.value.toISOString().slice(0, 7),
-    itemId: props.itemId
-  });
+  // Don't emit refresh event on initial mount if bookings are already provided
+  // This prevents duplicate requests when parent already loaded bookings
+  // The parent (Item.vue) will handle initial loading
 });
 
 onUnmounted(() => {

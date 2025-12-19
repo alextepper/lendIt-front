@@ -131,14 +131,58 @@ async function load() {
     // Store original for cancel
     originalItem.value = JSON.parse(JSON.stringify(item.value));
     
-    // Load unavailable dates if user is owner
+    // Use bookings and orders from item response (no need for separate API call)
+    // Transform bookings/orders to the format expected by BookingCalendar
     if (isOwner.value) {
-      const calendarData = await fetchItemCalendar(id);
-      unavailableDates.value = calendarData.unavailableDates;
-      availabilityData.value = calendarData.availability || {};
+      // Use bookings from item response if available
+      const itemBookings = item.value.bookings || [];
+      const itemOrders = item.value.orders || [];
       
-      // Load bookings for the current month
-      await loadBookings();
+      // Combine bookings and orders, transforming to consistent format
+      const allBookings = [
+        ...itemBookings.map(booking => ({
+          id: booking.id,
+          startDate: booking.startDate || booking.from || booking.start,
+          endDate: booking.endDate || booking.to || booking.end,
+          status: booking.status,
+          renter: booking.renter || booking.counterparty,
+          owner: booking.owner,
+          item: booking.item || item.value,
+          totalAmount: booking.totalAmount || booking.priceTotal || booking.total,
+          currency: booking.currency || item.value.currency,
+          createdAt: booking.createdAt,
+          updatedAt: booking.updatedAt,
+        })),
+        ...itemOrders.map(order => ({
+          id: order.id,
+          startDate: order.start || order.startDate || order.from,
+          endDate: order.end || order.endDate || order.to,
+          status: order.status,
+          renter: order.renter,
+          owner: order.owner,
+          item: order.item || item.value,
+          totalAmount: order.priceTotal || order.totalAmount || order.total,
+          currency: order.currency || item.value.currency,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+        }))
+      ];
+      
+      bookings.value = allBookings;
+      
+      // Load unavailable dates if user is owner (still needed for availability calendar)
+      try {
+        const calendarData = await fetchItemCalendar(id);
+        unavailableDates.value = calendarData.unavailableDates;
+        availabilityData.value = calendarData.availability || {};
+      } catch (e) {
+        console.warn('Failed to load calendar data:', e);
+        // Use blockedDates from item response as fallback
+        unavailableDates.value = (item.value.blockedDates || []).map(blocked => ({
+          date: blocked.from || blocked.date,
+          reason: blocked.reason
+        }));
+      }
     }
     
     // Load reviews for the item
@@ -535,38 +579,68 @@ async function handleAvailabilityUpdate(payload) {
 }
 
 async function loadBookings(month = null) {
-  if (!isOwner.value) return;
+  if (!isOwner.value || !item.value) return;
+  
+  // Prevent duplicate requests if already loading
+  if (loadingBookings.value) {
+    console.log('Bookings already loading, skipping duplicate request');
+    return;
+  }
   
   loadingBookings.value = true;
   try {
     const targetMonth = month || new Date().toISOString().slice(0, 7);
     
-    try {
-      // Try to fetch real data from backend
-      const response = await fetchBookingCalendarData(item.value.id, targetMonth);
-      console.log('Backend response:', response);
-      bookings.value = response.bookings || [];
-    } catch (backendError) {
-      console.warn('Backend not ready, using mock data:', backendError);
+    // If we need to fetch for a specific month, make API call
+    // Otherwise, use bookings from item response (already loaded)
+    if (month) {
+      // Fetch bookings for specific month if needed
+      try {
+        const response = await fetchBookingCalendarData(item.value.id, targetMonth);
+        console.log('Backend response for month:', response);
+        bookings.value = response.bookings || [];
+      } catch (backendError) {
+        console.warn('Failed to fetch bookings for month, using item data:', backendError);
+        // Fallback to item bookings if month fetch fails
+        const itemBookings = item.value.bookings || [];
+        const itemOrders = item.value.orders || [];
+        bookings.value = [
+          ...itemBookings,
+          ...itemOrders
+        ];
+      }
+    } else {
+      // Use bookings from item response (already loaded in load())
+      const itemBookings = item.value.bookings || [];
+      const itemOrders = item.value.orders || [];
       
-      // Fallback to mock data when backend is not ready
       bookings.value = [
-        {
-          id: '1',
-          startDate: '2024-01-15',
-          endDate: '2024-01-17',
-          customerName: 'John Doe',
-          status: 'CONFIRMED',
-          totalAmount: 15000
-        },
-        {
-          id: '2',
-          startDate: '2024-01-20',
-          endDate: '2024-01-22',
-          customerName: 'Jane Smith',
-          status: 'PENDING',
-          totalAmount: 12000
-        }
+        ...itemBookings.map(booking => ({
+          id: booking.id,
+          startDate: booking.startDate || booking.from || booking.start,
+          endDate: booking.endDate || booking.to || booking.end,
+          status: booking.status,
+          renter: booking.renter || booking.counterparty,
+          owner: booking.owner,
+          item: booking.item || item.value,
+          totalAmount: booking.totalAmount || booking.priceTotal || booking.total,
+          currency: booking.currency || item.value.currency,
+          createdAt: booking.createdAt,
+          updatedAt: booking.updatedAt,
+        })),
+        ...itemOrders.map(order => ({
+          id: order.id,
+          startDate: order.start || order.startDate || order.from,
+          endDate: order.end || order.endDate || order.to,
+          status: order.status,
+          renter: order.renter,
+          owner: order.owner,
+          item: order.item || item.value,
+          totalAmount: order.priceTotal || order.totalAmount || order.total,
+          currency: order.currency || item.value.currency,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+        }))
       ];
     }
   } catch (e) {
@@ -578,7 +652,14 @@ async function loadBookings(month = null) {
 }
 
 function handleBookingRefresh(params) {
-  loadBookings(params.month);
+  // Only fetch if month is specified and different from current month
+  // Otherwise, use bookings already loaded from item response
+  if (params?.month) {
+    loadBookings(params.month);
+  } else {
+    // Refresh from item data (no API call needed)
+    loadBookings();
+  }
 }
 
 function handleViewBooking(data) {
