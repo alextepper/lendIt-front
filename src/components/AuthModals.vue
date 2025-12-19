@@ -173,12 +173,9 @@ async function submit() {
     submitting.value = true
     try {
       await auth.login(loginForm)
-      // Close modal on success
+      // Close modal on success - navbar will update automatically
       closeModals()
-      // Navigate to redirect path if provided
-      if (redirectPath.value && redirectPath.value !== route.fullPath) {
-        router.push(redirectPath.value)
-      }
+      // Don't redirect - just stay on current page
     } catch (e) {
       error.value = auth.error || t('auth.login.failedToSignIn')
     } finally {
@@ -192,12 +189,9 @@ async function submit() {
     submitting.value = true
     try {
       await auth.register(registerForm)
-      // Close modal on success
+      // Close modal on success - navbar will update automatically
       closeModals()
-      // Navigate to redirect path if provided
-      if (redirectPath.value && redirectPath.value !== route.fullPath) {
-        router.push(redirectPath.value)
-      }
+      // Don't redirect - just stay on current page
     } catch (e) {
       error.value = auth.error || t('auth.register.failedToSignUp')
     } finally {

@@ -69,12 +69,8 @@ export const useAuthStore = defineStore("auth", {
 
         this.status = "idle";
 
-        // Go home or intended route
-        if (router.currentRoute.value.query.redirect) {
-          router.replace(String(router.currentRoute.value.query.redirect));
-        } else {
-          router.replace({ name: "home" });
-        }
+        // Don't redirect - just update the navbar state
+        // The modal will be closed by the component that called login
 
         return true;
       } catch (e) {
