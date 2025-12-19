@@ -23,8 +23,11 @@
       >
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <router-link class="nav-link" to="/search">
+            <router-link class="nav-link position-relative" to="/search">
               <i class="bi bi-search"></i> {{ $t('nav.search') }}
+              <span v-if="pendingBookingsCount > 0" class="position-absolute top-10 start-0 translate-middle badge rounded-pill bg-warning" style="font-size: 0.7rem; padding: 0.25em 0.5em;">
+                {{ pendingBookingsCount > 99 ? '99+' : pendingBookingsCount }}
+              </span>
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item ms-3">
@@ -649,7 +652,7 @@ watch(() => language.currentLocale, (newLocale) => {
 /* Navbar brand adjustments */
 .navbar-brand {
   font-size: 1.1rem;
-  padding: 0.5rem 0;
+  padding: 0;
   display: flex;
   align-items: center;
 }
