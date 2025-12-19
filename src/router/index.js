@@ -130,8 +130,18 @@ router.beforeEach(async (to, from, next) => {
   const hasRefreshToken = localStorage.getItem("refresh_token");
   const shouldInitialize = to.meta.requiresAuth || hasRefreshToken || auth.initialized;
 
-  if (!auth.initialized && shouldInitialize) {
-    await auth.initialize();
+  if (!auth.initialized) {
+    if (shouldInitialize) {
+      await auth.initialize();
+    } else {
+      // For public routes without refresh token, mark as initialized (no user)
+      // This prevents infinite loading states
+      // Use the store's state directly to mark as initialized
+      auth.$patch({
+        initialized: true,
+        status: "idle"
+      });
+    }
   }
 
   if (to.meta.requiresAuth && !auth.isAuthed) {
