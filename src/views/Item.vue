@@ -49,7 +49,8 @@ const categories = ref([]);
 // Edit form
 const editForm = reactive({
   title: '',
-  category: '',
+  // Tags for the item (e.g., "console", "part", etc.)
+  tags: [],
   location: '',
   latitude: null,
   longitude: null,
@@ -60,6 +61,9 @@ const editForm = reactive({
   currency: 'ILS',
   description: '',
 });
+
+// Tags input
+const newTag = ref('');
 
 // Location search
 const locationSearchQuery = ref('');
@@ -98,7 +102,7 @@ async function load() {
     
     // Initialize edit form with current values
     editForm.title = item.value.title || '';
-    editForm.category = item.value.category || '';
+    editForm.tags = Array.isArray(item.value.tags) ? [...item.value.tags] : [];
     editForm.location = item.value.address || item.value.location || '';
     editForm.latitude = item.value.latitude || null;
     editForm.longitude = item.value.longitude || null;
@@ -258,7 +262,7 @@ function toggleEditMode() {
 function cancelEdit() {
   // Restore original values
   editForm.title = originalItem.value.title || '';
-  editForm.category = originalItem.value.category || '';
+  editForm.tags = Array.isArray(originalItem.value.tags) ? [...originalItem.value.tags] : [];
   editForm.location = originalItem.value.address || originalItem.value.location || '';
   editForm.latitude = originalItem.value.latitude || null;
   editForm.longitude = originalItem.value.longitude || null;
@@ -452,10 +456,6 @@ async function saveChanges() {
     ui.showToast(t('item.titleRequired'), 'warning');
     return;
   }
-  if (!editForm.category) {
-    ui.showToast(t('item.categoryRequired'), 'warning');
-    return;
-  }
   if (!editForm.location && !editForm.address) {
     ui.showToast(t('item.locationRequired'), 'warning');
     return;
@@ -470,7 +470,11 @@ async function saveChanges() {
     // Update listing data
     const payload = {
       title: editForm.title,
-      category: editForm.category,
+      tags: Array.isArray(editForm.tags)
+        ? editForm.tags
+            .map(tag => String(tag).trim())
+            .filter(tag => tag.length > 0)
+        : [],
       location: editForm.location || editForm.address,
       address: editForm.address || editForm.location,
       latitude: editForm.latitude,
@@ -503,6 +507,25 @@ async function saveChanges() {
   } finally {
     saving.value = false;
   }
+}
+
+function addTag() {
+  const value = newTag.value.trim();
+  if (!value) return;
+
+  // Avoid duplicates (case-insensitive)
+  const exists = editForm.tags.some(
+    tag => String(tag).toLowerCase() === value.toLowerCase()
+  );
+  if (!exists) {
+    editForm.tags.push(value);
+  }
+  newTag.value = '';
+}
+
+function removeTag(index) {
+  if (index < 0 || index >= editForm.tags.length) return;
+  editForm.tags.splice(index, 1);
 }
 
 const deleting = ref(false);
@@ -985,13 +1008,54 @@ watch(fullscreenCarousel, (isOpen) => {
               </template>
             </div>
             <div v-else class="row g-3">
+              <!-- Tags editor -->
               <div class="col-md-6">
-                <label class="form-label small fw-bold">{{ $t('item.category') }}</label>
-                <select v-model="editForm.category" class="form-select" :disabled="saving">
-                  <option value="">{{ $t('item.choose') }}</option>
-                  <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-                </select>
+                <label class="form-label small fw-bold">
+                  {{ $t('item.tags') }}
+                </label>
+                <div class="mb-2">
+                  <div class="input-group">
+                    <input
+                      v-model="newTag"
+                      type="text"
+                      class="form-control form-control-sm"
+                      :placeholder="$t('item.tagsPlaceholder')"
+                      :disabled="saving"
+                      @keyup.enter.prevent="addTag"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      :disabled="saving || !newTag.trim()"
+                      @click="addTag"
+                    >
+                      <i class="bi bi-plus-lg"></i>
+                      {{ $t('item.addTag') }}
+                    </button>
+                  </div>
+                  <small class="text-muted d-block mt-1">
+                    {{ $t('item.tagsHelp') }}
+                  </small>
+                </div>
+                <div v-if="editForm.tags && editForm.tags.length" class="d-flex flex-wrap gap-1">
+                  <span
+                    v-for="(tag, index) in editForm.tags"
+                    :key="`${tag}-${index}`"
+                    class="badge bg-secondary d-inline-flex align-items-center"
+                  >
+                    <span class="me-1">#{{ tag }}</span>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-link p-0 text-white"
+                      @click="removeTag(index)"
+                      :disabled="saving"
+                    >
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </span>
+                </div>
               </div>
+
               <div class="col-md-6">
                 <label class="form-label small fw-bold">{{ $t('item.location') }} <span class="text-danger">*</span></label>
                 <div class="position-relative">
