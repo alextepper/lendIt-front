@@ -175,7 +175,11 @@
     "day": "day",
     "s": "s",
     "openItem": "Open item",
-    "item": "Item"
+    "item": "Item",
+    "tags": "Tags",
+    "tagsPlaceholder": "Enter tags separated by commas",
+    "addTag": "Add tag",
+    "tagsHelp": "Add tags to help others find your item"
   },
   "listing": {
     "editListing": "Edit Listing",

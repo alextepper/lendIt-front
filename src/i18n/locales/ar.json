@@ -24,24 +24,6 @@
     }
   },
   "auth": {
-    "login": {
-      "title": "تسجيل الدخول",
-      "email": "البريد الإلكتروني",
-      "password": "كلمة المرور",
-      "submit": "تسجيل الدخول",
-      "noAccount": "ليس لديك حساب؟",
-      "signUp": "سجل هنا"
-    },
-    "register": {
-      "title": "التسجيل",
-      "name": "الاسم الكامل",
-      "email": "البريد الإلكتروني",
-      "password": "كلمة المرور",
-      "confirmPassword": "تأكيد كلمة المرور",
-      "submit": "التسجيل",
-      "hasAccount": "لديك حساب بالفعل؟",
-      "signIn": "سجل الدخول هنا"
-    },
     "logout": "تسجيل الخروج",
     "welcome": "مرحباً بك، {name}!",
     "signInWithGoogle": "تسجيل الدخول باستخدام Google",
@@ -193,7 +175,11 @@
     "day": "يوم",
     "s": "أيام",
     "openItem": "فتح العنصر",
-    "item": "عنصر"
+    "item": "عنصر",
+    "tags": "الوسوم",
+    "tagsPlaceholder": "أدخل الوسوم مفصولة بفواصل",
+    "addTag": "إضافة وسم",
+    "tagsHelp": "أضف الوسوم لمساعدة الآخرين على العثور على عنصرك"
   },
   "listing": {
     "editListing": "تحرير الإعلان",
@@ -240,17 +226,6 @@
     "joinThousands": "انضم إلى آلاف المستخدمين الذين يؤجرون ويقرضون العناصر بالفعل",
     "browseAllItems": "تصفح جميع العناصر",
     "listYourItem": "أضف عنصرك"
-  },
-  "dashboard": {
-    "title": "لوحة التحكم",
-    "profile": "الملف الشخصي",
-    "myListings": "إعلاناتي",
-    "myRentals": "إيجاراتي",
-    "editProfile": "تحرير الملف الشخصي",
-    "uploadAvatar": "رفع صورة الملف الشخصي",
-    "createListing": "إنشاء إعلان",
-    "editListing": "تحرير الإعلان",
-    "deleteListing": "حذف الإعلان"
   },
   "messages": {
     "title": "الرسائل",
