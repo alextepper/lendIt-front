@@ -119,6 +119,3 @@ export async function mockFetchListings(params) {
 export async function mockFetchCategories() {
   return CATS;
 }
-export async function mockFetchLocations() {
-  return LOCS;
-}

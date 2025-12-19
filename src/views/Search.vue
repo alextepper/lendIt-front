@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
-import { fetchListings, fetchCategories, fetchLocations } from '../services/listingsService';
+import { fetchListings, fetchCategories } from '../services/listingsService';
 import ItemCard from '../components/ItemCard.vue';
 import PaginationBar from '../components/PaginationBar.vue';
 import SearchMap from '../components/SearchMap.vue';
@@ -32,7 +32,6 @@ const { state, setPatch, setPage, reset } = useQuerySync({
 });
 
 const categories = ref([]);
-const locations = ref([]);
 const data = ref({ items: [], page: 1, per_page: 12, total: 0, total_pages: 1 });
 const loading = ref(false);
 const error = ref(null);
@@ -61,7 +60,7 @@ const radiusValue = computed({
 // Fetch meta and initialize location
 onMounted(async () => {
   try {
-    [categories.value, locations.value] = await Promise.all([fetchCategories(), fetchLocations()]);
+    categories.value = await fetchCategories();
   } catch (e) {
     // non-blocking
   }

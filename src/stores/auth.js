@@ -109,7 +109,25 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async initialize() {
+      // Prevent concurrent initialization calls
       if (this.initialized) return;
+      if (this.status === "initializing") {
+        // If already initializing, wait for it to complete
+        return new Promise((resolve) => {
+          const checkInterval = setInterval(() => {
+            if (this.initialized || this.status !== "initializing") {
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 50);
+          // Timeout after 5 seconds
+          setTimeout(() => {
+            clearInterval(checkInterval);
+            resolve();
+          }, 5000);
+        });
+      }
+
       this.status = "initializing";
       try {
         // First, try to fetch user with existing cookies (if any)

@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import { fetchItem, fetchItemCalendar, updateAvailability, checkBookingAvailability } from '../services/itemService';
-import { updateListing, fetchCategories, fetchLocations, deleteListing, toggleListingActive } from '../services/listingsService';
+import { updateListing, fetchCategories, deleteListing, toggleListingActive } from '../services/listingsService';
 import { fetchBookingCalendarData } from '../services/bookingCalendarService';
 import { fetchItemReviews } from '../services/reviewsService';
 import BookingCard from '../components/BookingCard.vue';
@@ -43,9 +43,8 @@ const reviews = ref([]);
 const loadingReviews = ref(false);
 const reviewsError = ref(null);
 
-// Categories and locations for dropdown
+// Categories for dropdown
 const categories = ref([]);
-const locations = ref([]);
 
 // Edit form
 const editForm = reactive({
@@ -154,12 +153,11 @@ async function load() {
 onMounted(async () => {
   await load();
   
-  // Load categories and locations for edit mode
+  // Load categories for edit mode
   try {
     categories.value = await fetchCategories();
-    locations.value = await fetchLocations();
   } catch (e) {
-    console.error('Failed to load categories/locations:', e);
+    console.error('Failed to load categories:', e);
   }
 });
 

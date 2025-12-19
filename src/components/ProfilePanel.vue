@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { getProfile, updateProfile, uploadAvatar } from '../services/userService';
-import { fetchLocations } from '../services/listingsService';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import { useI18n } from 'vue-i18n'; 
@@ -20,11 +19,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL;
 const { t } = useI18n();
 onMounted(async () => {
   try {
-    const [me, locations] = await Promise.all([
-      getProfile(),
-      fetchLocations().catch(() => []) // Non-blocking if locations fail
-    ]);
-    cities.value = locations || [];
+    const me = await getProfile();
     form.value = {
       username: me.username || '',
       email: me.email || '',

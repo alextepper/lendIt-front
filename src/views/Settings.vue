@@ -3,7 +3,6 @@ import { ref, reactive, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import http from '../lib/http';
-import { fetchLocations } from '../services/listingsService';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -28,13 +27,8 @@ const passwordForm = reactive({
 
 // Load cities on mount
 onMounted(async () => {
-  try {
-    const locations = await fetchLocations();
-    cities.value = locations || [];
-  } catch (e) {
-    // Non-blocking if locations fail
-    console.warn('Failed to load cities:', e);
-  }
+  // Cities/locations removed - using geocoding instead
+  cities.value = [];
   
   // Load user profile data if not already in auth.user
   if (!profileForm.city && auth.user) {

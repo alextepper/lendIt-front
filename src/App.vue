@@ -45,21 +45,29 @@ import ErrorBoundary from './components/ErrorBoundary.vue'
 const auth = useAuthStore()
 const chat = useChatStore()
 
-// Initialize WebSocket when user is authenticated
-watch(() => auth.isAuthed, (isAuthed) => {
-  if (isAuthed) {
-    console.log('User authenticated, connecting WebSocket...')
-    chat.connectWebSocket()
-  } else {
-    console.log('User not authenticated, disconnecting WebSocket...')
+// Initialize chat when auth is initialized and user is authenticated
+watch(() => [auth.initialized, auth.isAuthed], ([initialized, isAuthed]) => {
+  if (initialized && isAuthed) {
+    // Load conversations and connect WebSocket
+    chat.loadConversations()
+      .catch(() => {
+        // Ignore chat loading errors
+      })
+      .finally(() => chat.connectWebSocket())
+  } else if (initialized && !isAuthed) {
+    // Disconnect if user is not authenticated
     chat.disconnectWebSocket()
   }
 }, { immediate: true })
 
-// Connect WebSocket on mount if already authenticated
-onMounted(() => {
-  if (auth.isAuthed) {
+// Initialize WebSocket when user is authenticated (for cases where auth state changes after initialization)
+watch(() => auth.isAuthed, (isAuthed) => {
+  if (isAuthed && auth.initialized) {
+    console.log('User authenticated, connecting WebSocket...')
     chat.connectWebSocket()
+  } else if (!isAuthed) {
+    console.log('User not authenticated, disconnecting WebSocket...')
+    chat.disconnectWebSocket()
   }
 })
 

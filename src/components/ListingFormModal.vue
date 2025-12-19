@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref, watch, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { fetchCategories, fetchLocations } from '../services/listingsService';
+import { fetchCategories } from '../services/listingsService';
 import { useUiStore } from '../stores/ui';
 import http from '../lib/http';
 
@@ -156,7 +156,7 @@ onMounted(async () => {
     console.warn('Failed to fetch categories from backend, using defaults:', error);
     cats.list = [...defaultCategories].sort();
   }
-  locs.list = await fetchLocations().catch(() => []);
+  locs.list = []; // Locations removed - using geocoding instead
 });
 
 // Location search functions

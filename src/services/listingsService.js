@@ -1,9 +1,5 @@
 import http from "../lib/http";
-import {
-  mockFetchListings,
-  mockFetchCategories,
-  mockFetchLocations,
-} from "./mock/listings.mock";
+import { mockFetchListings, mockFetchCategories } from "./mock/listings.mock";
 
 const USE_MOCK = false; // <- set true to use the mock for local demo
 
@@ -161,12 +157,6 @@ export async function fetchCategories() {
   if (USE_MOCK) return mockFetchCategories();
   const { data } = await http.get("/meta/categories");
   return data; // ["Tools","Consoles",...]
-}
-
-export async function fetchLocations() {
-  if (USE_MOCK) return mockFetchLocations();
-  const { data } = await http.get("/meta/locations");
-  return data; // ["Haifa","Tel Aviv",...]
 }
 
 export async function createListing(payload) {

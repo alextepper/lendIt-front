@@ -72,20 +72,8 @@ theme.init();
 const language = useLanguageStore();
 language.init();
 
-// Initialize auth store - try to fetch user profile (cookies will be sent automatically)
+// Initialize auth store - the router guard will handle initialization
+// to avoid duplicate calls on page refresh
 const auth = useAuthStore();
-// Initialize auth and chat in the background
-auth.initialize().then(() => {
-  // If user is authenticated, initialize chat
-  if (auth.isAuthed) {
-    const chat = useChatStore();
-    chat
-      .loadConversations()
-      .catch(() => {
-        // Ignore chat loading errors
-      })
-      .finally(() => chat.connectWebSocket());
-  }
-});
 
 app.mount("#app");
