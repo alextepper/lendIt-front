@@ -26,6 +26,7 @@ let map = null;
 let userMarker = null;
 let radiusCircle = null;
 let itemMarkers = [];
+let isInitializing = true; // Track if map is initializing
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -275,7 +276,7 @@ function updateMarkers() {
     });
 
     userMarker.on('dragend', () => {
-      if (userMarker) {
+      if (userMarker && !isInitializing) {
         const newPos = userMarker.getLatLng();
         const newLocation = {
           lat: newPos.lat,
@@ -283,7 +284,7 @@ function updateMarkers() {
           address: null
         };
         
-        // Emit the new location
+        // Emit the new location (only if not initializing)
         emit('location-changed', newLocation);
         
         // Update radius circle position
@@ -460,6 +461,13 @@ function updateMarkers() {
         }
       }
     }
+  }
+  
+  // Mark initialization as complete after markers are updated
+  if (isInitializing) {
+    setTimeout(() => {
+      isInitializing = false;
+    }, 500);
   }
 }
 

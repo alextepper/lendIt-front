@@ -60,13 +60,16 @@ const radiusValue = computed({
 onMounted(async () => {
   // If URL already has lat/lng (e.g. shared link), respect that
   if (state.value.lat && state.value.lng) {
+    isInitialLoad = true;
     useManualLocation();
     await runSearch();
+    isInitialLoad = false;
     return;
   }
   
   // Otherwise, automatically use the user's current location for filters
   // (this will prompt for browser location permission and trigger a search)
+  isInitialLoad = true;
   getCurrentLocation();
 });
 
@@ -230,10 +233,11 @@ async function getCurrentLocation() {
     }
     
     // Wait a bit for state to update, then trigger search
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise(resolve => setTimeout(resolve, 200));
     
-    // Reset flag and trigger search
+    // Reset flags and trigger search
     isSettingLocation = false;
+    isInitialLoad = false; // Mark initial load as complete
     lastSearchedLocation = `${lat.toFixed(6)},${lng.toFixed(6)}`;
     runSearch();
     
@@ -304,6 +308,7 @@ function clearLocation() {
 
 // Watch for manual lat/lng changes (but avoid triggering on initial getCurrentLocation)
 let isSettingLocation = false;
+let isInitialLoad = true; // Track if we're in initial load phase
 
 // Sync location search query with current location address
 watch(() => currentLocation.value.address, (newAddress) => {
@@ -313,8 +318,11 @@ watch(() => currentLocation.value.address, (newAddress) => {
 });
 
 watch(() => [state.value.lat, state.value.lng], ([lat, lng], [oldLat, oldLng]) => {
-  // Only trigger if lat/lng actually changed and weren't set by getCurrentLocation
-  if (lat && lng && (lat !== oldLat || lng !== oldLng) && !isSettingLocation) {
+  // Don't trigger during initial load or when location is being set programmatically
+  if (isInitialLoad || isSettingLocation) return;
+  
+  // Only trigger if lat/lng actually changed
+  if (lat && lng && (lat !== oldLat || lng !== oldLng)) {
     useManualLocation();
     // Trigger search when location is manually set
     const locationKey = `${parseFloat(lat).toFixed(6)},${parseFloat(lng).toFixed(6)}`;
@@ -328,8 +336,8 @@ watch(() => [state.value.lat, state.value.lng], ([lat, lng], [oldLat, oldLng]) =
 // Watch for radius changes and trigger search
 let radiusTimeout = null;
 watch(() => state.value.radiusKm, (newRadius, oldRadius) => {
-  // Don't trigger if location is being set (to avoid duplicate searches)
-  if (isSettingLocation) return;
+  // Don't trigger during initial load or when location is being set (to avoid duplicate searches)
+  if (isInitialLoad || isSettingLocation) return;
   
   if (state.value.lat && state.value.lng && newRadius != null && newRadius !== '' && newRadius !== oldRadius) {
     // Clear previous timeout
@@ -468,6 +476,12 @@ function handleLocationChanged(newLocation) {
       return;
     }
     
+    // Don't trigger search during initial load (map initialization)
+    if (isInitialLoad) {
+      lastSearchedLocation = locationKey;
+      return;
+    }
+    
     // Prevent watch from triggering duplicate search
     isSettingLocation = true;
     
@@ -479,7 +493,7 @@ function handleLocationChanged(newLocation) {
       isSettingLocation = false;
       lastSearchedLocation = locationKey;
       runSearch();
-    }, 150);
+    }, 200);
   }
 }
 
