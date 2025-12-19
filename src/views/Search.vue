@@ -516,7 +516,7 @@ function formatPrice(amount) {
       <div class="col-12 col-lg-3">
       <div class="card">
         <!-- Collapsed state: Show input field -->
-        <div v-if="filtersCollapsed" class="p-2">
+        <div v-show="filtersCollapsed" class="p-2">
           <div class="position-relative">
             <input
               type="text"
@@ -530,8 +530,8 @@ function formatPrice(amount) {
           </div>
         </div>
         
-        <!-- Expanded state: Show full filters -->
-        <div v-else>
+        <!-- Expanded state: Show header and filters -->
+        <template v-if="!filtersCollapsed">
           <button
             class="btn btn-link btn-sm p-0 text-decoration-none w-100"
             @click="toggleFilters"
@@ -540,13 +540,11 @@ function formatPrice(amount) {
           >
             <div class="card-header d-flex justify-content-between align-items-center p-2">
               <h2 class="h6 mb-0">{{ $t('search.filters') }}</h2>
-              <i class="bi filters-chevron" :class="filtersCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+              <i class="bi filters-chevron bi-chevron-up"></i>
             </div>
           </button>
-        </div>
         
-        <transition name="filters-collapse">
-          <div v-show="!filtersCollapsed" id="filtersCollapse">
+          <div id="filtersCollapse">
             <form class="card-body p-3" @submit.prevent="applyFilters">
         <div class="mb-3">
           <label class="form-label">{{ $t('search.keyword') }}</label>
@@ -758,7 +756,7 @@ function formatPrice(amount) {
         </div>
             </form>
           </div>
-        </transition>
+        </template>
       </div>
     </div>
 
