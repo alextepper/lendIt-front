@@ -44,7 +44,7 @@ const locationSuggestions = ref([]);
 const showingSuggestions = ref(false);
 const isSelectingLocation = ref(false);
 const geocodingLoading = ref(false);
-const filtersCollapsed = ref(false);
+const filtersCollapsed = ref(true); // Start collapsed to show input field
 
 // Computed property for radius to ensure it's always a number
 const radiusValue = computed({
@@ -65,12 +65,16 @@ onMounted(async () => {
     // non-blocking
   }
   
-  // Initialize location from URL if present
+  // If URL already has lat/lng (e.g. shared link), respect that
   if (state.value.lat && state.value.lng) {
     useManualLocation();
+    await runSearch();
+    return;
   }
   
-  await runSearch();
+  // Otherwise, automatically use the user's current location for filters
+  // (this will prompt for browser location permission and trigger a search)
+  getCurrentLocation();
 });
 
 // Derived label
@@ -511,19 +515,36 @@ function formatPrice(amount) {
       <!-- Filters Sidebar -->
       <div class="col-12 col-lg-3">
       <div class="card">
-        <button
-            class="btn btn-link btn-sm p-0 text-decoration-none"
+        <!-- Collapsed state: Show input field -->
+        <div v-if="filtersCollapsed" class="p-2">
+          <div class="position-relative">
+            <input
+              type="text"
+              class="form-control search-input-collapsed"
+              :placeholder="$t('search.placeholder')"
+              readonly
+              @click="toggleFilters"
+              @focus="toggleFilters"
+            />
+            <i class="bi bi-search position-absolute search-icon-collapsed"></i>
+          </div>
+        </div>
+        
+        <!-- Expanded state: Show full filters -->
+        <div v-else>
+          <button
+            class="btn btn-link btn-sm p-0 text-decoration-none w-100"
             @click="toggleFilters"
             :aria-expanded="!filtersCollapsed"
             aria-controls="filtersCollapse"
           >
-        <div class="card-header d-flex justify-content-between align-items-center p-2">
-          <h2 class="h6 mb-0">{{ $t('search.filters') }}</h2>
-          
-            <i class="bi filters-chevron" :class="filtersCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
-          
+            <div class="card-header d-flex justify-content-between align-items-center p-2">
+              <h2 class="h6 mb-0">{{ $t('search.filters') }}</h2>
+              <i class="bi filters-chevron" :class="filtersCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+            </div>
+          </button>
         </div>
-      </button>
+        
         <transition name="filters-collapse">
           <div v-show="!filtersCollapsed" id="filtersCollapse">
             <form class="card-body p-3" @submit.prevent="applyFilters">
@@ -1133,6 +1154,36 @@ function formatPrice(amount) {
 
 .card-header:hover .filters-chevron {
   transform: scale(1.1);
+}
+
+/* Collapsed filters input styling */
+.search-input-collapsed {
+  cursor: pointer;
+  padding-left: 2.5rem;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+}
+
+.search-input-collapsed:hover {
+  border-color: #adb5bd;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+}
+
+.search-input-collapsed:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  outline: 0;
+}
+
+.search-icon-collapsed {
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Desktop Grid View Styles - Only apply on lg and up */
