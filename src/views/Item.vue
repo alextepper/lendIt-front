@@ -17,12 +17,14 @@ import BookingCalendar from '../components/BookingCalendar.vue';
 import { Modal } from 'bootstrap';
 import { getItemPhotoUrl } from '../utils/imageUtils';
 import http from '../lib/http';
+import { useAuthModal } from '../composables/useAuthModal';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const ui = useUiStore();
 const auth = useAuthStore();
+const { openLoginModal } = useAuthModal();
 const item = ref(null);
 const loading = ref(true);
 const error = ref(null);
@@ -211,7 +213,7 @@ onMounted(async () => {
 
 function showBookingModal() {
   if (!auth.isAuthed) {
-    router.push({ name: 'login', query: { redirect: route.fullPath } });
+    openLoginModal(route.fullPath);
     return;
   }
   
@@ -233,7 +235,7 @@ function closeBookingModal() {
 function showOwnerModal() {
   // Redirect to login if not authenticated
   if (!auth.isAuthed) {
-    router.push({ name: 'login', query: { redirect: route.fullPath } });
+    openLoginModal(route.fullPath);
     return;
   }
   

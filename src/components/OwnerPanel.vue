@@ -4,6 +4,7 @@ import { useChatStore } from '../stores/chat'
 import { useRouter, useRoute } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import { Modal } from 'bootstrap'
+import { useAuthModal } from '../composables/useAuthModal'
 
 const props = defineProps({
   owner: { type: Object, required: true },
@@ -14,6 +15,7 @@ const auth = useAuthStore()
 const chat = useChatStore()
 const router = useRouter()
 const route = useRoute()
+const { openLoginModal } = useAuthModal()
 const loading = ref(false)
 
 function getOwnerInitials(name) {
@@ -44,7 +46,7 @@ function closeParentModal() {
 async function messageOwner() {
   if (!auth.isAuthed) {
     closeParentModal()
-    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    openLoginModal(route.fullPath)
     return
   }
   

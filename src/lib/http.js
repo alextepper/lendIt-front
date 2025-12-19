@@ -146,9 +146,9 @@ http.interceptors.response.use(
 
       if (shouldRedirect) {
         const currentRoute = router.currentRoute.value;
-        if (!currentRoute.path.includes("/login")) {
+        if (!currentRoute.path.includes("/login") && !currentRoute.query.modal) {
           const to = currentRoute.fullPath;
-          router.replace({ name: "login", query: { redirect: to } });
+          router.replace({ path: currentRoute.path, query: { ...currentRoute.query, modal: 'login', redirect: to } });
         }
       }
     }

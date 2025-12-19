@@ -30,6 +30,7 @@
 
   <GlobalToast />
   <GlobalLoader />
+  <AuthModals />
 </template>
 
 <script setup>
@@ -41,6 +42,7 @@ import AppLoadingScreen from './components/AppLoadingScreen.vue'
 import GlobalToast from './components/GlobalToast.vue'
 import GlobalLoader from './components/GlobalLoader.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
+import AuthModals from './components/AuthModals.vue'
 
 const auth = useAuthStore()
 const chat = useChatStore()

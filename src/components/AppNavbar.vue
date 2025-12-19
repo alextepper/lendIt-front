@@ -97,8 +97,8 @@
           <NotificationsBell class="d-none d-sm-inline-flex" />
 
           <template v-if="!auth.isAuthed">
-            <router-link class="btn btn-outline-primary btn-sm" to="/login">{{ $t('nav.login') }}</router-link>
-            <router-link class="btn btn-primary btn-sm" to="/register">{{ $t('nav.register') }}</router-link>
+            <button class="btn btn-outline-primary btn-sm" @click="openLoginModal">{{ $t('nav.login') }}</button>
+            <button class="btn btn-primary btn-sm" @click="openRegisterModal">{{ $t('nav.register') }}</button>
           </template>
           <template v-else>
             <!-- User Profile Dropdown -->
@@ -213,6 +213,7 @@ import { watch, ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import NotificationsBell from './NotificationsBell.vue'
 import { fetchAllBookings } from '../services/bookingRequestService'
 import websocketService from '../services/websocketService'
+import { useAuthModal } from '../composables/useAuthModal'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -220,6 +221,7 @@ const theme = useThemeStore()
 const chat = useChatStore()
 const language = useLanguageStore()
 const debug = useDebugStore()
+const { openLoginModal, openRegisterModal } = useAuthModal()
 
 const showDebug = ref(false)
 const navOpen = ref(false)

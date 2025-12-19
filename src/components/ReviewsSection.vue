@@ -11,6 +11,7 @@ import {
 } from '../services/reviewsService';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
+import { useAuthModal } from '../composables/useAuthModal';
 
 const props = defineProps({ 
   item: { type: Object, required: true },
@@ -25,6 +26,7 @@ const props = defineProps({
 const emit = defineEmits(['refresh', 'review-submitted']);
 const ui = useUiStore();
 const auth = useAuthStore();
+const { openLoginModal } = useAuthModal();
 
 const agg = ref({ avg: 0, count: 0, breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } });
 const data = ref({ items: [], page: 1, total_pages: 1 });
@@ -137,13 +139,13 @@ function closeReviewModal() {
         >
           <i class="bi bi-pencil-square me-1"></i>Write a review
         </button>
-        <router-link 
+        <button 
           v-else-if="!auth.isAuthed && canReview" 
           class="btn btn-sm btn-outline-primary" 
-          :to="{ name: 'login', query: { redirect: `/item/${props.item.id}` } }"
+          @click="openLoginModal(`/item/${props.item.id}`)"
         >
           Sign in to review
-        </router-link>
+        </button>
       </div>
     </div>
 

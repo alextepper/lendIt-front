@@ -29,13 +29,13 @@ const router = createRouter({
       path: "/login",
       name: "login",
       component: Login,
-      meta: { guestOnly: true },
+      meta: { guestOnly: true, showModal: true },
     },
     {
       path: "/register",
       name: "register",
       component: Register,
-      meta: { guestOnly: true },
+      meta: { guestOnly: true, showModal: true },
     },
     {
       path: "/auth/callback",
@@ -129,11 +129,22 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.requiresAuth && !auth.isAuthed) {
-    return next({ name: "login", query: { redirect: to.fullPath } });
+    // Show login modal instead of navigating to login page
+    return next({ path: to.path, query: { ...to.query, modal: 'login', redirect: to.fullPath } });
   }
   if (to.meta.guestOnly && auth.isAuthed) {
     return next({ name: "home" });
   }
+  
+  // If navigating to login/register routes, show modal instead
+  if (to.name === 'login' || to.name === 'register') {
+    const modalType = to.name === 'login' ? 'login' : 'register';
+    return next({ 
+      path: to.path === '/login' || to.path === '/register' ? '/' : to.path,
+      query: { ...to.query, modal: modalType, redirect: to.query.redirect || to.fullPath }
+    });
+  }
+  
   next();
 });
 

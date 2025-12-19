@@ -4,6 +4,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useUiStore } from '../stores/ui';
+import { useAuthModal } from '../composables/useAuthModal';
 import { fetchItem } from '../services/itemService';
 import { getQuote, createOrder, mockPayment } from '../services/orderService';
 
@@ -11,6 +12,7 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const ui = useUiStore();
+const { openLoginModal } = useAuthModal();
 
 // Steps
 const step = ref(1); // 1=review, 2=payment, 3=success
@@ -38,7 +40,7 @@ const days = computed(() => {
 onMounted(async () => {
   // Check auth
   if (!auth.isAuthed) {
-    router.push({ name: 'login', query: { redirect: route.fullPath } });
+    openLoginModal(route.fullPath);
     return;
   }
 

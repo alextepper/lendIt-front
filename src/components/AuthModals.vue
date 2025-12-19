@@ -1,0 +1,242 @@
+<template>
+  <!-- Login Modal -->
+  <div
+    v-if="showLoginModal"
+    class="modal fade show"
+    id="loginModal"
+    tabindex="-1"
+    :style="{ display: 'block' }"
+    @click.self="closeModals"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h5 class="modal-title">{{ $t('auth.login.title') }}</h5>
+          <button
+            type="button"
+            class="btn-close"
+            @click="closeModals"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div v-if="error" class="alert alert-danger">{{ error }}</div>
+
+          <form @submit.prevent="submit" novalidate>
+            <!-- Google Sign In Button -->
+            <div class="mb-3">
+              <GoogleSignInButton :return-url="redirectPath" />
+            </div>
+            
+            <!-- Divider -->
+            <div class="divider mb-3">
+              <span class="divider-text">{{ $t('auth.or') }}</span>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">{{ $t('auth.login.email') }}</label>
+              <input v-model="loginForm.email" class="form-control" type="email" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ $t('auth.login.password') }}</label>
+              <input v-model="loginForm.password" class="form-control" type="password" minlength="6" required />
+            </div>
+            <button class="btn btn-primary w-100" :disabled="submitting" type="submit">
+              <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+              {{ $t('auth.login.submit') }}
+            </button>
+          </form>
+
+          <p class="small mt-3 text-center">
+            {{ $t('auth.login.noAccount') }}
+            <a href="#" @click.prevent="switchToRegister">{{ $t('auth.login.signUp') }}</a>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop fade show" @click="closeModals"></div>
+  </div>
+
+  <!-- Register Modal -->
+  <div
+    v-if="showRegisterModal"
+    class="modal fade show"
+    id="registerModal"
+    tabindex="-1"
+    :style="{ display: 'block' }"
+    @click.self="closeModals"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h5 class="modal-title">{{ $t('auth.register.title') }}</h5>
+          <button
+            type="button"
+            class="btn-close"
+            @click="closeModals"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div v-if="error" class="alert alert-danger">{{ error }}</div>
+
+          <form @submit.prevent="submit" novalidate>
+            <!-- Google Sign In Button -->
+            <div class="mb-3">
+              <GoogleSignInButton :return-url="redirectPath" />
+            </div>
+            
+            <!-- Divider -->
+            <div class="divider mb-3">
+              <span class="divider-text">{{ $t('auth.or') }}</span>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">{{ $t('auth.register.name') }}</label>
+              <input v-model="registerForm.name" class="form-control" type="text" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ $t('auth.register.email') }}</label>
+              <input v-model="registerForm.email" class="form-control" type="email" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ $t('auth.register.password') }}</label>
+              <input v-model="registerForm.password" class="form-control" type="password" minlength="6" required />
+            </div>
+            <button class="btn btn-primary w-100" :disabled="submitting" type="submit">
+              <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+              {{ $t('auth.register.submit') }}
+            </button>
+          </form>
+
+          <p class="small mt-3 text-center">
+            {{ $t('auth.register.hasAccount') }}
+            <a href="#" @click.prevent="switchToLogin">{{ $t('auth.register.signIn') }}</a>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop fade show" @click="closeModals"></div>
+  </div>
+</template>
+
+<script setup>
+import { reactive, ref, watch, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { useI18n } from 'vue-i18n'
+import { useAuthModal } from '../composables/useAuthModal'
+import GoogleSignInButton from './GoogleSignInButton.vue'
+
+const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+const { t } = useI18n()
+const {
+  showLoginModal,
+  showRegisterModal,
+  redirectPath,
+  closeModals,
+  switchToRegister,
+  switchToLogin,
+  syncWithRoute
+} = useAuthModal()
+
+const loginForm = reactive({ email: '', password: '' })
+const registerForm = reactive({ name: '', email: '', password: '' })
+const submitting = ref(false)
+const error = ref(null)
+
+// Sync with route changes
+watch(() => route.query.modal, () => {
+  syncWithRoute()
+}, { immediate: true })
+
+onMounted(() => {
+  syncWithRoute()
+  // Check for OAuth error in query params
+  if (route.query.error === 'oauth_failed') {
+    error.value = t('auth.oauthSignInFailed')
+  }
+})
+
+async function submit() {
+  error.value = null
+  
+  if (showLoginModal.value) {
+    if (!loginForm.email || !loginForm.password) {
+      error.value = t('auth.login.fillAllFields')
+      return
+    }
+    submitting.value = true
+    try {
+      await auth.login(loginForm)
+      // Close modal on success
+      closeModals()
+      // Navigate to redirect path if provided
+      if (redirectPath.value && redirectPath.value !== route.fullPath) {
+        router.push(redirectPath.value)
+      }
+    } catch (e) {
+      error.value = auth.error || t('auth.login.failedToSignIn')
+    } finally {
+      submitting.value = false
+    }
+  } else if (showRegisterModal.value) {
+    if (!registerForm.name || !registerForm.email || !registerForm.password) {
+      error.value = t('auth.register.fillAllFields')
+      return
+    }
+    submitting.value = true
+    try {
+      await auth.register(registerForm)
+      // Close modal on success
+      closeModals()
+      // Navigate to redirect path if provided
+      if (redirectPath.value && redirectPath.value !== route.fullPath) {
+        router.push(redirectPath.value)
+      }
+    } catch (e) {
+      error.value = auth.error || t('auth.register.failedToSignUp')
+    } finally {
+      submitting.value = false
+    }
+  }
+}
+
+</script>
+
+<style scoped>
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #dee2e6;
+}
+
+.divider-text {
+  position: relative;
+  background-color: white;
+  padding: 0 1rem;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.modal-backdrop {
+  z-index: 1040;
+}
+
+.modal {
+  z-index: 1050;
+}
+</style>
+
