@@ -1,7 +1,9 @@
 <template>
   <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom app-navbar">
     <div class="container-fluid container">
-      <router-link class="navbar-brand fw-semibold" to="/">{{ $t('app.title') }}</router-link>
+      <router-link class="navbar-brand" to="/">
+        <img src="/logo.png" alt="Sharo" class="navbar-logo" />
+      </router-link>
 
       <button
         class="navbar-toggler"
@@ -648,11 +650,23 @@ watch(() => language.currentLocale, (newLocale) => {
 .navbar-brand {
   font-size: 1.1rem;
   padding: 0.5rem 0;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
 }
 
 @media (min-width: 576px) {
   .navbar-brand {
     font-size: 1.25rem;
+  }
+  
+  .navbar-logo {
+    height: 45px;
   }
 }
 

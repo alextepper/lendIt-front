@@ -207,17 +207,9 @@ async function getCurrentLocation() {
     runSearch();
     
     // Try to get address from coordinates (reverse geocoding) - non-blocking
-    // Use multiple zoom levels to get the most accurate address possible
-    Promise.all([
-      // Try with high zoom first (most specific)
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`),
-      // Fallback with medium zoom
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1&accept-language=en`)
-    ])
-      .then(responses => Promise.all(responses.map(r => r.ok ? r.json() : null)))
-      .then(results => {
-        const data = results.find(r => r && r.display_name) || results[0];
-        
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`)
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
         if (data && data.display_name) {
           // Prefer more specific address components
           let address = data.display_name;
