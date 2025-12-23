@@ -663,6 +663,26 @@ watch(() => language.currentLocale, (newLocale) => {
   }
 }
 
+/* Extra-small screens: make profile dropdown nearly full-width under navbar */
+@media (max-width: 576px) {
+  .navbar-profile-menu {
+    left: 0.5rem;
+    right: 0.5rem;
+    margin-left: 0;
+    margin-right: 0;
+    width: auto;
+    max-width: none;
+  }
+
+  .rtl .navbar-profile-menu,
+  [dir="rtl"] .navbar-profile-menu {
+    left: 0.5rem;
+    right: 0.5rem;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
 .dropdown-header {
   padding: 0.75rem 1rem;
   background-color: rgba(0, 0, 0, 0.03);

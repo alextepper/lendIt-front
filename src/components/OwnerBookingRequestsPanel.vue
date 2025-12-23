@@ -187,62 +187,133 @@
     tabindex="-1"
     ref="approveModal"
   >
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">{{ $t('bookingRequests.approveModal.title') }}</h5>
+        <div class="modal-header border-0 pb-0">
+          <div>
+            <h5 class="modal-title mb-1">
+              <i class="bi bi-check2-circle text-success me-2"></i>
+              {{ $t('bookingRequests.approveModal.title') }}
+            </h5>
+            <p v-if="selectedRequest" class="text-muted small mb-0">
+              {{ formatDate(selectedRequest.startDate || selectedRequest.from) }} →
+              {{ formatDate(selectedRequest.endDate || selectedRequest.to) }}
+            </p>
+          </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body">
+
+        <div class="modal-body pt-0">
+          <!-- Booking summary -->
           <div v-if="selectedRequest" class="mb-3">
-            <p><strong>{{ $t('bookingRequests.approveModal.renter') }}:</strong> {{ (selectedRequest.counterparty || selectedRequest.renter)?.displayName || (selectedRequest.counterparty || selectedRequest.renter)?.username || (selectedRequest.counterparty || selectedRequest.renter)?.name }}</p>
-            <p><strong>{{ $t('bookingRequests.approveModal.dates') }}:</strong> {{ formatDate(selectedRequest.startDate || selectedRequest.from) }} → {{ formatDate(selectedRequest.endDate || selectedRequest.to) }}</p>
-            <p><strong>{{ $t('bookingRequests.totalAmount') }}:</strong> {{ formatCurrency(selectedRequest.totalAmount || selectedRequest.estimatedTotal || selectedRequest.total) }}</p>
-            <p v-if="selectedRequest.rentalPrice"><strong>{{ $t('bookingRequests.approveModal.rentalPrice') }}:</strong> {{ formatCurrency(selectedRequest.rentalPrice) }}</p>
-            <p v-if="selectedRequest.depositAmount"><strong>{{ $t('bookingRequests.deposit') }}:</strong> {{ formatCurrency(selectedRequest.depositAmount) }}</p>
+            <div class="card border-0 bg-light mb-3">
+              <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <div class="text-muted small mb-1">{{ $t('bookingRequests.itemLabel') || 'Item' }}</div>
+                    <div class="fw-semibold">
+                      {{ selectedRequest.item?.title || $t('bookingRequests.noTitle') || 'Untitled item' }}
+                    </div>
+                  </div>
+                  <span class="badge" :class="getStatusBadgeClass(selectedRequest.status)">
+                    {{ $t(`bookingRequests.status.${selectedRequest.status}`) }}
+                  </span>
+                </div>
+                <div class="d-flex flex-wrap gap-3 small text-muted">
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-calendar me-1"></i>
+                    <span>
+                      {{ formatDate(selectedRequest.startDate || selectedRequest.from) }} →
+                      {{ formatDate(selectedRequest.endDate || selectedRequest.to) }}
+                    </span>
+                  </div>
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-cash-stack me-1"></i>
+                    <span>
+                      {{ formatCurrency(selectedRequest.totalAmount || selectedRequest.estimatedTotal || selectedRequest.total) }}
+                    </span>
+                  </div>
+                  <div
+                    v-if="selectedRequest.depositAmount || selectedRequest.item?.deposit"
+                    class="d-flex align-items-center"
+                  >
+                    <i class="bi bi-shield-check me-1"></i>
+                    <span>
+                      {{ formatCurrency(selectedRequest.depositAmount || selectedRequest.item?.deposit) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Renter row with link to messages -->
+            <div class="d-flex align-items-center mb-3">
+              <div>
+                <div class="text-muted small mb-1">
+                  {{ $t('bookingRequests.approveModal.renter') }}
+                </div>
+                <router-link
+                  v-if="selectedRequest.counterparty || selectedRequest.renter"
+                  :to="{
+                    name: 'messages',
+                    query: { userId: (selectedRequest.counterparty || selectedRequest.renter).id }
+                  }"
+                  class="fw-semibold text-decoration-none d-inline-flex align-items-center"
+                >
+                  <i class="bi bi-person-circle me-1"></i>
+                  {{
+                    (selectedRequest.counterparty || selectedRequest.renter)?.displayName ||
+                    (selectedRequest.counterparty || selectedRequest.renter)?.username ||
+                    (selectedRequest.counterparty || selectedRequest.renter)?.name
+                  }}
+                </router-link>
+              </div>
+            </div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label">{{ $t('bookingRequests.approveModal.adjustRentalPrice') }}</label>
-            <input
-              v-model.number="paymentModifications.rentalPrice"
-              type="number"
-              class="form-control"
-              :placeholder="`${$t('bookingRequests.approveModal.current')}: ${formatCurrency(selectedRequest?.rentalPrice || selectedRequest?.item?.pricePerDay || 0)}`"
-              min="0"
-              step="0.01"
-            />
-            <small class="text-muted">{{ $t('bookingRequests.approveModal.leaveEmptyToKeepOriginal', { field: $t('bookingRequests.approveModal.rentalPrice') }) }}</small>
-          </div>
+          <!-- Adjustments section -->
+          <div class="border rounded-3 p-3 bg-white">
+            <h6 class="mb-3 d-flex align-items-center">
+              <i class="bi bi-sliders me-2 text-primary"></i>
+              {{ $t('bookingRequests.approveModal.adjustments') || 'Adjust offer (optional)' }}
+            </h6>
 
-          <div class="mb-3">
-            <label class="form-label">{{ $t('bookingRequests.approveModal.adjustDepositAmount') }}</label>
-            <input
-              v-model.number="paymentModifications.depositAmount"
-              type="number"
-              class="form-control"
-              :placeholder="`${$t('bookingRequests.approveModal.current')}: ${formatCurrency(selectedRequest?.depositAmount || selectedRequest?.item?.deposit || 0)}`"
-              min="0"
-              step="0.01"
-            />
-            <small class="text-muted">{{ $t('bookingRequests.approveModal.leaveEmptyToKeepOriginal', { field: $t('bookingRequests.deposit') }) }}</small>
-          </div>
+            <div class="mb-3">
+              <label class="form-label">{{ $t('bookingRequests.approveModal.adjustRentalPrice') }}</label>
+              <input
+                v-model.number="paymentModifications.rentalPrice"
+                type="number"
+                class="form-control"
+                :placeholder="`${$t('bookingRequests.approveModal.current')}: ${formatCurrency(selectedRequest?.rentalPrice || selectedRequest?.item?.pricePerDay || 0)}`"
+                min="0"
+                step="0.01"
+              />
+              <small class="text-muted">
+                {{ $t('bookingRequests.approveModal.leaveEmptyToKeepOriginal', { field: $t('bookingRequests.approveModal.rentalPrice') }) }}
+              </small>
+            </div>
 
-          <div class="mb-3">
-            <label class="form-label">{{ $t('bookingRequests.approveModal.adjustTotalAmount') }}</label>
-            <input
-              v-model.number="paymentModifications.totalAmount"
-              type="number"
-              class="form-control"
-              :placeholder="`${$t('bookingRequests.approveModal.current')}: ${formatCurrency(selectedRequest?.estimatedTotal || selectedRequest?.total || 0)}`"
-              min="0"
-              step="0.01"
-            />
-            <small class="text-muted">{{ $t('bookingRequests.approveModal.leaveEmptyToKeepOriginal', { field: $t('bookingRequests.totalAmount') }) }}</small>
+            <div class="mb-0">
+              <label class="form-label">{{ $t('bookingRequests.approveModal.adjustDepositAmount') }}</label>
+              <input
+                v-model.number="paymentModifications.depositAmount"
+                type="number"
+                class="form-control"
+                :placeholder="`${$t('bookingRequests.approveModal.current')}: ${formatCurrency(selectedRequest?.depositAmount || selectedRequest?.item?.deposit || 0)}`"
+                min="0"
+                step="0.01"
+              />
+              <small class="text-muted">
+                {{ $t('bookingRequests.approveModal.leaveEmptyToKeepOriginal', { field: $t('bookingRequests.deposit') }) }}
+              </small>
+            </div>
           </div>
         </div>
+
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ $t('bookingRequests.approveModal.cancel') }}</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            {{ $t('bookingRequests.approveModal.cancel') }}
+          </button>
           <button
             type="button"
             class="btn btn-success"

@@ -401,10 +401,10 @@
     "itemsRentingOut": "פריטים שאני משכיר"
   },
   "bookingRequests": {
-    "title": "בקשות הזמנה",
-    "navTitle": "בקשות הזמנה",
-    "description": "סקור ונהל בקשות הזמנה לפריטים שלך.",
-    "noRequestsFound": "לא נמצאו בקשות הזמנה.",
+    "title": "הזמנות שלי",
+    "navTitle": "הזמנות שלי",
+    "description": "סקור ונהל הזמנות לפריטים שלך.",
+    "noRequestsFound": "לא נמצאו הזמנות.",
     "filter": "סינון",
     "all": "הכל",
     "pending": "ממתין",
@@ -422,7 +422,7 @@
     "youAreRenter": "אתה שוכר",
     "youAreOwner": "אתה בעלים",
     "approveModal": {
-      "title": "אשר בקשות הזמנה",
+      "title": "אשר הזמנה",
       "renter": "שוכר",
       "dates": "תאריכים",
       "rentalPrice": "מחיר השכרה",
@@ -436,11 +436,11 @@
       "approving": "מאשר..."
     },
     "rejectModal": {
-      "title": "דחה בקשות הזמנה",
+      "title": "דחה הזמנה",
       "reason": "סיבה (אופציונלי)",
       "reasonPlaceholder": "למשל, הפריט לא זמין לתאריכים אלה, או דירוג שוכר נמוך...",
       "cancel": "בטל",
-      "rejectRequest": "דחה בקשה",
+      "rejectRequest": "דחה הזמנה",
       "rejecting": "דוחה..."
     },
     "status": {
@@ -448,14 +448,14 @@
       "AWAITING_PAYMENT": "ממתין לתשלום",
       "CONFIRMED": "אושר",
       "OWNER_DECLINED": "נדחה",
-      "CANCELLED": "בוטל"
+      "CANCELLED": "בוטלה"
     },
     "messages": {
-      "approved": "בקשות הזמנה אושרה. השוכר יקבל הודעה לשלם.",
-      "declined": "בקשות הזמנה נדחתה. השוכר יקבל הודעה.",
-      "failedToLoad": "נכשל בטעינת בקשות הזמנה.",
-      "failedToApprove": "נכשל באישור הבקשה.",
-      "failedToDecline": "נכשל בדחיית הבקשה."
+      "approved": "הזמנה אושרה. השוכר יקבל הודעה לשלם.",
+      "declined": "הזמנה נדחתה. השוכר יקבל הודעה.",
+      "failedToLoad": "נכשל בטעינת הזמנות.",
+      "failedToApprove": "נכשל באישור ההזמנה.",
+      "failedToDecline": "נכשל בדחיית ההזמנה."
     }
   }
 }

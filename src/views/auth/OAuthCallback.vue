@@ -3,11 +3,13 @@ import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { useI18n } from 'vue-i18n';
+import { useAuthModal } from '../../composables/useAuthModal';
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const { t } = useI18n();
+const { closeModals } = useAuthModal();
 
 const loading = ref(true);
 const error = ref(null);
@@ -87,6 +89,13 @@ onMounted(async () => {
       // Check if this was opened in a popup
       const isPopup = route.query.popup === 'true' || window.opener !== null;
       
+      // Close any open auth modals in the parent app
+      try {
+        closeModals();
+      } catch (e) {
+        console.warn('Failed to close auth modals after OAuth:', e);
+      }
+
       if (isPopup && window.opener) {
         // We're in a popup - send message to parent window and close
         window.opener.postMessage({
