@@ -44,7 +44,12 @@
       "hasAccount": "Already have an account?",
       "signIn": "Sign in here",
       "fillAllFields": "Please fill in all fields",
-      "failedToSignUp": "Failed to sign up"
+      "failedToSignUp": "Failed to sign up",
+      "acceptTermsPrefix": "I agree to the",
+      "termsLink": "Terms of Use",
+      "privacyLink": "Privacy Policy",
+      "and": "and",
+      "mustAcceptTerms": "You must accept the Terms of Use and Privacy Policy to continue"
     },
     "logout": "Logout",
     "welcome": "Welcome back, {name}!",

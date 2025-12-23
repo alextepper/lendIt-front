@@ -105,7 +105,28 @@
                 <label class="form-label">{{ $t('auth.register.password') }}</label>
                 <input v-model="registerForm.password" class="form-control" type="password" minlength="6" required />
               </div>
-              <button class="btn btn-primary w-100" :disabled="submitting" type="submit">
+
+              <!-- Terms & Conditions checkbox -->
+              <div class="form-check mb-3 small">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="register-accept-terms"
+                  v-model="registerForm.acceptTerms"
+                />
+                <label class="form-check-label" for="register-accept-terms">
+                  {{ $t('auth.register.acceptTermsPrefix') }}
+                  <a href="/terms" target="_blank" rel="noopener">
+                    {{ $t('auth.register.termsLink') }}
+                  </a>
+                  {{ $t('auth.register.and') }}
+                  <a href="/privacy" target="_blank" rel="noopener">
+                    {{ $t('auth.register.privacyLink') }}
+                  </a>
+                </label>
+              </div>
+
+              <button class="btn btn-primary w-100" :disabled="submitting || !registerForm.acceptTerms" type="submit">
                 <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
                 {{ $t('auth.register.submit') }}
               </button>
@@ -145,7 +166,7 @@ const {
 } = useAuthModal()
 
 const loginForm = reactive({ email: '', password: '' })
-const registerForm = reactive({ name: '', email: '', password: '' })
+const registerForm = reactive({ name: '', email: '', password: '', acceptTerms: false })
 const submitting = ref(false)
 const error = ref(null)
 
@@ -190,6 +211,11 @@ async function submit() {
   } else if (showRegisterModal.value) {
     if (!registerForm.name || !registerForm.email || !registerForm.password) {
       error.value = t('auth.register.fillAllFields')
+      return
+    }
+
+    if (!registerForm.acceptTerms) {
+      error.value = t('auth.register.mustAcceptTerms')
       return
     }
     submitting.value = true

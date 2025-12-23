@@ -21,6 +21,8 @@ const CheckoutSuccess = () => import("../views/CheckoutSuccess.vue");
 const CheckoutFailure = () => import("../views/CheckoutFailure.vue");
 const UserProfile = () => import("../views/UserProfile.vue");
 const NotFound = () => import("../views/NotFound.vue");
+const Terms = () => import("../views/Terms.vue");
+const Privacy = () => import("../views/Privacy.vue");
 
 const router = createRouter({
   history: createWebHistory(),
@@ -118,6 +120,16 @@ const router = createRouter({
       name: "checkout-failure",
       component: CheckoutFailure,
       meta: { requiresAuth: true },
+    },
+    {
+      path: "/terms",
+      name: "terms",
+      component: Terms,
+    },
+    {
+      path: "/privacy",
+      name: "privacy",
+      component: Privacy,
     },
     { path: "/:pathMatch(.*)*", name: "not-found", component: NotFound },
   ],
