@@ -14,7 +14,7 @@ const route = useRoute();
 const showSidebarMobile = ref(true);
 const hasActive = computed(() => !!chat.activeId);
 
-async function openConversationForUser(userId) {
+async function openConversationForUser(userId, itemId = null) {
   if (!userId) return;
 
   try {
@@ -23,8 +23,8 @@ async function openConversationForUser(userId) {
       await chat.loadConversations();
     }
 
-    // Create or get existing thread with this user
-    const thread = await chat.createThread(userId);
+    // Create or get existing thread with this user and item (if provided)
+    const thread = await chat.createThread(userId, itemId);
 
     if (thread?.id) {
       await chat.open(thread.id);
@@ -46,19 +46,20 @@ onMounted(async () => {
   }
 
   const userId = route.query.userId;
+  const itemId = route.query.itemId;
   if (userId) {
-    await openConversationForUser(userId);
+    await openConversationForUser(userId, itemId || null);
   } else if (chat.activeId == null && chat.conversations[0]) {
     chat.open(chat.conversations[0].id);
   }
 });
 
-// React to userId changes in query (e.g., clicking different "message" links)
+// React to userId and itemId changes in query (e.g., clicking different "message" links)
 watch(
-  () => route.query.userId,
-  async (newUserId) => {
+  () => [route.query.userId, route.query.itemId],
+  async ([newUserId, newItemId]) => {
     if (newUserId) {
-      await openConversationForUser(newUserId);
+      await openConversationForUser(newUserId, newItemId || null);
     }
   }
 );

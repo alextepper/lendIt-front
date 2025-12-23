@@ -58,6 +58,14 @@ function getItemImageUrl(item) {
   return null;
 }
 
+function getProfilePictureUrl(conversation) {
+  if (!conversation) return null;
+  const user = conversation.otherUser;
+  if (!user) return null;
+  // Check avatar first, then profilePicture (similar to AppNavbar)
+  return user.avatar || user.profilePicture || null;
+}
+
 async function handleArchive(conversationId, archived) {
   try {
     await chat.toggleArchive(conversationId, archived);
@@ -149,12 +157,20 @@ function formatTime(dateString) {
                 height="48"
                 style="object-fit: cover;"
               />
+              <img
+                v-else-if="getProfilePictureUrl(c)"
+                :src="getProfilePictureUrl(c)"
+                class="rounded-circle"
+                width="48"
+                height="48"
+                style="object-fit: cover;"
+              />
               <div 
                 v-else
-                class="rounded d-flex align-items-center justify-content-center bg-light position-relative"
+                class="rounded-circle d-flex align-items-center justify-content-center bg-light position-relative"
                 style="width: 48px; height: 48px;"
               >
-                <i class="bi bi-box text-muted"></i>
+                <i class="bi bi-person text-muted"></i>
               </div>
               <span 
                 v-if="c.unread" 

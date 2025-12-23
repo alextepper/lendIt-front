@@ -620,6 +620,10 @@ function goToMessagesForSelectedRenter() {
   const userId = user?.id;
   if (!userId) return;
 
+  // Get itemId from the booking request
+  const itemId = selectedRequest.value.itemId || 
+                 selectedRequest.value.item?.id;
+
   // Hide approve/reject modals (and their backdrops) before navigation
   if (approveModalInstance) {
     approveModalInstance.hide();
@@ -630,7 +634,10 @@ function goToMessagesForSelectedRenter() {
 
   router.push({
     name: 'messages',
-    query: { userId }
+    query: { 
+      userId,
+      ...(itemId && { itemId })
+    }
   });
 }
 
