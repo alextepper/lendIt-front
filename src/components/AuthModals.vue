@@ -85,7 +85,10 @@
             <form @submit.prevent="submit" novalidate>
               <!-- Google Sign In Button -->
               <div class="mb-3">
-                <GoogleSignInButton :return-url="redirectPath" />
+                <GoogleSignInButton
+                  :return-url="redirectPath"
+                  :disabled="!registerForm.acceptTerms"
+                />
               </div>
               
               <!-- Divider -->

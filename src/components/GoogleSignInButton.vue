@@ -7,6 +7,11 @@ const props = defineProps({
   returnUrl: {
     type: String,
     default: null
+  },
+  // Optional: allow parent to disable the button (e.g. until terms are accepted)
+  disabled: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -79,11 +84,16 @@ function handleGoogleSignIn(event) {
         // OAuth completed successfully
         window.removeEventListener('message', messageListener);
         popup.close();
+        // Determine where to go next; prefer the sanitized returnUrl from the callback
+        const target =
+          typeof event.data.returnUrl === 'string' && event.data.returnUrl
+            ? event.data.returnUrl
+            : router.currentRoute.value.fullPath;
         loading.value = false;
-        
-        // Reload page or refresh auth state
-        // The tokens are in cookies, so we just need to refresh the auth state
-        window.location.reload();
+
+        // Navigate to the target URL (which should not include modal/redirect params anymore)
+        // This will trigger auth initialization and update the navbar state
+        window.location.assign(target);
       } else if (event.data.type === 'oauth-error') {
         // OAuth failed
         window.removeEventListener('message', messageListener);
@@ -121,7 +131,7 @@ function handleGoogleSignIn(event) {
       type="button"
       class="btn btn-outline-secondary w-100 google-sign-in-button"
       @click.prevent="handleGoogleSignIn"
-      :disabled="loading"
+      :disabled="loading || props.disabled"
     >
       <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
       <svg

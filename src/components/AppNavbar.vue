@@ -14,8 +14,8 @@
       >
         <span class="navbar-toggler-icon"></span>
         <span
-          v-if="totalNotifications > 0"
-          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+          v-if="totalNotifications > 0 && !navOpen"
+          class="position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger"
           style="font-size: 0.7rem; padding: 0.25em 0.5em;"
         >
           {{ totalNotifications > 99 ? '99+' : totalNotifications }}
@@ -106,8 +106,12 @@
           <!-- <NotificationsBell class="d-none d-sm-inline-flex" /> -->
 
           <template v-if="!auth.isAuthed">
-            <button class="btn btn-outline-primary btn-sm" @click="openLoginModal">{{ $t('nav.login') }}</button>
-            <button class="btn btn-primary btn-sm" @click="openRegisterModal">{{ $t('nav.register') }}</button>
+            <button class="btn btn-outline-primary btn-sm" @click="openLoginModal()">
+              {{ $t('nav.login') }}
+            </button>
+            <button class="btn btn-primary btn-sm" @click="openRegisterModal()">
+              {{ $t('nav.register') }}
+            </button>
           </template>
           <template v-else>
             <!-- User Profile Dropdown -->
