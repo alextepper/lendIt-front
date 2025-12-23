@@ -252,13 +252,11 @@
                 <div class="text-muted small mb-1">
                   {{ $t('bookingRequests.approveModal.renter') }}
                 </div>
-                <router-link
+                <button
                   v-if="selectedRequest.counterparty || selectedRequest.renter"
-                  :to="{
-                    name: 'messages',
-                    query: { userId: (selectedRequest.counterparty || selectedRequest.renter).id }
-                  }"
-                  class="fw-semibold text-decoration-none d-inline-flex align-items-center"
+                  type="button"
+                  class="btn btn-link p-0 fw-semibold text-decoration-none d-inline-flex align-items-center"
+                  @click="goToMessagesForSelectedRenter"
                 >
                   <i class="bi bi-person-circle me-1"></i>
                   {{
@@ -266,7 +264,7 @@
                     (selectedRequest.counterparty || selectedRequest.renter)?.username ||
                     (selectedRequest.counterparty || selectedRequest.renter)?.name
                   }}
-                </router-link>
+                </button>
               </div>
             </div>
           </div>
@@ -614,6 +612,26 @@ async function handleReject() {
   } finally {
     rejecting.value = false;
   }
+}
+
+function goToMessagesForSelectedRenter() {
+  if (!selectedRequest.value) return;
+  const user = selectedRequest.value.counterparty || selectedRequest.value.renter;
+  const userId = user?.id;
+  if (!userId) return;
+
+  // Hide approve/reject modals (and their backdrops) before navigation
+  if (approveModalInstance) {
+    approveModalInstance.hide();
+  }
+  if (rejectModalInstance) {
+    rejectModalInstance.hide();
+  }
+
+  router.push({
+    name: 'messages',
+    query: { userId }
+  });
 }
 
 function goToPayment(booking) {

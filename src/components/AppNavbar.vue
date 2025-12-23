@@ -112,7 +112,7 @@
                 type="button"
               >
                 <img 
-                  :src="auth.user?.avatar || 'https://placehold.co/40x40?text=' + (auth.user?.username?.[0] || 'U')" 
+                  :src="auth.user?.avatar || auth.user?.profilePicture || 'https://placehold.co/40x40?text=' + (auth.user?.username?.[0] || 'U')" 
                   :alt="auth.user?.username || $t('nav.user')"
                   class="rounded-circle border border-2 border-primary profile-img"
                   width="40" 
@@ -123,7 +123,7 @@
                 <li class="dropdown-header">
                   <div class="d-flex align-items-center">
                     <img 
-                      :src="auth.user?.avatar || 'https://placehold.co/32x32?text=' + (auth.user?.name?.[0] || 'U')" 
+                      :src="auth.user?.avatar || auth.user?.profilePicture || 'https://placehold.co/32x32?text=' + (auth.user?.name?.[0] || 'U')" 
                       :alt="auth.user?.name || $t('nav.user')"
                       class="rounded-circle me-2 profile-img"
                       width="32" 
@@ -206,6 +206,7 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
 import { useChatStore } from '../stores/chat'
@@ -218,6 +219,7 @@ import websocketService from '../services/websocketService'
 import { useAuthModal } from '../composables/useAuthModal'
 
 const { t } = useI18n()
+const route = useRoute()
 const auth = useAuthStore()
 const theme = useThemeStore()
 const chat = useChatStore()
@@ -370,6 +372,14 @@ onMounted(() => {
     }
   }
 })
+
+// Close mobile navbar (and backdrop) on route change
+watch(
+  () => route.fullPath,
+  () => {
+    closeNav()
+  }
+)
 
 onBeforeUnmount(() => {
   if (!navMain.value) return
