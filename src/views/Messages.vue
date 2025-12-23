@@ -1,25 +1,67 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import { useChatStore } from '../stores/chat';
 import ConversationsList from '../components/ConversationsList.vue';
 import ChatWindow from '../components/ChatWindow.vue';
 
 const { t } = useI18n();
 const chat = useChatStore();
+const route = useRoute();
 
 // Mobile layout: show/hide sidebar (conversations list)
 const showSidebarMobile = ref(true);
 const hasActive = computed(() => !!chat.activeId);
 
+async function openConversationForUser(userId) {
+  if (!userId) return;
+
+  try {
+    // Ensure conversations loaded
+    if (!chat.conversations.length) {
+      await chat.loadConversations();
+    }
+
+    // Create or get existing thread with this user
+    const thread = await chat.createThread(userId);
+
+    if (thread?.id) {
+      await chat.open(thread.id);
+
+      // On small screens, switch to chat view after selecting a conversation
+      if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        showSidebarMobile.value = false;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to open conversation for user:', userId, e);
+  }
+}
+
 onMounted(async () => {
+  // Always load conversations on mount
   if (!chat.conversations.length) {
     await chat.loadConversations();
   }
-  if (chat.activeId == null && chat.conversations[0]) {
+
+  const userId = route.query.userId;
+  if (userId) {
+    await openConversationForUser(userId);
+  } else if (chat.activeId == null && chat.conversations[0]) {
     chat.open(chat.conversations[0].id);
   }
 });
+
+// React to userId changes in query (e.g., clicking different "message" links)
+watch(
+  () => route.query.userId,
+  async (newUserId) => {
+    if (newUserId) {
+      await openConversationForUser(newUserId);
+    }
+  }
+);
 
 function selectConv(id) {
   chat.open(id);
