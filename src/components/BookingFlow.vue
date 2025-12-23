@@ -187,22 +187,26 @@ function formatDateRange(from, to) {
         <div class="date-inputs">
           <div class="date-input-group">
             <label class="date-label">Check-in Date</label>
-            <input 
-              v-model="dateFrom" 
-              type="date" 
-              class="date-input"
-              :min="minDate"
-            />
+            <div class="date-input-wrapper">
+              <input 
+                v-model="dateFrom" 
+                type="date" 
+                class="date-input"
+                :min="minDate"
+              />
+            </div>
           </div>
           <div class="date-input-group">
             <label class="date-label">Check-out Date</label>
-            <input 
-              v-model="dateTo" 
-              type="date" 
-              class="date-input"
-              :min="minToDate"
-              :disabled="!dateFrom"
-            />
+            <div class="date-input-wrapper">
+              <input 
+                v-model="dateTo" 
+                type="date" 
+                class="date-input"
+                :min="minToDate"
+                :disabled="!dateFrom"
+              />
+            </div>
           </div>
         </div>
 
@@ -546,6 +550,11 @@ function formatDateRange(from, to) {
   position: relative;
 }
 
+.date-input-wrapper {
+  height: 44px;
+  overflow: hidden;
+}
+
 .date-label {
   display: block;
   font-size: 13px;
@@ -558,7 +567,7 @@ function formatDateRange(from, to) {
 
 .date-input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 0 16px;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   font-size: 16px;
@@ -567,6 +576,9 @@ function formatDateRange(from, to) {
   background: #ffffff;
   transition: all 0.3s ease;
   cursor: pointer;
+  box-sizing: border-box;
+  height: 44px;
+  line-height: 44px;
 }
 
 .date-input:focus {
@@ -1086,3 +1098,25 @@ function formatDateRange(from, to) {
 }
 </style>
 
+<!-- Global iOS Safari date input fix -->
+<style>
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  height: 44px;
+  line-height: 44px;
+  padding: 0 12px;
+  font-size: 16px;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  height: 100%;
+  line-height: 44px;
+}
+
+.date-input-wrapper {
+  height: 44px;
+  overflow: hidden;
+}
+</style>

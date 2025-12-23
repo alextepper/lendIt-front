@@ -88,15 +88,22 @@ export const useAuthStore = defineStore("auth", {
         // - { id, email, ... }
         // - { user: { ... } }
         // - { data: { user: { ... } } }
-        const user = data?.user || data?.data?.user || data?.data || data;
+        const rawUser = data?.user || data?.data?.user || data?.data || data;
 
-        if (!user || !user.id) {
+        if (!rawUser || !rawUser.id) {
           console.warn("Unexpected /auth/me response shape:", data);
         }
 
-        this.user = user;
+        // Normalize avatar field so all components can rely on auth.user.avatar
+        const normalizedUser = {
+          ...rawUser,
+          avatar:
+            rawUser.avatar || rawUser.profilePicture || rawUser.profile_picture,
+        };
+
+        this.user = normalizedUser;
         this.status = "idle";
-        return user;
+        return normalizedUser;
       } catch (e) {
         console.warn("Failed to fetch user:", e);
         this.user = null;
