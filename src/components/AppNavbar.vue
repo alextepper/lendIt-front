@@ -122,13 +122,6 @@
               <ul class="dropdown-menu dropdown-menu-end navbar-profile-menu">
                 <li class="dropdown-header">
                   <div class="d-flex align-items-center">
-                    <img 
-                      :src="auth.user?.avatar || auth.user?.profilePicture || 'https://placehold.co/32x32?text=' + (auth.user?.name?.[0] || 'U')" 
-                      :alt="auth.user?.name || $t('nav.user')"
-                      class="rounded-circle me-2 profile-img"
-                      width="32" 
-                      height="32"
-                    />
                     <div>
                       <div class="fw-semibold">{{ auth.user?.username || $t('nav.user') }}</div>
                       <small class="text-muted">{{ auth.user?.email || '' }}</small>
@@ -673,8 +666,10 @@ watch(() => language.currentLocale, (newLocale) => {
   }
 }
 
-/* Extra-small screens: make profile dropdown nearly full-width under navbar */
+/* Extra-small screens: make dropdowns nearly full-width under navbar */
 @media (max-width: 576px) {
+  .language-dropdown,
+  .theme-dropdown,
   .navbar-profile-menu {
     left: 0.5rem;
     right: 0.5rem;
@@ -684,7 +679,11 @@ watch(() => language.currentLocale, (newLocale) => {
     max-width: none;
   }
 
+  .rtl .language-dropdown,
+  .rtl .theme-dropdown,
   .rtl .navbar-profile-menu,
+  [dir="rtl"] .language-dropdown,
+  [dir="rtl"] .theme-dropdown,
   [dir="rtl"] .navbar-profile-menu {
     left: 0.5rem;
     right: 0.5rem;

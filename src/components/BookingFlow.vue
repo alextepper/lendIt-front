@@ -41,9 +41,10 @@ const canProceed = computed(() => {
 });
 
 const minDate = computed(() => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow.toISOString().split('T')[0];
+  // Allow selecting today as a valid check-in date
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today.toISOString().split('T')[0];
 });
 
 const minToDate = computed(() => {
@@ -250,11 +251,6 @@ function formatDateRange(from, to) {
             <span class="preview-value">{{ formatCurrency(props.item.initialPrice) }}</span>
           </div>
           
-          <div class="preview-line">
-            <span class="preview-label">Service fee (est. 8%)</span>
-            <span class="preview-value">~{{ formatCurrency(Math.round((days * props.item.pricePerDay + (props.item.initialPrice || 0)) * 0.08)) }}</span>
-          </div>
-          
           <div v-if="props.item.deposit" class="preview-line deposit">
             <span class="preview-label">
               <i class="bi bi-shield-check me-1"></i>
@@ -268,7 +264,7 @@ function formatDateRange(from, to) {
           <div class="preview-total">
             <span class="preview-total-label">Total to Pay</span>
             <span class="preview-total-value">
-              {{ formatCurrency((days * props.item.pricePerDay + (props.item.initialPrice || 0)) + Math.round((days * props.item.pricePerDay + (props.item.initialPrice || 0)) * 0.08) + (props.item.deposit || 0)) }}
+              {{ formatCurrency((days * props.item.pricePerDay + (props.item.initialPrice || 0)) + (props.item.deposit || 0)) }}
             </span>
           </div>
         </div>
@@ -335,11 +331,6 @@ function formatDateRange(from, to) {
           <div v-if="quote.initialPrice" class="quote-line">
             <span class="quote-label">Initial fee</span>
             <span class="quote-value">{{ formatCurrency(quote.initialPrice) }}</span>
-          </div>
-
-          <div v-if="quote.fees" class="quote-line">
-            <span class="quote-label">Service fee</span>
-            <span class="quote-value">{{ formatCurrency(quote.fees.total) }}</span>
           </div>
 
           <div class="quote-divider"></div>
