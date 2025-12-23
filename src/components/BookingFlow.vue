@@ -57,6 +57,21 @@ const minToDate = computed(() => {
 // Watch dates for validation
 watch([dateFrom, dateTo], async ([from, to]) => {
   availabilityError.value = '';
+
+  // Prevent selecting dates before today (device local time)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split('T')[0];
+
+  if (from && from < todayStr) {
+    availabilityError.value = 'Check-in date cannot be in the past';
+    return;
+  }
+
+  if (to && to < todayStr) {
+    availabilityError.value = 'Check-out date cannot be in the past';
+    return;
+  }
   
   if (from && to && from < to) {
     try {

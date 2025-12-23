@@ -6,13 +6,20 @@
       </router-link>
 
       <button
-        class="navbar-toggler"
+        class="navbar-toggler position-relative"
         type="button"
         data-bs-toggle="collapse"
         data-bs-target="#navMain"
         ref="navToggler"
       >
         <span class="navbar-toggler-icon"></span>
+        <span
+          v-if="totalNotifications > 0"
+          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+          style="font-size: 0.7rem; padding: 0.25em 0.5em;"
+        >
+          {{ totalNotifications > 99 ? '99+' : totalNotifications }}
+        </span>
       </button>
 
       <div
@@ -226,6 +233,11 @@ const navMain = ref(null)
 const navToggler = ref(null)
 const pendingBookingsCount = ref(0)
 let bookingsRefreshInterval = null
+
+// Total notifications: booking requests requiring attention + unread messages
+const totalNotifications = computed(() => {
+  return (pendingBookingsCount.value || 0) + (chat.unreadTotal || 0)
+})
 
 // Store WebSocket listener callbacks for cleanup
 const bookingWebSocketCallbacks = {
