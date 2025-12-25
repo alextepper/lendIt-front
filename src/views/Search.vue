@@ -67,10 +67,17 @@ onMounted(async () => {
     return;
   }
   
-  // Otherwise, automatically use the user's current location for filters
-  // (this will prompt for browser location permission and trigger a search)
+  // Otherwise, try to get user's current location
+  // If location isn't available, show all items
   isInitialLoad = true;
-  getCurrentLocation();
+  try {
+    await getCurrentLocation();
+  } catch (err) {
+    // Location not available - show all items without location filter
+    console.log('Location not available, showing all items');
+    isInitialLoad = false;
+    await runSearch();
+  }
 });
 
 // Derived label
@@ -162,7 +169,7 @@ function onPageChange(p) {
 async function getCurrentLocation() {
   if (!navigator.geolocation) {
     locationError.value = 'Geolocation is not supported by your browser';
-    return;
+    throw new Error('Geolocation is not supported by your browser');
   }
 
   locationLoading.value = true;
@@ -189,6 +196,7 @@ async function getCurrentLocation() {
               errorMessage += 'An unknown error occurred.';
               break;
           }
+          locationError.value = errorMessage;
           reject(new Error(errorMessage));
         },
         {
@@ -280,6 +288,9 @@ async function getCurrentLocation() {
   } catch (err) {
     locationError.value = err.message || 'Failed to get your location. Please allow location access or enter coordinates manually.';
     console.error('Geolocation error:', err);
+    locationLoading.value = false;
+    // Re-throw error so onMounted can handle it and show all items
+    throw err;
   } finally {
     locationLoading.value = false;
   }
