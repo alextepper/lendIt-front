@@ -121,14 +121,11 @@ export async function approveBookingRequest(
   }
 
   try {
-    // Always send an object - ensure it's valid even if empty
-    // Some backends/proxies abort requests with undefined/null bodies
+    // Ensure we always send a valid object with rentalPrice and depositAmount
     const payload =
-      paymentModifications &&
-      typeof paymentModifications === "object" &&
-      Object.keys(paymentModifications).length > 0
+      paymentModifications && typeof paymentModifications === "object"
         ? paymentModifications
-        : {}; // Always send empty object rather than undefined/null
+        : {};
 
     const response = await http.post(
       `/bookings/${bookingId}/owner-approve`,

@@ -535,41 +535,47 @@ async function handleApprove() {
 
   approving.value = true;
   try {
-    const mods = {};
+    const request = selectedRequest.value;
     
-    // Only include fields that have valid numeric values
-    // v-model.number can produce null, undefined, NaN, or empty string for empty inputs
-    const rentalPrice = paymentModifications.value.rentalPrice;
-    if (rentalPrice != null && rentalPrice !== '' && !isNaN(rentalPrice) && rentalPrice > 0) {
-      mods.rentalPrice = Math.round(rentalPrice * 100); // Convert to cents
+    // Get original values from booking (backend returns values in cents)
+    // If not in booking, get from item
+    let originalRentalPrice = request.rentalPrice || request.item?.pricePerDay || 0;
+    let originalDepositAmount = request.depositAmount || request.item?.deposit || 0;
+    
+    // Ensure values are numbers (in cents)
+    originalRentalPrice = typeof originalRentalPrice === 'number' ? originalRentalPrice : parseInt(originalRentalPrice) || 0;
+    originalDepositAmount = typeof originalDepositAmount === 'number' ? originalDepositAmount : parseInt(originalDepositAmount) || 0;
+    
+    // Build payload - always send rentalPrice and depositAmount from booking
+    const payload = {
+      rentalPrice: originalRentalPrice,
+      depositAmount: originalDepositAmount
+    };
+    
+    // Override with user modifications if provided (convert from currency units to cents)
+    const modifiedRentalPrice = paymentModifications.value.rentalPrice;
+    if (modifiedRentalPrice != null && modifiedRentalPrice !== '' && !isNaN(modifiedRentalPrice) && modifiedRentalPrice > 0) {
+      payload.rentalPrice = Math.round(modifiedRentalPrice * 100); // User input is in currency, convert to cents
     }
     
-    const depositAmount = paymentModifications.value.depositAmount;
-    if (depositAmount != null && depositAmount !== '' && !isNaN(depositAmount) && depositAmount >= 0) {
-      mods.depositAmount = Math.round(depositAmount * 100); // Convert to cents
-    }
-    
-    const totalAmount = paymentModifications.value.totalAmount;
-    if (totalAmount != null && totalAmount !== '' && !isNaN(totalAmount) && totalAmount > 0) {
-      mods.totalAmount = Math.round(totalAmount * 100); // Convert to cents
+    const modifiedDepositAmount = paymentModifications.value.depositAmount;
+    if (modifiedDepositAmount != null && modifiedDepositAmount !== '' && !isNaN(modifiedDepositAmount) && modifiedDepositAmount >= 0) {
+      payload.depositAmount = Math.round(modifiedDepositAmount * 100); // User input is in currency, convert to cents
     }
 
-    // Always send an object, even if empty (backend expects an object, not undefined)
+    // Always send rentalPrice and depositAmount from the booking
     const result = await approveBookingRequest(
-      selectedRequest.value.id, 
-      mods
+      request.id, 
+      payload
     );
     
     // Update local state with backend response
     // Backend returns: { booking: { status: 'AWAITING_PAYMENT', ... }, message: "..." }
     const updatedBooking = result.booking || result;
     selectedRequest.value.status = updatedBooking.status || 'AWAITING_PAYMENT';
-    if (mods.rentalPrice) selectedRequest.value.rentalPrice = mods.rentalPrice;
-    if (mods.depositAmount) selectedRequest.value.depositAmount = mods.depositAmount;
-    if (mods.totalAmount) selectedRequest.value.total = mods.totalAmount;
-    if (updatedBooking.totalAmount) selectedRequest.value.totalAmount = updatedBooking.totalAmount;
     if (updatedBooking.rentalPrice) selectedRequest.value.rentalPrice = updatedBooking.rentalPrice;
     if (updatedBooking.depositAmount) selectedRequest.value.depositAmount = updatedBooking.depositAmount;
+    if (updatedBooking.totalAmount) selectedRequest.value.totalAmount = updatedBooking.totalAmount;
 
     ui.showToast(t('bookingRequests.messages.approved'), 'success');
     
