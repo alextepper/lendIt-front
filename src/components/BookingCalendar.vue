@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import DatePicker from 'vue-datepicker-next';
 import 'vue-datepicker-next/index.css';
 import OrderDetailsModal from './OrderDetailsModal.vue';
@@ -8,6 +9,8 @@ import { useUiStore } from '../stores/ui';
 import http from '../lib/http';
 import { Modal } from 'bootstrap';
 import { fetchAllBookings } from '../services/bookingRequestService';
+
+const { t } = useI18n();
 
 const props = defineProps({
   itemId: { type: String, required: true },
@@ -49,8 +52,16 @@ const showBlockedDatesList = ref(false);
 // Current month being viewed
 const currentMonth = ref(new Date());
 
-// Week days
-const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+// Week days - translated
+const weekDays = computed(() => [
+  t('calendar.weekDays.sun'),
+  t('calendar.weekDays.mon'),
+  t('calendar.weekDays.tue'),
+  t('calendar.weekDays.wed'),
+  t('calendar.weekDays.thu'),
+  t('calendar.weekDays.fri'),
+  t('calendar.weekDays.sat')
+]);
 
 // Get all bookings (from props or fetched)
 const allBookings = computed(() => {
@@ -384,12 +395,12 @@ function closeBlockingModal() {
 // Submit blocking request (create or update)
 async function submitBlocking() {
   if (!blockingForm.value.startDate || !blockingForm.value.endDate) {
-    ui.showToast('Please select both start and end dates', 'warning');
+    ui.showToast(t('calendar.errors.selectBothDates'), 'warning');
     return;
   }
 
   if (new Date(blockingForm.value.startDate) >= new Date(blockingForm.value.endDate)) {
-    ui.showToast('End date must be after start date', 'warning');
+    ui.showToast(t('calendar.errors.endDateAfterStart'), 'warning');
     return;
   }
 
@@ -424,14 +435,14 @@ async function submitBlocking() {
         localBlockedDates.value[index] = updatedBlock;
       }
       
-      ui.showToast('Blocked date range updated successfully', 'success');
+      ui.showToast(t('calendar.messages.blockedDateUpdated'), 'success');
     } else {
       // Create new blocked date
       response = await http.post(`/items/${props.itemId}/calendar/block`, {
         from,
         to,
         reason: blockingForm.value.reason || undefined
-      });
+    });
       
       // Add to local array immediately
       const newBlock = response.data || {
@@ -443,8 +454,8 @@ async function submitBlocking() {
         updatedAt: new Date().toISOString()
       };
       localBlockedDates.value.push(newBlock);
-      
-      ui.showToast('Date range blocked successfully', 'success');
+
+    ui.showToast(t('calendar.messages.dateRangeBlocked'), 'success');
     }
 
     closeBlockingModal();
@@ -454,7 +465,7 @@ async function submitBlocking() {
     });
   } catch (error) {
     console.error('Failed to block date range:', error);
-    ui.showToast(error?.response?.data?.message || 'Failed to block date range', 'danger');
+    ui.showToast(error?.response?.data?.message || t('calendar.messages.failedToBlock'), 'danger');
   } finally {
     blockingLoading.value = false;
   }
@@ -462,7 +473,7 @@ async function submitBlocking() {
 
 // Delete blocked date
 async function deleteBlockedDate(blockedDateId) {
-  if (!confirm('Are you sure you want to delete this blocked date range?')) {
+  if (!confirm(t('calendar.confirmDelete'))) {
     return;
   }
 
@@ -477,7 +488,7 @@ async function deleteBlockedDate(blockedDateId) {
 
   try {
     await http.delete(`/items/${props.itemId}/calendar/block/${blockedDateId}`);
-    ui.showToast('Blocked date range deleted successfully', 'success');
+    ui.showToast(t('calendar.messages.blockedDateDeleted'), 'success');
     emit('refresh', {
       month: currentMonth.value.toISOString().slice(0, 7),
       itemId: props.itemId
@@ -488,7 +499,7 @@ async function deleteBlockedDate(blockedDateId) {
       localBlockedDates.value.splice(index, 0, removedBlock);
     }
     console.error('Failed to delete blocked date range:', error);
-    ui.showToast(error?.response?.data?.message || 'Failed to delete blocked date range', 'danger');
+    ui.showToast(error?.response?.data?.message || t('calendar.messages.failedToDelete'), 'danger');
   } finally {
     deletingBlockId.value = null;
   }
@@ -800,9 +811,9 @@ watch(() => currentMonth.value, (newMonth) => {
           <div class="header-info">
             <h5 class="calendar-title">
               <i class="bi bi-calendar-check me-2"></i>
-              Booking Calendar
+              {{ $t('calendar.title') }}
             </h5>
-            <p class="calendar-subtitle">View all bookings and taken dates for this item</p>
+            <p class="calendar-subtitle">{{ $t('calendar.subtitle') }}</p>
           </div>
           <div class="header-actions">
             <button 
@@ -811,7 +822,7 @@ watch(() => currentMonth.value, (newMonth) => {
               :disabled="loading"
             >
               <i class="bi bi-calendar-x me-1"></i>
-              {{ showBlockedDatesList ? 'Hide Blocked Dates' : 'Block Dates' }}
+              {{ showBlockedDatesList ? $t('calendar.hideBlockedDates') : $t('calendar.blockDates') }}
             </button>
             <button 
               class="btn btn-outline-primary btn-sm"
@@ -819,7 +830,7 @@ watch(() => currentMonth.value, (newMonth) => {
               :disabled="loading || internalLoading"
             >
               <i class="bi bi-arrow-clockwise me-1" :class="{ 'spinning': loading || internalLoading }"></i>
-              Refresh
+              {{ $t('calendar.refresh') }}
             </button>
           </div>
         </div>
@@ -829,15 +840,15 @@ watch(() => currentMonth.value, (newMonth) => {
       <div class="calendar-stats">
         <div class="stat-item">
           <div class="stat-value">{{ totalBookings }}</div>
-          <div class="stat-label">Total Bookings</div>
+          <div class="stat-label">{{ $t('calendar.totalBookings') }}</div>
         </div>
         <div class="stat-item">
           <div class="stat-value">{{ totalDaysBooked }}</div>
-          <div class="stat-label">Days Booked</div>
+          <div class="stat-label">{{ $t('calendar.daysBooked') }}</div>
         </div>
         <div class="stat-item">
           <div class="stat-value">{{ currentMonthBookings.length }}</div>
-          <div class="stat-label">This Month</div>
+          <div class="stat-label">{{ $t('calendar.thisMonth') }}</div>
         </div>
       </div>
 
@@ -858,13 +869,13 @@ watch(() => currentMonth.value, (newMonth) => {
               class="btn btn-sm btn-outline-secondary me-2"
               @click="goToToday"
             >
-              Today
+              {{ $t('calendar.today') }}
             </button>
             <button 
               class="btn btn-sm btn-outline-primary"
               @click="goToOctober2025"
             >
-              Oct 2025
+              {{ $t('calendar.oct2025') }}
             </button>
           </div>
         </div>
@@ -945,7 +956,7 @@ watch(() => currentMonth.value, (newMonth) => {
 
       <!-- Recent Bookings -->
       <div v-if="currentMonthBookings.length > 0" class="recent-bookings">
-        <h6 class="bookings-title">Bookings This Month ({{ currentMonthBookings.length }})</h6>
+        <h6 class="bookings-title">{{ $t('calendar.bookingsThisMonth', { count: currentMonthBookings.length }) }}</h6>
         <div class="bookings-list">
           <div 
             v-for="booking in currentMonthBookings.slice(0, 5)" 
@@ -974,8 +985,8 @@ watch(() => currentMonth.value, (newMonth) => {
       <!-- Empty State -->
       <div v-else-if="!loading" class="empty-state">
         <i class="bi bi-calendar-x empty-icon"></i>
-        <h6>No Bookings This Month</h6>
-        <p class="text-muted">This item has no bookings for the selected month.</p>
+        <h6>{{ $t('calendar.noBookingsThisMonth') }}</h6>
+        <p class="text-muted">{{ $t('calendar.noBookingsDescription') }}</p>
       </div>
 
       <!-- Blocked Dates Modal -->
@@ -984,7 +995,7 @@ watch(() => currentMonth.value, (newMonth) => {
           <div class="blocked-dates-modal-header">
             <h5 class="blocked-dates-modal-title">
               <i class="bi bi-calendar-x me-2"></i>
-              Blocked Dates ({{ activeBlockedDates.length }})
+              {{ $t('calendar.blockedDates', { count: activeBlockedDates.length }) }}
             </h5>
             <button 
               type="button"
@@ -1001,13 +1012,13 @@ watch(() => currentMonth.value, (newMonth) => {
                 @click="showBlockingForm()"
               >
                 <i class="bi bi-plus-circle me-1"></i>
-                Add Block
+                {{ $t('calendar.addBlock') }}
               </button>
             </div>
             
             <div v-if="activeBlockedDates.length === 0" class="text-muted text-center py-5">
               <i class="bi bi-calendar-check display-6 d-block mb-2"></i>
-              <p class="mb-0">No active blocked dates</p>
+              <p class="mb-0">{{ $t('calendar.noActiveBlockedDates') }}</p>
             </div>
             
             <div v-else class="blocked-dates-list">
@@ -1033,7 +1044,7 @@ watch(() => currentMonth.value, (newMonth) => {
                     :disabled="blockingLoading"
                   >
                     <i class="bi bi-pencil"></i>
-                    Edit
+                    {{ $t('calendar.edit') }}
                   </button>
                   <button
                     class="btn btn-sm btn-outline-danger"
@@ -1042,7 +1053,7 @@ watch(() => currentMonth.value, (newMonth) => {
                   >
                     <span v-if="deletingBlockId === blockedDate.id" class="spinner-border spinner-border-sm me-1"></span>
                     <i v-else class="bi bi-trash"></i>
-                    Delete
+                    {{ $t('calendar.delete') }}
                   </button>
                 </div>
               </div>
@@ -1091,7 +1102,7 @@ watch(() => currentMonth.value, (newMonth) => {
           @click.stop
         >
           <i class="bi bi-box-arrow-up-right me-1"></i>
-          View Booking Details
+          {{ $t('calendar.viewBookingDetails') }}
         </router-link>
         <div v-if="index < hoveredBookings.length - 1" class="tooltip-divider"></div>
       </div>
@@ -1121,7 +1132,7 @@ watch(() => currentMonth.value, (newMonth) => {
         <div class="modal-header">
           <h5 class="modal-title" id="blockingModalLabel">
             <i class="bi bi-calendar-x me-2"></i>
-            {{ editingBlockedDate ? 'Edit Blocked Date Range' : 'Block Date Range' }}
+            {{ editingBlockedDate ? $t('calendar.editBlockedDateRange') : $t('calendar.blockDateRange') }}
           </h5>
           <button 
             type="button" 
@@ -1133,7 +1144,7 @@ watch(() => currentMonth.value, (newMonth) => {
         <div class="modal-body">
           <form @submit.prevent="submitBlocking">
             <div class="mb-3">
-              <label for="startDate" class="form-label">Start Date</label>
+              <label for="startDate" class="form-label">{{ $t('calendar.startDate') }}</label>
               <input 
                 type="date" 
                 class="form-control" 
@@ -1143,7 +1154,7 @@ watch(() => currentMonth.value, (newMonth) => {
               >
             </div>
             <div class="mb-3">
-              <label for="endDate" class="form-label">End Date</label>
+              <label for="endDate" class="form-label">{{ $t('calendar.endDate') }}</label>
               <input 
                 type="date" 
                 class="form-control" 
@@ -1153,13 +1164,13 @@ watch(() => currentMonth.value, (newMonth) => {
               >
             </div>
             <div class="mb-3">
-              <label for="reason" class="form-label">Reason (Optional)</label>
+              <label for="reason" class="form-label">{{ $t('calendar.reason') }}</label>
               <textarea 
                 class="form-control" 
                 id="reason"
                 v-model="blockingForm.reason"
                 rows="3"
-                placeholder="e.g., Maintenance period, Personal use, etc."
+                :placeholder="$t('calendar.reasonPlaceholder')"
               ></textarea>
             </div>
           </form>
@@ -1171,7 +1182,7 @@ watch(() => currentMonth.value, (newMonth) => {
             @click="closeBlockingModal"
             :disabled="blockingLoading"
           >
-            Cancel
+            {{ $t('calendar.cancel') }}
           </button>
           <button 
             type="button" 
@@ -1181,7 +1192,7 @@ watch(() => currentMonth.value, (newMonth) => {
           >
             <span v-if="blockingLoading" class="spinner-border spinner-border-sm me-2"></span>
             <i v-else class="bi bi-calendar-x me-1"></i>
-            {{ blockingLoading ? (editingBlockedDate ? 'Updating...' : 'Blocking...') : (editingBlockedDate ? 'Update Dates' : 'Block Dates') }}
+            {{ blockingLoading ? (editingBlockedDate ? $t('calendar.updating') : $t('calendar.blocking')) : (editingBlockedDate ? $t('calendar.updateDates') : $t('calendar.blockDates')) }}
           </button>
         </div>
       </div>

@@ -554,10 +554,10 @@ async function handleApprove() {
       mods.totalAmount = Math.round(totalAmount * 100); // Convert to cents
     }
 
-    // Only send modifications if at least one field was provided
+    // Always send an object, even if empty (backend expects an object, not undefined)
     const result = await approveBookingRequest(
       selectedRequest.value.id, 
-      Object.keys(mods).length > 0 ? mods : undefined
+      mods
     );
     
     // Update local state with backend response

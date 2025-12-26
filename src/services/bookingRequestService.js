@@ -93,17 +93,20 @@ export async function fetchAllBookings(params = {}) {
 /**
  * Approve a booking request (owner action)
  * Uses POST /api/bookings/:id/owner-approve
- * 
+ *
  * Lifecycle:
  * 1. Owner can adjust pricing (optional): rentalPrice, depositAmount, totalAmount
  * 2. Booking is updated: status = AWAITING_PAYMENT
  * 3. No Order entity - bookings handle payments directly
- * 
+ *
  * @param {string} bookingId - Booking ID
  * @param {Object} paymentModifications - Optional payment changes { rentalPrice, depositAmount, totalAmount }
  * @returns {Promise<Object>} Response with booking and message: { booking: {...}, message: "..." }
  */
-export async function approveBookingRequest(bookingId, paymentModifications = {}) {
+export async function approveBookingRequest(
+  bookingId,
+  paymentModifications = {}
+) {
   if (USE_MOCK) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return {
@@ -112,12 +115,22 @@ export async function approveBookingRequest(bookingId, paymentModifications = {}
         status: "AWAITING_PAYMENT",
         ...paymentModifications,
       },
-      message: "Booking approved successfully. Renter can now proceed to payment.",
+      message:
+        "Booking approved successfully. Renter can now proceed to payment.",
     };
   }
 
   try {
-    const response = await http.post(`/bookings/${bookingId}/owner-approve`, paymentModifications);
+    // Ensure we always send an object, not undefined (prevents "request aborted" errors)
+    const payload =
+      paymentModifications && typeof paymentModifications === "object"
+        ? paymentModifications
+        : {};
+
+    const response = await http.post(
+      `/bookings/${bookingId}/owner-approve`,
+      payload
+    );
     // Backend returns: { booking: {...}, message: "..." }
     // Handle both { success: true, data: {...} } and direct response
     const data = response.data?.data || response.data;
@@ -147,7 +160,9 @@ export async function rejectBookingRequest(bookingId, reason = "") {
   }
 
   try {
-    const { data } = await http.post(`/bookings/${bookingId}/owner-decline`, { reason });
+    const { data } = await http.post(`/bookings/${bookingId}/owner-decline`, {
+      reason,
+    });
     return data;
   } catch (error) {
     throw new Error(
@@ -231,4 +246,3 @@ export async function confirmBooking(bookingId) {
     );
   }
 }
-

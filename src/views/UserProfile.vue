@@ -437,7 +437,7 @@ onMounted(() => {
                   <p class="review-text">{{ review.comment }}</p>
                   <div class="review-meta">
                     <span class="review-type badge bg-primary">
-                      Item Review
+                      {{ $t('reviews.itemReview') }}
                     </span>
                     <span v-if="review.item" class="review-item">
                       for <strong>{{ review.item.title }}</strong>
@@ -448,8 +448,8 @@ onMounted(() => {
             </div>
             <div v-else class="empty-state">
               <i class="bi bi-star empty-icon"></i>
-              <h5>No Reviews Yet</h5>
-              <p class="text-muted">This user hasn't received any reviews yet.</p>
+              <h5>{{ $t('reviews.noReviews') }}</h5>
+              <p class="text-muted">{{ $t('reviews.noReviewsDescription') }}</p>
             </div>
           </div>
         </div>

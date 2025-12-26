@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import StarRating from './StarRating.vue';
 import ReviewItem from './ReviewItem.vue';
 import ReviewModal from './ReviewModal.vue';
@@ -10,6 +11,8 @@ import {
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import { useAuthModal } from '../composables/useAuthModal';
+
+const { t } = useI18n();
 
 const props = defineProps({ 
   item: { type: Object, required: true },
@@ -36,12 +39,12 @@ const isLoading = computed(() => props.loading !== null ? props.loading : intern
 const reviewsData = computed(() => props.reviews || data.value.items);
 
 // Sort options
-const sortOptions = [
-  { value: 'NEWEST', label: 'Newest First' },
-  { value: 'OLDEST', label: 'Oldest First' },
-  { value: 'RATING', label: 'Highest Rating' },
-  { value: 'HELPFUL', label: 'Most Helpful' }
-];
+const sortOptions = computed(() => [
+  { value: 'NEWEST', label: t('reviews.sort.newest') },
+  { value: 'OLDEST', label: t('reviews.sort.oldest') },
+  { value: 'RATING', label: t('reviews.sort.rating') },
+  { value: 'HELPFUL', label: t('reviews.sort.helpful') }
+]);
 const selectedSort = ref('NEWEST');
 
 async function load(page = 1) {
@@ -86,7 +89,7 @@ watch(selectedSort, () => {
 async function onSubmitReview(payload) {
   try {
     await createReview(props.item.id, payload);
-    ui.showToast('Thanks for your review!', 'success');
+    ui.showToast(t('reviews.thanksForReview'), 'success');
     // Emit refresh event to parent component
     emit('refresh');
     // Also reload if we're managing our own data
@@ -115,7 +118,7 @@ function closeReviewModal() {
 <template>
   <div class="card p-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <h2 class="h6 mb-0">Reviews ({{ item.ratingCount }})</h2>
+      <h2 class="h6 mb-0">{{ $t('reviews.title', { count: item.ratingCount }) }}</h2>
       <div class="d-flex gap-2 align-items-center">
         <!-- Sort Dropdown -->
         <select 
@@ -156,7 +159,7 @@ function closeReviewModal() {
             <i class="bi bi-star-fill rating-star-bg"></i>
             <i class="bi bi-star-fill rating-star-fill" :style="{ width: ((item.ratingAvg || 0) / 5) * 100 + '%' }"></i>
           </div>
-          <div class="small text-secondary">{{ item.ratingCount }} reviews</div>
+          <div class="small text-secondary">{{ $t('reviews.reviewsCount', { count: item.ratingCount }) }}</div>
         </div>
       </div>
       <div class="col-md-8">
@@ -177,18 +180,18 @@ function closeReviewModal() {
         {{ props.error }}
         <button class="btn btn-sm btn-outline-warning ms-2" @click="emit('refresh')">
           <i class="bi bi-arrow-clockwise me-1"></i>
-          Retry
+          {{ $t('reviews.retry') }}
         </button>
       </div>
     </div>
 
     <!-- List -->
     <div class="mt-3">
-      <div v-if="isLoading" class="small text-secondary">Loading…</div>
+      <div v-if="isLoading" class="small text-secondary">{{ $t('reviews.loading') }}</div>
       <div v-else-if="reviewsData.length === 0" class="text-center py-4 text-muted">
         <i class="bi bi-star display-4 d-block mb-2"></i>
-        <div>No reviews yet</div>
-        <small>Be the first to review this item!</small>
+        <div>{{ $t('reviews.noReviews') }}</div>
+        <small>{{ $t('reviews.beFirst') }}</small>
       </div>
       <div v-else>
         <ReviewItem
@@ -200,9 +203,9 @@ function closeReviewModal() {
         />
 
         <div class="d-flex justify-content-center gap-2 mt-3" v-if="data.total_pages > 1">
-          <button class="btn btn-outline-secondary btn-sm" :disabled="data.page <= 1" @click="load(data.page - 1)">Prev</button>
-          <span class="small text-secondary">Page {{ data.page }} / {{ data.total_pages }}</span>
-          <button class="btn btn-outline-secondary btn-sm" :disabled="data.page >= data.total_pages" @click="load(data.page + 1)">Next</button>
+          <button class="btn btn-outline-secondary btn-sm" :disabled="data.page <= 1" @click="load(data.page - 1)">{{ $t('reviews.prev') }}</button>
+          <span class="small text-secondary">{{ $t('reviews.page', { current: data.page, total: data.total_pages }) }}</span>
+          <button class="btn btn-outline-secondary btn-sm" :disabled="data.page >= data.total_pages" @click="load(data.page + 1)">{{ $t('reviews.next') }}</button>
         </div>
       </div>
     </div>
