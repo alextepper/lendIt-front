@@ -35,15 +35,15 @@ class WebSocketService {
     }
 
     try {
-      // Get WebSocket URL from runtime config or fallback to build-time env var
+      // In production with same-origin reverse proxy, always use current origin
+      // In development, use VITE_WS_URL if set, otherwise use current origin
       const wsUrl =
         (typeof window !== "undefined" && window.__WS_URL__) ||
-        import.meta.env.VITE_WS_URL ||
         (import.meta.env.PROD
-          ? window.location.origin
-          : window.location.origin);
+          ? window.location.origin // Production: use same origin (reverse proxy handles it)
+          : import.meta.env.VITE_WS_URL || window.location.origin); // Dev: use env var or current origin
 
-      console.log("Connecting to Socket.IO server...");
+      console.log("Connecting to Socket.IO server at:", wsUrl);
 
       // Clean token (remove "Bearer " prefix if present)
       const cleanToken = this.cleanToken(token);

@@ -585,6 +585,11 @@ async function handleApprove() {
     
     // Reload to get updated data
     await loadRequests();
+    
+    // Notify navbar to refresh badge count
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('booking-status-changed'));
+    }
   } catch (e) {
     console.error('Failed to approve request:', e);
     ui.showToast(e?.message || t('bookingRequests.messages.failedToApprove'), 'danger');
@@ -612,6 +617,11 @@ async function handleReject() {
     
     // Reload to get updated data
     await loadRequests();
+    
+    // Notify navbar to refresh badge count
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('booking-status-changed'));
+    }
   } catch (e) {
     console.error('Failed to decline request:', e);
     ui.showToast(e?.message || t('bookingRequests.messages.failedToDecline'), 'danger');

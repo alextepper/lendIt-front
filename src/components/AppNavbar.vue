@@ -512,6 +512,22 @@ if (typeof document !== 'undefined') {
   })
 }
 
+// Listen for booking status changes to refresh badge count
+if (typeof window !== 'undefined') {
+  const handleBookingStatusChange = () => {
+    if (auth.isAuthed) {
+      loadPendingBookingsCount()
+    }
+  }
+  
+  window.addEventListener('booking-status-changed', handleBookingStatusChange)
+  
+  // Cleanup on unmount
+  onBeforeUnmount(() => {
+    window.removeEventListener('booking-status-changed', handleBookingStatusChange)
+  })
+}
+
 // Cleanup interval and WebSocket listeners on unmount
 onBeforeUnmount(() => {
   if (bookingsRefreshInterval) {
