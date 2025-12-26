@@ -447,6 +447,43 @@ async function loadPendingBookingsCount() {
   }
 }
 
+// Set up WebSocket listeners for real-time booking updates
+function setupBookingWebSocketListeners() {
+  // Remove existing listeners if any
+  if (bookingWebSocketCallbacks.booking_created) {
+    websocketService.off('booking_created', bookingWebSocketCallbacks.booking_created)
+  }
+  if (bookingWebSocketCallbacks.booking_updated) {
+    websocketService.off('booking_updated', bookingWebSocketCallbacks.booking_updated)
+  }
+  if (bookingWebSocketCallbacks.booking_status_changed) {
+    websocketService.off('booking_status_changed', bookingWebSocketCallbacks.booking_status_changed)
+  }
+
+  // Create callbacks that refresh the badge count
+  const onBookingCreated = () => {
+    loadPendingBookingsCount()
+  }
+
+  const onBookingUpdated = () => {
+    loadPendingBookingsCount()
+  }
+
+  const onBookingStatusChanged = () => {
+    loadPendingBookingsCount()
+  }
+
+  // Store callbacks for cleanup
+  bookingWebSocketCallbacks.booking_created = onBookingCreated
+  bookingWebSocketCallbacks.booking_updated = onBookingUpdated
+  bookingWebSocketCallbacks.booking_status_changed = onBookingStatusChanged
+
+  // Register listeners
+  websocketService.on('booking_created', onBookingCreated)
+  websocketService.on('booking_updated', onBookingUpdated)
+  websocketService.on('booking_status_changed', onBookingStatusChanged)
+}
+
 // Watch for auth changes and load count
 watch(() => auth.isAuthed, (isAuthed) => {
   // Clear existing interval
