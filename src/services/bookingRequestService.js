@@ -121,15 +121,24 @@ export async function approveBookingRequest(
   }
 
   try {
-    // Ensure we always send an object, not undefined (prevents "request aborted" errors)
+    // Always send an object - ensure it's valid even if empty
+    // Some backends/proxies abort requests with undefined/null bodies
     const payload =
-      paymentModifications && typeof paymentModifications === "object"
+      paymentModifications &&
+      typeof paymentModifications === "object" &&
+      Object.keys(paymentModifications).length > 0
         ? paymentModifications
-        : {};
+        : {}; // Always send empty object rather than undefined/null
 
     const response = await http.post(
       `/bookings/${bookingId}/owner-approve`,
-      payload
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 30000, // 30 seconds - approval might take longer if backend processes payment
+      }
     );
     // Backend returns: { booking: {...}, message: "..." }
     // Handle both { success: true, data: {...} } and direct response
