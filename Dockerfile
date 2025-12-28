@@ -6,9 +6,15 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
+# Verify build output exists
+RUN ls -la /app/dist/ || (echo "❌ Build failed - dist directory not found" && exit 1)
+
 # --- run ---
 FROM caddy:2-alpine
 COPY --from=build /app/dist /app/dist
+
+# Verify files were copied
+RUN ls -la /app/dist/ || echo "⚠️ Warning: /app/dist/ is empty or missing"
 
 # Create config.js endpoint that serves runtime API URL
 RUN echo '#!/bin/sh' > /generate-config.sh && \
@@ -34,8 +40,6 @@ RUN echo '#!/bin/sh' > /generate-caddyfile.sh && \
     echo '  echo "        reverse_proxy $BACKEND_URL {"' >> /generate-caddyfile.sh && \
     echo '  echo "            header_up Host {host}"' >> /generate-caddyfile.sh && \
     echo '  echo "            header_up X-Real-IP {remote}"' >> /generate-caddyfile.sh && \
-    echo '  echo "            header_up X-Forwarded-For {remote}"' >> /generate-caddyfile.sh && \
-    echo '  echo "            header_up X-Forwarded-Proto {scheme}"' >> /generate-caddyfile.sh && \
     echo '  echo "        }"' >> /generate-caddyfile.sh && \
     echo '  echo "    }"' >> /generate-caddyfile.sh && \
     echo '  echo "    handle /socket.io/* {"' >> /generate-caddyfile.sh && \
@@ -44,8 +48,6 @@ RUN echo '#!/bin/sh' > /generate-caddyfile.sh && \
     echo '  echo "            header_up Upgrade \"websocket\""' >> /generate-caddyfile.sh && \
     echo '  echo "            header_up Host {host}"' >> /generate-caddyfile.sh && \
     echo '  echo "            header_up X-Real-IP {remote}"' >> /generate-caddyfile.sh && \
-    echo '  echo "            header_up X-Forwarded-For {remote}"' >> /generate-caddyfile.sh && \
-    echo '  echo "            header_up X-Forwarded-Proto {scheme}"' >> /generate-caddyfile.sh && \
     echo '  echo "        }"' >> /generate-caddyfile.sh && \
     echo '  echo "    }"' >> /generate-caddyfile.sh && \
     echo '  echo "    handle {"' >> /generate-caddyfile.sh && \
@@ -61,11 +63,19 @@ RUN echo '#!/bin/sh' > /generate-caddyfile.sh && \
 RUN echo '#!/bin/sh' > /start.sh && \
     echo 'set -e' >> /start.sh && \
     echo '' >> /start.sh && \
+    echo '# Debug: Check if frontend files exist' >> /start.sh && \
+    echo 'echo "📁 Checking frontend files..."' >> /start.sh && \
+    echo 'ls -la /app/dist/ | head -20 || echo "❌ /app/dist/ does not exist or is empty"' >> /start.sh && \
+    echo '' >> /start.sh && \
     echo '# Generate runtime config.js with API URL' >> /start.sh && \
     echo '/generate-config.sh' >> /start.sh && \
     echo '' >> /start.sh && \
     echo '# Generate Caddyfile at runtime with dynamic backend URL' >> /start.sh && \
+    echo 'BACKEND_URL=${BACKEND_URL:-http://backend:4000}' >> /start.sh && \
+    echo 'echo "🔧 Using BACKEND_URL: $BACKEND_URL"' >> /start.sh && \
     echo '/generate-caddyfile.sh' >> /start.sh && \
+    echo 'echo "📄 Generated Caddyfile:"' >> /start.sh && \
+    echo 'cat /etc/caddy/Caddyfile' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'exec caddy run --config /etc/caddy/Caddyfile' >> /start.sh && \
     chmod +x /start.sh
