@@ -38,6 +38,22 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo 'echo "" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "    location / { try_files \$uri \$uri/ /index.html; }" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "    # WebSocket proxy for Socket.IO (via /api/socket.io) - MUST come before /api/" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "    location /api/socket.io/ {" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        set \$backend \"$BACKEND_URL\";" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        # Strip /api prefix before proxying to backend" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        rewrite ^/api/socket.io/(.*) /socket.io/\$1 break;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        proxy_pass \$backend;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        proxy_http_version 1.1;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        proxy_set_header Upgrade \$http_upgrade;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        proxy_set_header Connection \"upgrade\";" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        proxy_set_header Host \$host;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        proxy_set_header X-Real-IP \$remote_addr;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        proxy_set_header X-Forwarded-Proto \$scheme;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "        proxy_read_timeout 86400;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "    }" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "    location /api/ {" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "        set \$backend \"$BACKEND_URL\";" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "        proxy_pass \$backend;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
@@ -53,20 +69,6 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo 'echo "        proxy_send_timeout 60s;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "        proxy_read_timeout 60s;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "        proxy_buffering off;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "    }" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "    # WebSocket proxy for Socket.IO" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "    location /socket.io/ {" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "        set \$backend \"$BACKEND_URL\";" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "        proxy_pass \$backend;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "        proxy_http_version 1.1;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "        proxy_set_header Upgrade \$http_upgrade;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "        proxy_set_header Connection \"upgrade\";" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "        proxy_set_header Host \$host;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "        proxy_set_header X-Real-IP \$remote_addr;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "        proxy_set_header X-Forwarded-Proto \$scheme;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "        proxy_read_timeout 86400;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "    }" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "}" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo '' >> /start.sh && \

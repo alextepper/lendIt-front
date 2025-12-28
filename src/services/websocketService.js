@@ -70,6 +70,7 @@ class WebSocketService {
 
       // Create Socket.IO connection config
       const config = {
+        path: "/api/socket.io/", // Use /api/socket.io instead of /socket.io
         withCredentials: true, // IMPORTANT: Send httpOnly cookies with request
         transports: ["websocket", "polling"], // Try WebSocket first, fallback to polling
         reconnection: true,
@@ -85,6 +86,7 @@ class WebSocketService {
       }
 
       console.log("⚙️ [WebSocket] Connection config:", {
+        path: config.path,
         withCredentials: config.withCredentials,
         transports: config.transports,
         reconnection: config.reconnection,
