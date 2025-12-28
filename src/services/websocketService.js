@@ -30,7 +30,7 @@ class WebSocketService {
 
   connect(token) {
     if (this.socket?.connected) {
-      console.log("Socket.IO already connected");
+      console.log("🔌 Socket.IO already connected, socket ID:", this.socket.id);
       return;
     }
 
@@ -43,15 +43,29 @@ class WebSocketService {
           ? window.location.origin
           : window.location.origin);
 
-      console.log("Connecting to Socket.IO server...");
+      console.log("🔗 [WebSocket] Starting connection process...");
+      console.log("🌐 [WebSocket] URL:", wsUrl);
+      console.log(
+        "🌐 [WebSocket] window.location.origin:",
+        window.location.origin
+      );
+      console.log("🌐 [WebSocket] window.__WS_URL__:", window.__WS_URL__);
+      console.log("🌐 [WebSocket] VITE_WS_URL:", import.meta.env.VITE_WS_URL);
+      console.log("🌐 [WebSocket] PROD mode:", import.meta.env.PROD);
 
       // Clean token (remove "Bearer " prefix if present)
       const cleanToken = this.cleanToken(token);
 
       if (cleanToken) {
-        console.log("Token provided:", cleanToken ? "✅" : "❌");
+        console.log(
+          "🔑 [WebSocket] Token provided: ✅ (length:",
+          cleanToken.length,
+          ")"
+        );
       } else {
-        console.log("No token provided - using httpOnly cookies 🍪");
+        console.log(
+          "🔑 [WebSocket] No token provided - using httpOnly cookies 🍪"
+        );
       }
 
       // Create Socket.IO connection config
@@ -70,11 +84,28 @@ class WebSocketService {
         config.query = { token: cleanToken };
       }
 
+      console.log("⚙️ [WebSocket] Connection config:", {
+        withCredentials: config.withCredentials,
+        transports: config.transports,
+        reconnection: config.reconnection,
+        reconnectionAttempts: config.reconnectionAttempts,
+        hasAuth: !!config.auth,
+        hasQuery: !!config.query,
+      });
+
+      console.log("🚀 [WebSocket] Creating Socket.IO instance...");
       this.socket = io(wsUrl, config);
+      console.log(
+        "✅ [WebSocket] Socket.IO instance created, socket:",
+        this.socket
+      );
 
       // Connection successful
       this.socket.on("connect", () => {
-        console.log("✅ Socket.IO connected:", this.socket.id);
+        console.log("✅ [WebSocket] Connected successfully!");
+        console.log("   Socket ID:", this.socket.id);
+        console.log("   Transport:", this.socket.io.engine.transport.name);
+        console.log("   URL:", this.socket.io.uri);
         this.reconnectAttempts = 0;
         this.emit("connected");
       });
@@ -113,48 +144,120 @@ class WebSocketService {
 
       // Connection error
       this.socket.on("connect_error", (error) => {
-        console.error("❌ Socket.IO connection error:", error.message);
+        console.error("❌ [WebSocket] Connection error occurred");
+        console.error("   Error message:", error.message);
+        console.error("   Error type:", error.type);
+        console.error("   Error description:", error.description);
+        console.error("   Error context:", error.context);
+        console.error("   Full error object:", error);
+        console.error("   Socket state:", {
+          connected: this.socket?.connected,
+          disconnected: this.socket?.disconnected,
+          transport: this.socket?.io?.engine?.transport?.name,
+          readyState: this.socket?.io?.engine?.readyState,
+        });
+        console.error("   Current URL:", this.socket?.io?.uri);
+        console.error(
+          "   Reconnect attempt:",
+          this.reconnectAttempts + 1,
+          "/",
+          this.maxReconnectAttempts
+        );
+
         this.reconnectAttempts++;
         this.emit("error", error);
 
         // Stop trying after max attempts
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-          console.error("Max reconnection attempts reached");
+          console.error(
+            "❌ [WebSocket] Max reconnection attempts reached, stopping reconnection"
+          );
           this.socket?.disconnect();
         }
       });
 
       // Disconnection
       this.socket.on("disconnect", (reason) => {
-        console.log("🔌 Socket.IO disconnected:", reason);
+        console.log("🔌 [WebSocket] Disconnected");
+        console.log("   Reason:", reason);
+        console.log("   Socket ID:", this.socket?.id);
+        console.log("   Reconnect attempts:", this.reconnectAttempts);
         this.emit("disconnected");
 
         // Auto-reconnect is handled by Socket.IO
         if (reason === "io server disconnect") {
+          console.log(
+            "🔄 [WebSocket] Server initiated disconnect, manually reconnecting..."
+          );
           // Server initiated disconnect, manually reconnect
           this.socket?.connect();
         }
       });
 
+      // Transport upgrade/downgrade
+      this.socket.io.engine.on("upgrade", () => {
+        console.log(
+          "⬆️ [WebSocket] Transport upgraded to:",
+          this.socket.io.engine.transport.name
+        );
+      });
+
+      this.socket.io.engine.on("downgrade", () => {
+        console.log(
+          "⬇️ [WebSocket] Transport downgraded to:",
+          this.socket.io.engine.transport.name
+        );
+      });
+
+      // Connection state changes
+      this.socket.io.engine.on("open", () => {
+        console.log("🔓 [WebSocket] Engine opened");
+      });
+
+      this.socket.io.engine.on("close", (reason) => {
+        console.log("🔒 [WebSocket] Engine closed, reason:", reason);
+      });
+
+      this.socket.io.engine.on("error", (error) => {
+        console.error("⚠️ [WebSocket] Engine error:", error);
+        console.error("   Error details:", {
+          message: error.message,
+          type: error.type,
+          description: error.description,
+        });
+      });
+
       // Reconnection attempt
       this.socket.io.on("reconnect_attempt", (attempt) => {
         console.log(
-          `Reconnecting... Attempt ${attempt}/${this.maxReconnectAttempts}`
+          `🔄 [WebSocket] Reconnecting... Attempt ${attempt}/${this.maxReconnectAttempts}`
         );
+        console.log("   Current URL:", this.socket.io.uri);
+        console.log("   Transport:", this.socket.io.engine?.transport?.name);
       });
 
       // Reconnection successful
       this.socket.io.on("reconnect", (attemptNumber) => {
-        console.log(`✅ Reconnected after ${attemptNumber} attempts`);
+        console.log(
+          `✅ [WebSocket] Reconnected successfully after ${attemptNumber} attempts`
+        );
+        console.log("   Socket ID:", this.socket.id);
+        console.log("   Transport:", this.socket.io.engine.transport.name);
         this.reconnectAttempts = 0;
       });
 
       // Reconnection failed
       this.socket.io.on("reconnect_failed", () => {
-        console.error("❌ Reconnection failed");
+        console.error(
+          "❌ [WebSocket] Reconnection failed - all attempts exhausted"
+        );
+        console.error("   Total attempts:", this.reconnectAttempts);
       });
     } catch (error) {
-      console.error("Failed to create Socket.IO connection:", error);
+      console.error("❌ [WebSocket] Failed to create Socket.IO connection");
+      console.error("   Error:", error);
+      console.error("   Error message:", error.message);
+      console.error("   Error stack:", error.stack);
     }
   }
 
