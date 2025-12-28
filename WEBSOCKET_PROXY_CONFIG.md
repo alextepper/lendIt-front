@@ -1,6 +1,6 @@
 # WebSocket Proxy Configuration Guide
 
-Since your frontend uses a same-origin reverse proxy setup (API calls go through `/api`), you need to configure your reverse proxy (nginx/Apache) to handle WebSocket upgrades for Socket.IO.
+Since your frontend uses a same-origin reverse proxy setup (API calls go through `/api`), you need to configure your reverse proxy to handle WebSocket upgrades for Socket.IO.
 
 ## Current Setup
 
@@ -8,7 +8,124 @@ Since your frontend uses a same-origin reverse proxy setup (API calls go through
 - **Socket.IO Path**: Automatically appends `/socket.io/` to the base URL
 - **Expected Connection**: `wss://www.sharo-app.com/socket.io/?EIO=4&transport=websocket`
 
-## Nginx Configuration
+## ⚠️ Important: Railway Deployment
+
+**If you're using Railway**, do NOT use Nginx. Railway uses dynamic IP assignment, which breaks Nginx configurations. Instead, use **Caddy** (recommended) or Railway's built-in proxy.
+
+## Caddy Configuration (For Railway - Recommended)
+
+**Caddy is recommended for Railway** because it handles dynamic IPs and automatically manages HTTPS.
+
+### 1. Create a `Caddyfile` in your proxy service root:
+
+```caddyfile
+# Caddyfile for Railway deployment
+:80 {
+    # Reverse proxy for API requests
+    handle /api/* {
+        reverse_proxy backend:4000 {
+            uri strip_prefix /api
+        }
+    }
+
+    # WebSocket proxy for Socket.IO (CRITICAL)
+    handle /socket.io/* {
+        reverse_proxy backend:4000 {
+            header_up Connection "upgrade"
+            header_up Upgrade "websocket"
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Frontend static files
+    handle {
+        root * /app/dist
+        try_files {path} /index.html
+        file_server
+    }
+}
+```
+
+**Important Notes:**
+- Replace `backend:4000` with your actual backend service name and port (or use Railway's service discovery)
+- Replace `/app/dist` with your actual frontend build directory
+- Caddy automatically handles HTTPS if Railway provides SSL
+
+### 2. Update your Railway proxy service:
+
+**Option A: Using Dockerfile**
+```dockerfile
+FROM caddy:2-alpine
+
+# Copy Caddyfile
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# Copy frontend build
+COPY dist /app/dist
+
+# Expose ports
+EXPOSE 80 443
+
+# Start Caddy
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
+```
+
+**Option B: Using Railway's buildpack**
+- Railway should auto-detect Caddy if `Caddyfile` is present
+- Make sure your `Caddyfile` is in the root of your proxy service
+
+### 3. Railway Service Configuration:
+
+1. **Backend Service**: Should be accessible via Railway's internal network (use service name, not IP)
+2. **Proxy Service**: Should have the `Caddyfile` and frontend `dist` folder
+3. **Environment Variables**: Caddy doesn't need special env vars for basic setup
+
+### 4. Railway Service Discovery:
+
+Railway services can communicate using service names. Update your `Caddyfile`:
+
+```caddyfile
+# If your backend service is named "backend" in Railway
+reverse_proxy backend:4000
+
+# Or use Railway's internal service discovery
+# Railway automatically resolves service names
+```
+
+### 5. Test the configuration:
+
+```bash
+# Test Caddyfile syntax locally
+caddy validate --config Caddyfile
+
+# Or if using Docker
+docker run --rm -v $(pwd):/etc/caddy caddy:2 caddy validate --config /etc/caddy/Caddyfile
+```
+
+### 6. Deploy to Railway:
+
+After pushing your `Caddyfile`:
+1. Railway will automatically detect Caddy
+2. Start the proxy service
+3. Handle WebSocket upgrades automatically
+4. Provide HTTPS automatically (if using Railway's domain)
+
+### 7. Troubleshooting Railway + Caddy:
+
+**Issue: 400 Bad Request**
+- Check that your backend service name matches in `Caddyfile`
+- Verify backend is running and accessible
+- Check Railway logs for both proxy and backend services
+
+**Issue: WebSocket still failing**
+- Ensure `/socket.io/*` handler comes before the general `handle` block
+- Check Railway service logs: `railway logs`
+- Verify backend Socket.IO is running on the correct port
+
+## Nginx Configuration (For Non-Railway Deployments)
 
 Add or update your nginx configuration to handle WebSocket connections:
 
