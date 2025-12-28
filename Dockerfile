@@ -9,7 +9,6 @@ RUN npm run build
 # --- run ---
 FROM caddy:2-alpine
 COPY --from=build /app/dist /app/dist
-COPY Caddyfile /etc/caddy/Caddyfile
 
 # Create config.js endpoint that serves runtime API URL
 RUN echo '#!/bin/sh' > /generate-config.sh && \
@@ -30,9 +29,9 @@ RUN echo '#!/bin/sh' > /generate-caddyfile.sh && \
     echo '  echo "    handle /health {"' >> /generate-caddyfile.sh && \
     echo '  echo "        respond \"OK\" 200"' >> /generate-caddyfile.sh && \
     echo '  echo "    }"' >> /generate-caddyfile.sh && \
-    echo '  echo "    handle /api/* {"' >> /generate-caddyfile.sh && \
+    echo '  echo "    handle_path /api/* {"' >> /generate-caddyfile.sh && \
+    echo '  echo "        # handle_path automatically strips /api prefix before proxying"' >> /generate-caddyfile.sh && \
     echo '  echo "        reverse_proxy $BACKEND_URL {"' >> /generate-caddyfile.sh && \
-    echo '  echo "            uri strip_prefix /api"' >> /generate-caddyfile.sh && \
     echo '  echo "            header_up Host {host}"' >> /generate-caddyfile.sh && \
     echo '  echo "            header_up X-Real-IP {remote}"' >> /generate-caddyfile.sh && \
     echo '  echo "            header_up X-Forwarded-For {remote}"' >> /generate-caddyfile.sh && \
