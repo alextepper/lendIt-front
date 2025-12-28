@@ -10,12 +10,12 @@
     }
 
     # Reverse proxy for API requests
-    handle /api/* {
+    handle_path /api/* {
         # Use Railway's internal service discovery - replace "backend" with your actual backend service name
         # Railway services communicate using service names (e.g., if backend service is named "backend", use "http://backend:PORT")
         # You can also use Railway's private networking - set BACKEND_URL env var and this will be resolved at runtime
+        # handle_path automatically strips /api prefix before proxying
         reverse_proxy http://backend:4000 {
-            uri strip_prefix /api
             header_up Host {host}
             header_up X-Real-IP {remote}
             header_up X-Forwarded-For {remote}
