@@ -13,9 +13,12 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Create config.js endpoint that serves runtime API URL
 RUN echo '#!/bin/sh' > /generate-config.sh && \
     echo 'set -e' >> /generate-config.sh && \
+    echo '# Note: In production, frontend uses window.location.origin for same-origin connections' >> /generate-config.sh && \
+    echo '# This config.js is mainly for API base URL, not WebSocket URL' >> /generate-config.sh && \
     echo 'API_URL=${VITE_API_BASE_URL:-${BACKEND_URL}}' >> /generate-config.sh && \
     echo 'echo "window.__API_BASE_URL__ = \"$API_URL\";" > /usr/share/nginx/html/config.js' >> /generate-config.sh && \
-    echo 'echo "window.__WS_URL__ = \"$API_URL\";" >> /usr/share/nginx/html/config.js' >> /generate-config.sh && \
+    echo '# WebSocket URL should match current origin (frontend will use window.location.origin)' >> /generate-config.sh && \
+    echo 'echo "window.__WS_URL__ = window.location.origin;" >> /usr/share/nginx/html/config.js' >> /generate-config.sh && \
     chmod +x /generate-config.sh
 
 # Create startup script that generates nginx config with Railway PORT support

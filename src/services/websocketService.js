@@ -35,13 +35,35 @@ class WebSocketService {
     }
 
     try {
-      // Get WebSocket URL from runtime config or fallback to build-time env var
-      const wsUrl =
-        (typeof window !== "undefined" && window.__WS_URL__) ||
-        import.meta.env.VITE_WS_URL ||
-        (import.meta.env.PROD
-          ? window.location.origin
-          : window.location.origin);
+      // In production, always use window.location.origin for same-origin connection
+      // In development, use VITE_WS_URL if set, otherwise use current origin
+      let wsUrl;
+      if (import.meta.env.PROD) {
+        // Production: Always use same origin (proxy handles routing)
+        wsUrl = window.location.origin;
+        console.log(
+          "🔧 [WebSocket] Production mode: using same origin for WebSocket"
+        );
+      } else {
+        // Development: Use env var or fallback to current origin
+        wsUrl = import.meta.env.VITE_WS_URL || window.location.origin;
+        console.log("🔧 [WebSocket] Development mode: using", wsUrl);
+      }
+
+      // Validate that __WS_URL__ matches current origin (if set)
+      if (typeof window !== "undefined" && window.__WS_URL__) {
+        const wsUrlFromConfig = window.__WS_URL__.replace(/\/$/, ""); // Remove trailing slash
+        const currentOrigin = window.location.origin;
+        if (wsUrlFromConfig !== currentOrigin) {
+          console.warn("⚠️ [WebSocket] __WS_URL__ mismatch detected!");
+          console.warn("   __WS_URL__:", wsUrlFromConfig);
+          console.warn("   window.location.origin:", currentOrigin);
+          console.warn(
+            "   Using window.location.origin to avoid cross-origin issues"
+          );
+          wsUrl = currentOrigin;
+        }
+      }
 
       console.log("🔗 [WebSocket] Starting connection process...");
       console.log("🌐 [WebSocket] URL:", wsUrl);
