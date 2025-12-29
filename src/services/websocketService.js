@@ -92,9 +92,9 @@ class WebSocketService {
 
       // Create Socket.IO connection config
       const config = {
-        path: "/api/socket.io/", // Use /api/socket.io instead of /socket.io
+        path: "/api/socket.io", // Use /api/socket.io (no trailing slash - Socket.IO adds it)
         withCredentials: true, // IMPORTANT: Send httpOnly cookies with request
-        transports: ["websocket", "polling"], // Try WebSocket first, fallback to polling
+        transports: ["polling", "websocket"], // Try polling first for debugging, then upgrade to websocket
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 2000,
@@ -129,7 +129,12 @@ class WebSocketService {
         console.log("✅ [WebSocket] Connected successfully!");
         console.log("   Socket ID:", this.socket.id);
         console.log("   Transport:", this.socket.io.engine.transport.name);
-        console.log("   URL:", this.socket.io.uri);
+        console.log("   Full URI:", this.socket.io.uri);
+        console.log("   Engine ID:", this.socket.io.engine.id);
+        console.log("   Connection state:", {
+          connected: this.socket.connected,
+          disconnected: this.socket.disconnected,
+        });
         this.reconnectAttempts = 0;
         this.emit("connected");
       });
@@ -205,6 +210,8 @@ class WebSocketService {
         console.log("🔌 [WebSocket] Disconnected");
         console.log("   Reason:", reason);
         console.log("   Socket ID:", this.socket?.id);
+        console.log("   Full URI:", this.socket?.io?.uri);
+        console.log("   Transport:", this.socket?.io?.engine?.transport?.name);
         console.log("   Reconnect attempts:", this.reconnectAttempts);
         this.emit("disconnected");
 
