@@ -84,16 +84,21 @@ function handleGoogleSignIn(event) {
         // OAuth completed successfully
         window.removeEventListener('message', messageListener);
         popup.close();
+        loading.value = false;
+        
         // Determine where to go next; prefer the sanitized returnUrl from the callback
         const target =
           typeof event.data.returnUrl === 'string' && event.data.returnUrl
             ? event.data.returnUrl
             : router.currentRoute.value.fullPath;
-        loading.value = false;
-
-        // Navigate to the target URL (which should not include modal/redirect params anymore)
-        // This will trigger auth initialization and update the navbar state
-        window.location.assign(target);
+        
+        // Use router navigation instead of window.location to preserve Vue Router state
+        // This keeps the user on the same page (e.g., search page with map) without full reload
+        router.replace(target).catch((err) => {
+          // If navigation fails (e.g., invalid route), fallback to window.location
+          console.warn('Router navigation failed, using window.location:', err);
+          window.location.href = target;
+        });
       } else if (event.data.type === 'oauth-error') {
         // OAuth failed
         window.removeEventListener('message', messageListener);

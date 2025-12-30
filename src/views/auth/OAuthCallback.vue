@@ -70,15 +70,31 @@ onMounted(async () => {
           returnUrl = '/';
         } else {
           // Remove modal and redirect query params to avoid reopening modals
+          // But preserve all other query params (like lat, lng, radiusKm for search page)
           try {
+            // Parse the URL to extract pathname and search params
             const url = new URL(returnUrl, window.location.origin);
+            
+            // Remove only modal and redirect params, keep everything else
             url.searchParams.delete('modal');
             url.searchParams.delete('redirect');
-            returnUrl = url.pathname + (url.search ? url.search : '');
+            
+            // Reconstruct URL with preserved query params
+            const preservedParams = url.searchParams.toString();
+            returnUrl = url.pathname + (preservedParams ? '?' + preservedParams : '');
           } catch (e) {
-            // If URL parsing fails, just use the pathname part
-            const pathMatch = returnUrl.match(/^([^?#]+)/);
-            returnUrl = pathMatch ? pathMatch[1] : '/';
+            // If URL parsing fails, try manual parsing to preserve query params
+            const [pathname, search] = returnUrl.split('?');
+            if (search) {
+              const params = new URLSearchParams(search);
+              params.delete('modal');
+              params.delete('redirect');
+              const preservedParams = params.toString();
+              returnUrl = pathname + (preservedParams ? '?' + preservedParams : '');
+            } else {
+              // No query params, just use the pathname
+              returnUrl = pathname || '/';
+            }
           }
         }
       } else {
