@@ -10,25 +10,43 @@ export function useAuthModal() {
   const route = useRoute()
 
   function openLoginModal(redirect = null) {
-    redirectPath.value = redirect || route.fullPath
+    // Store the redirect path BEFORE modifying the route
+    // Use the provided redirect, or the current path WITHOUT modal query params
+    const currentPath = route.path;
+    const currentQuery = { ...route.query };
+    delete currentQuery.modal;
+    delete currentQuery.redirect;
+    const queryString = new URLSearchParams(currentQuery).toString();
+    const pathWithoutModal = currentPath + (queryString ? '?' + queryString : '');
+    
+    redirectPath.value = redirect || pathWithoutModal;
     showRegisterModal.value = false
     showLoginModal.value = true
     // Update URL without navigation
     const query = { ...route.query, modal: 'login' }
-    if (redirect) {
-      query.redirect = redirect
+    if (redirectPath.value) {
+      query.redirect = redirectPath.value
     }
     router.replace({ query })
   }
 
   function openRegisterModal(redirect = null) {
-    redirectPath.value = redirect || route.fullPath
+    // Store the redirect path BEFORE modifying the route
+    // Use the provided redirect, or the current path WITHOUT modal query params
+    const currentPath = route.path;
+    const currentQuery = { ...route.query };
+    delete currentQuery.modal;
+    delete currentQuery.redirect;
+    const queryString = new URLSearchParams(currentQuery).toString();
+    const pathWithoutModal = currentPath + (queryString ? '?' + queryString : '');
+    
+    redirectPath.value = redirect || pathWithoutModal;
     showLoginModal.value = false
     showRegisterModal.value = true
     // Update URL without navigation
     const query = { ...route.query, modal: 'register' }
-    if (redirect) {
-      query.redirect = redirect
+    if (redirectPath.value) {
+      query.redirect = redirectPath.value
     }
     router.replace({ query })
   }
@@ -64,11 +82,33 @@ export function useAuthModal() {
     if (route.query.modal === 'login') {
       showLoginModal.value = true
       showRegisterModal.value = false
-      redirectPath.value = route.query.redirect || route.fullPath
+      // Use redirect from query if available, otherwise get path without modal params
+      if (route.query.redirect) {
+        redirectPath.value = route.query.redirect
+      } else {
+        // Get current path without modal query params
+        const currentPath = route.path;
+        const currentQuery = { ...route.query };
+        delete currentQuery.modal;
+        delete currentQuery.redirect;
+        const queryString = new URLSearchParams(currentQuery).toString();
+        redirectPath.value = currentPath + (queryString ? '?' + queryString : '');
+      }
     } else if (route.query.modal === 'register') {
       showRegisterModal.value = true
       showLoginModal.value = false
-      redirectPath.value = route.query.redirect || route.fullPath
+      // Use redirect from query if available, otherwise get path without modal params
+      if (route.query.redirect) {
+        redirectPath.value = route.query.redirect
+      } else {
+        // Get current path without modal query params
+        const currentPath = route.path;
+        const currentQuery = { ...route.query };
+        delete currentQuery.modal;
+        delete currentQuery.redirect;
+        const queryString = new URLSearchParams(currentQuery).toString();
+        redirectPath.value = currentPath + (queryString ? '?' + queryString : '');
+      }
     } else {
       showLoginModal.value = false
       showRegisterModal.value = false

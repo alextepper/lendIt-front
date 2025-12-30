@@ -41,12 +41,29 @@ function handleGoogleSignIn(event) {
     const params = new URLSearchParams();
     
     // Always pass the current page URL as return_url so user stays on the same page after OAuth
-    const currentPath = router.currentRoute.value.fullPath;
-    const returnUrl = props.returnUrl || 
-                     router.currentRoute.value.query.redirect || 
-                     currentPath;
+    // Use the redirectPath prop if provided (from auth modal), otherwise get from query or current route
+    // But remove modal query params from current route to get the actual page path
+    let returnUrl = props.returnUrl;
+    
+    if (!returnUrl) {
+      returnUrl = router.currentRoute.value.query.redirect;
+    }
+    
+    if (!returnUrl) {
+      // Get current path but remove modal-related query params to get the actual page
+      const currentRoute = router.currentRoute.value;
+      const pathWithoutModal = currentRoute.path;
+      const queryWithoutModal = { ...currentRoute.query };
+      delete queryWithoutModal.modal;
+      delete queryWithoutModal.redirect;
+      
+      // Reconstruct the full path without modal params
+      const queryString = new URLSearchParams(queryWithoutModal).toString();
+      returnUrl = pathWithoutModal + (queryString ? '?' + queryString : '');
+    }
     
     // Encode the return URL to preserve it through the OAuth flow
+    console.log('[GoogleSignIn] Setting returnUrl:', returnUrl);
     params.set('return_url', encodeURIComponent(returnUrl));
     
     // Add popup flag to indicate this should be handled as popup
@@ -94,6 +111,7 @@ function handleGoogleSignIn(event) {
         
         // Use router navigation instead of window.location to preserve Vue Router state
         // This keeps the user on the same page (e.g., search page with map) without full reload
+        console.log('[GoogleSignIn] Navigating to target after OAuth success:', target);
         router.replace(target).catch((err) => {
           // If navigation fails (e.g., invalid route), fallback to window.location
           console.warn('Router navigation failed, using window.location:', err);

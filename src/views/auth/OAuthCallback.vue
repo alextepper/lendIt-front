@@ -47,6 +47,7 @@ onMounted(async () => {
 
       // Get return URL from query params (decoded) or use current page
       let returnUrl = route.query.return_url;
+      console.log('[OAuthCallback] Received return_url from query:', returnUrl);
       
       // Decode if it was encoded
       if (returnUrl) {
@@ -126,7 +127,7 @@ onMounted(async () => {
         }, 1000);
       } else {
         // Normal flow - redirect to intended destination
-        console.log('OAuth callback redirecting to:', returnUrl);
+        console.log('[OAuthCallback] Redirecting to (normal flow):', returnUrl);
         router.replace(returnUrl);
       }
     } catch (fetchError) {
