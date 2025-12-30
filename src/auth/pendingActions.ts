@@ -62,16 +62,19 @@ export function clearPendingAction(): void {
  * This is a generic runner that components can use
  * @param action - The action to run
  * @param handlers - Map of action types to handler functions
+ * @returns true if action was handled, false otherwise
  */
-export function runPendingAction(
+export async function runPendingAction(
   action: PendingAction,
   handlers: Record<string, (action: PendingAction) => void | Promise<void>>
-): void {
+): Promise<boolean> {
   const handler = handlers[action.type];
   if (handler) {
-    handler(action);
+    await handler(action);
+    return true;
   } else {
     console.warn('[PendingActions] No handler for action type:', action.type);
+    return false;
   }
 }
 

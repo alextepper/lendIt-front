@@ -9,8 +9,6 @@
  * 5. Handles errors and popup blockers gracefully
  */
 
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
 import { setPendingAction, consumePendingAction } from './pendingActions';
 
 // Configuration
@@ -99,6 +97,10 @@ export async function loginWithGooglePopup(pendingAction?: {
   type: string;
   [key: string]: any;
 }): Promise<void> {
+  // Import composables dynamically to avoid calling them at module level
+  const { useRouter } = await import('vue-router');
+  const { useAuthStore } = await import('../stores/auth');
+  
   const router = useRouter();
   const auth = useAuthStore();
 
@@ -123,9 +125,23 @@ export async function loginWithGooglePopup(pendingAction?: {
   // Build OAuth URL with callback and return_url
   const oauthUrl = getOAuthUrl();
   const callbackUrl = getCallbackUrl();
-  const fullCallbackUrl = new URL(callbackUrl, window.location.origin).toString();
   
-  const url = new URL(oauthUrl, window.location.origin);
+  // Build full callback URL
+  let fullCallbackUrl: string;
+  if (callbackUrl.startsWith('http://') || callbackUrl.startsWith('https://')) {
+    fullCallbackUrl = callbackUrl;
+  } else {
+    fullCallbackUrl = new URL(callbackUrl, window.location.origin).toString();
+  }
+  
+  // Build OAuth URL
+  let url: URL;
+  if (oauthUrl.startsWith('http://') || oauthUrl.startsWith('https://')) {
+    url = new URL(oauthUrl);
+  } else {
+    url = new URL(oauthUrl, window.location.origin);
+  }
+  
   url.searchParams.set('return_url', encodeURIComponent(fullCallbackUrl));
   url.searchParams.set('popup', 'true');
 

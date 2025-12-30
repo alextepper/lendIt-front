@@ -8,7 +8,6 @@ import { checkBookingAvailability } from '../services/itemService';
 import { createBookingRequest } from '../services/bookingRequestService';
 import { requireAuth, resumePendingAction } from '../auth/requireAuth';
 import { useAuthModal } from '../composables/useAuthModal';
-import { watch } from 'vue';
 
 const props = defineProps({
   item: { type: Object, required: true },
@@ -166,24 +165,31 @@ async function submitBookingRequest() {
   );
 }
 
-// Resume pending action after auth
+// Resume pending action after auth - use a flag to prevent multiple executions
+let hasResumed = false;
 watch(() => auth.isAuthed, async (isAuthed) => {
-  if (isAuthed) {
+  if (isAuthed && !hasResumed) {
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    await resumePendingAction({
+    const action = await resumePendingAction({
       BOOK: async (action) => {
-        // Restore form state if available
-        if (action.from) dateFrom.value = action.from;
-        if (action.to) dateTo.value = action.to;
-        if (action.notes) notes.value = action.notes;
-        
-        // Re-run submitBookingRequest - it will now succeed since user is authenticated
-        await submitBookingRequest();
+        // Only resume if this is the right item
+        if (action.itemId === props.item.id) {
+          hasResumed = true;
+          // Restore form state if available
+          if (action.from) dateFrom.value = action.from;
+          if (action.to) dateTo.value = action.to;
+          if (action.notes) notes.value = action.notes;
+          
+          // Re-run submitBookingRequest - it will now succeed since user is authenticated
+          await submitBookingRequest();
+        }
       }
     });
     
-    closeModals();
+    if (action) {
+      closeModals();
+    }
   }
 }, { immediate: false });
 

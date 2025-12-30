@@ -11,7 +11,7 @@
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useAuthModal } from '../composables/useAuthModal';
-import { setPendingAction, consumePendingAction, runPendingAction } from './pendingActions';
+import { setPendingAction, getPendingAction, consumePendingAction, runPendingAction } from './pendingActions';
 
 /**
  * Require authentication before executing an action
@@ -68,14 +68,21 @@ export async function requireAuth<T = void>(
 /**
  * Check if there's a pending action and resume it
  * This should be called after successful authentication
+ * @returns The action if it was consumed and handled, null otherwise
  */
 export async function resumePendingAction(
   handlers: Record<string, (action: { type: string; [key: string]: any }) => void | Promise<void>>
-): Promise<void> {
-  const action = consumePendingAction();
+): Promise<{ type: string; [key: string]: any } | null> {
+  const action = getPendingAction();
   if (action) {
-    await runPendingAction(action, handlers);
+    const handled = await runPendingAction(action, handlers);
+    if (handled) {
+      // Only consume if it was actually handled
+      consumePendingAction();
+      return action;
+    }
   }
+  return null;
 }
 
 

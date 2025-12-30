@@ -2,9 +2,10 @@
 import { useAuthStore } from '../stores/auth'
 import { useChatStore } from '../stores/chat'
 import { useRouter, useRoute } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { Modal } from 'bootstrap'
 import { useAuthModal } from '../composables/useAuthModal'
+import { requireAuth, resumePendingAction } from '../auth/requireAuth'
 
 const props = defineProps({
   owner: { type: Object, required: true },
@@ -15,7 +16,7 @@ const auth = useAuthStore()
 const chat = useChatStore()
 const router = useRouter()
 const route = useRoute()
-const { openLoginModal } = useAuthModal()
+const { openLoginModal, closeModals } = useAuthModal()
 const loading = ref(false)
 
 function getOwnerInitials(name) {
@@ -68,19 +69,27 @@ async function messageOwner() {
   )
 }
 
-// Resume pending action after auth
+// Resume pending action after auth - only if this component is responsible for MESSAGE actions
+// Use a flag to prevent multiple executions
+let hasResumed = false;
 watch(() => auth.isAuthed, async (isAuthed) => {
-  if (isAuthed) {
+  if (isAuthed && !hasResumed) {
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    await resumePendingAction({
+    const action = await resumePendingAction({
       MESSAGE: async (action) => {
-        // Re-run messageOwner - it will now succeed since user is authenticated
-        await messageOwner();
+        // Only resume if this is the right owner/item
+        if (action.ownerId === props.owner.id && action.itemId === props.itemId) {
+          hasResumed = true;
+          // Re-run messageOwner - it will now succeed since user is authenticated
+          await messageOwner();
+        }
       }
     });
     
-    closeModals();
+    if (action) {
+      closeModals();
+    }
   }
 }, { immediate: false });
 </script>

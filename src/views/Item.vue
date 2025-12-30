@@ -201,34 +201,45 @@ onMounted(async () => {
   await load();
   
   // Resume pending action after auth completes
-  // Watch for auth state changes
+  // Watch for auth state changes - use a flag to prevent multiple executions
+  let hasResumed = false;
   watch(() => auth.isAuthed, async (isAuthed) => {
-    if (isAuthed) {
+    if (isAuthed && !hasResumed) {
       // Small delay to ensure everything is ready
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Resume pending action
-      await resumePendingAction({
+      const action = await resumePendingAction({
         BOOK: async (action) => {
-          // Open booking modal
-          const modalEl = document.getElementById('bookingModal');
-          if (modalEl) {
-            const modal = new Modal(modalEl);
-            modal.show();
+          // Only resume if this is the right item
+          if (action.itemId === item.value?.id) {
+            hasResumed = true;
+            // Open booking modal
+            const modalEl = document.getElementById('bookingModal');
+            if (modalEl) {
+              const modal = new Modal(modalEl);
+              modal.show();
+            }
           }
         },
         MESSAGE: async (action) => {
-          // Open owner modal
-          const modalEl = document.getElementById('ownerModal');
-          if (modalEl) {
-            const modal = new Modal(modalEl);
-            modal.show();
+          // Only resume if this is the right item
+          if (action.itemId === item.value?.id) {
+            hasResumed = true;
+            // Open owner modal
+            const modalEl = document.getElementById('ownerModal');
+            if (modalEl) {
+              const modal = new Modal(modalEl);
+              modal.show();
+            }
           }
         }
       });
       
-      // Close login modal if open
-      closeModals();
+      // Close login modal if open and action was handled
+      if (action) {
+        closeModals();
+      }
     }
   }, { immediate: false });
 });
