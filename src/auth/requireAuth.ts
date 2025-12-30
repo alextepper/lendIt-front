@@ -42,19 +42,27 @@ export async function requireAuth<T = void>(
 
   // Show login modal if requested
   if (showModal) {
-    // Get current route from window.location (works in all contexts)
-    const currentUrl = new URL(window.location.href);
-    const pathWithoutModal = currentUrl.pathname;
-    
-    // Build query params without modal/redirect
-    const queryParams = new URLSearchParams(currentUrl.search);
-    queryParams.delete('modal');
-    queryParams.delete('redirect');
-    const queryString = queryParams.toString();
-    
-    const returnPath = pathWithoutModal + (queryString ? '?' + queryString : '') + (currentUrl.hash || '');
-    
-    openLoginModal(returnPath);
+    try {
+      // Get current route from window.location (works in all contexts)
+      const currentUrl = new URL(window.location.href);
+      const pathWithoutModal = currentUrl.pathname || window.location.pathname || '/';
+      
+      // Build query params without modal/redirect
+      const queryParams = new URLSearchParams(currentUrl.search);
+      queryParams.delete('modal');
+      queryParams.delete('redirect');
+      const queryString = queryParams.toString();
+      
+      const hash = currentUrl.hash || window.location.hash || '';
+      const returnPath = pathWithoutModal + (queryString ? '?' + queryString : '') + hash;
+      
+      openLoginModal(returnPath);
+    } catch (e) {
+      // Fallback if URL parsing fails
+      console.warn('[requireAuth] Failed to parse current URL, using fallback:', e);
+      const fallbackPath = window.location.pathname + window.location.search + window.location.hash;
+      openLoginModal(fallbackPath);
+    }
   }
 
   // If using Google popup, we can optionally trigger it automatically

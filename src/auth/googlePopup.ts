@@ -220,16 +220,23 @@ export async function loginWithGooglePopup(pendingAction?: {
             if (savedRoute) {
               try {
                 const routeState = JSON.parse(savedRoute);
-                // Build the full URL to navigate to
-                const queryString = new URLSearchParams(routeState.query).toString();
-                const fullPath = routeState.path + (queryString ? '?' + queryString : '') + (routeState.hash || '');
-                
-                // Only restore if we're not already on that route
-                const currentPath = window.location.pathname + window.location.search + window.location.hash;
-                if (fullPath !== currentPath) {
-                  // Use window.location for navigation (works in all contexts)
-                  window.location.replace(fullPath);
+                // Validate routeState structure
+                if (routeState && routeState.path) {
+                  // Build the full URL to navigate to
+                  const query = routeState.query || {};
+                  const queryString = new URLSearchParams(query).toString();
+                  const fullPath = routeState.path + (queryString ? '?' + queryString : '') + (routeState.hash || '');
+                  
+                  // Only restore if we're not already on that route
+                  const currentPath = window.location.pathname + window.location.search + window.location.hash;
+                  if (fullPath !== currentPath) {
+                    // Use window.location for navigation (works in all contexts)
+                    window.location.replace(fullPath);
+                  } else {
+                    sessionStorage.removeItem('oauth_return_route');
+                  }
                 } else {
+                  console.warn('[GooglePopup] Invalid route state structure:', routeState);
                   sessionStorage.removeItem('oauth_return_route');
                 }
               } catch (e) {
@@ -282,16 +289,23 @@ export async function loginWithGooglePopup(pendingAction?: {
               if (savedRoute) {
                 try {
                   const routeState = JSON.parse(savedRoute);
-                  // Build the full URL to navigate to
-                  const queryString = new URLSearchParams(routeState.query).toString();
-                  const fullPath = routeState.path + (queryString ? '?' + queryString : '') + (routeState.hash || '');
-                  
-                  // Only restore if we're not already on that route
-                  const currentPath = window.location.pathname + window.location.search + window.location.hash;
-                  if (fullPath !== currentPath) {
-                    // Use window.location for navigation (works in all contexts)
-                    window.location.replace(fullPath);
+                  // Validate routeState structure
+                  if (routeState && routeState.path) {
+                    // Build the full URL to navigate to
+                    const query = routeState.query || {};
+                    const queryString = new URLSearchParams(query).toString();
+                    const fullPath = routeState.path + (queryString ? '?' + queryString : '') + (routeState.hash || '');
+                    
+                    // Only restore if we're not already on that route
+                    const currentPath = window.location.pathname + window.location.search + window.location.hash;
+                    if (fullPath !== currentPath) {
+                      // Use window.location for navigation (works in all contexts)
+                      window.location.replace(fullPath);
+                    } else {
+                      sessionStorage.removeItem('oauth_return_route');
+                    }
                   } else {
+                    console.warn('[GooglePopup] Invalid route state structure:', routeState);
                     sessionStorage.removeItem('oauth_return_route');
                   }
                 } catch (e) {
