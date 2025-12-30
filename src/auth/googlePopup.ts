@@ -63,11 +63,26 @@ function getOAuthUrl(): string {
     }
   }
 
+  // Normalize backendBaseURL - remove trailing slash
+  backendBaseURL = backendBaseURL.endsWith('/') ? backendBaseURL.slice(0, -1) : backendBaseURL;
+
   // Build the OAuth URL - use relative path for same-origin, absolute for cross-origin
-  const isSameOrigin = backendBaseURL.startsWith(window.location.origin);
-  const oauthPath = isSameOrigin ? '/api/auth/google' : `${backendBaseURL}/api/auth/google`;
+  const isSameOrigin = backendBaseURL === window.location.origin || 
+                       backendBaseURL === `${window.location.origin}/api` ||
+                       backendBaseURL.startsWith(window.location.origin);
   
-  return oauthPath;
+  if (isSameOrigin) {
+    // Same origin - use relative path
+    return '/api/auth/google';
+  } else {
+    // Cross-origin - build absolute URL
+    // If backendBaseURL already includes /api, don't add it again
+    if (backendBaseURL.endsWith('/api')) {
+      return `${backendBaseURL}/auth/google`;
+    } else {
+      return `${backendBaseURL}/api/auth/google`;
+    }
+  }
 }
 
 /**
@@ -128,23 +143,23 @@ export async function loginWithGooglePopup(pendingAction?: {
   const oauthUrl = getOAuthUrl();
   const callbackUrl = getCallbackUrl();
   
-  // Build full callback URL
-  let fullCallbackUrl: string;
-  if (callbackUrl.startsWith('http://') || callbackUrl.startsWith('https://')) {
-    fullCallbackUrl = callbackUrl;
-  } else {
-    fullCallbackUrl = new URL(callbackUrl, window.location.origin).toString();
-  }
+  // Build full callback URL (absolute URL)
+  const fullCallbackUrl = new URL(callbackUrl, window.location.origin).toString();
   
-  // Build OAuth URL
+  // Build OAuth URL - handle both relative and absolute
   let url: URL;
   if (oauthUrl.startsWith('http://') || oauthUrl.startsWith('https://')) {
     url = new URL(oauthUrl);
   } else {
+    // Relative path - construct absolute URL
     url = new URL(oauthUrl, window.location.origin);
   }
   
-  url.searchParams.set('return_url', encodeURIComponent(fullCallbackUrl));
+  // Ensure no double slashes in path
+  url.pathname = url.pathname.replace(/\/+/g, '/');
+  
+  // Set query params - encode return_url only once
+  url.searchParams.set('return_url', fullCallbackUrl);
   url.searchParams.set('popup', 'true');
 
   // Open popup window (not a new tab)
