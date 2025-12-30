@@ -9,37 +9,16 @@
       </div>
       <div class="card-body">
         <form @submit.prevent="handleSubmit">
-          <!-- Review Type Selection -->
+          <!-- Review Type Info (read-only, determined by user role) -->
           <div class="mb-3">
-            <label class="form-label">Review Type</label>
-            <div class="btn-group w-100" role="group">
-              <input 
-                type="radio" 
-                class="btn-check" 
-                id="rental-experience" 
-                v-model="form.subjectType" 
-                value="RENTAL_EXPERIENCE"
-              >
-              <label class="btn btn-outline-primary" for="rental-experience">
-                <i class="bi bi-box-seam me-1"></i>
-                Rental Experience
-              </label>
-              
-              <input 
-                type="radio" 
-                class="btn-check" 
-                id="renter-review" 
-                v-model="form.subjectType" 
-                value="RENTER"
-                :disabled="!canReviewRenter"
-              >
-              <label class="btn btn-outline-primary" for="renter-review" :class="{ 'disabled': !canReviewRenter }">
-                <i class="bi bi-person-check me-1"></i>
-                Review Renter
-              </label>
-            </div>
-            <div v-if="!canReviewRenter" class="form-text text-muted">
-              You can only review renters for orders you own
+            <div class="alert alert-info mb-0">
+              <i class="bi bi-info-circle me-2"></i>
+              <span v-if="form.subjectType === 'RENTER'">
+                You are reviewing the renter for this booking.
+              </span>
+              <span v-else>
+                You are reviewing your rental experience.
+              </span>
             </div>
           </div>
 
@@ -60,71 +39,10 @@
             </div>
           </div>
 
-          <!-- Breakdown Ratings (for rental experience) -->
-          <div v-if="form.subjectType === 'RENTAL_EXPERIENCE'" class="mb-3">
-            <label class="form-label">Detailed Ratings</label>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label small">Item Quality</label>
-                <div class="rating-breakdown">
-                  <i 
-                    v-for="star in 5" 
-                    :key="`quality-${star}`"
-                    class="bi bi-star-fill star"
-                    :class="{ 'active': star <= form.ratingsBreakdown.item_quality }"
-                    @click="form.ratingsBreakdown.item_quality = star"
-                  ></i>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small">Communication</label>
-                <div class="rating-breakdown">
-                  <i 
-                    v-for="star in 5" 
-                    :key="`comm-${star}`"
-                    class="bi bi-star-fill star"
-                    :class="{ 'active': star <= form.ratingsBreakdown.communication_with_owner }"
-                    @click="form.ratingsBreakdown.communication_with_owner = star"
-                  ></i>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <!-- Breakdown Ratings (for renter review) -->
-          <div v-if="form.subjectType === 'RENTER'" class="mb-3">
-            <label class="form-label">Detailed Ratings</label>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label small">Care of Item</label>
-                <div class="rating-breakdown">
-                  <i 
-                    v-for="star in 5" 
-                    :key="`care-${star}`"
-                    class="bi bi-star-fill star"
-                    :class="{ 'active': star <= form.ratingsBreakdown.care_of_item }"
-                    @click="form.ratingsBreakdown.care_of_item = star"
-                  ></i>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small">Punctuality</label>
-                <div class="rating-breakdown">
-                  <i 
-                    v-for="star in 5" 
-                    :key="`punct-${star}`"
-                    class="bi bi-star-fill star"
-                    :class="{ 'active': star <= form.ratingsBreakdown.punctuality }"
-                    @click="form.ratingsBreakdown.punctuality = star"
-                  ></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Title (for rental experience) -->
+          <!-- Title (for rental experience only) -->
           <div v-if="form.subjectType === 'RENTAL_EXPERIENCE'" class="mb-3">
-            <label for="review-title" class="form-label">Review Title</label>
+            <label for="review-title" class="form-label">Review Title <span class="text-danger">*</span></label>
             <input 
               type="text" 
               class="form-control" 
@@ -132,62 +50,30 @@
               v-model="form.title"
               placeholder="Summarize your experience"
               maxlength="100"
+              required
             >
             <div class="form-text">{{ form.title.length }}/100 characters</div>
           </div>
 
-          <!-- Review Body (only for rental experience) -->
-          <div v-if="form.subjectType === 'RENTAL_EXPERIENCE'" class="mb-3">
-            <label for="review-body" class="form-label">Review Details</label>
+          <!-- Review Body -->
+          <div class="mb-3">
+            <label for="review-body" class="form-label">
+              Review Details
+              <span v-if="form.subjectType === 'RENTAL_EXPERIENCE'" class="text-danger">*</span>
+              <span v-else class="text-muted small">(Optional)</span>
+            </label>
             <textarea 
               class="form-control" 
               id="review-body"
               v-model="form.body"
               rows="4"
-              placeholder="Tell others about your experience..."
+              :placeholder="form.subjectType === 'RENTAL_EXPERIENCE' ? 'Tell others about your experience...' : 'Add any additional comments about the renter...'"
               maxlength="1000"
+              :required="form.subjectType === 'RENTAL_EXPERIENCE'"
             ></textarea>
             <div class="form-text">{{ form.body.length }}/1000 characters</div>
           </div>
 
-          <!-- Photos (for rental experience) -->
-          <div v-if="form.subjectType === 'RENTAL_EXPERIENCE'" class="mb-3">
-            <label class="form-label">Photos (Optional)</label>
-            <div class="photo-upload">
-              <input 
-                type="file" 
-                ref="photoInput"
-                @change="handlePhotoUpload"
-                multiple
-                accept="image/*"
-                class="d-none"
-              >
-              <button 
-                type="button" 
-                class="btn btn-outline-secondary"
-                @click="$refs.photoInput.click()"
-              >
-                <i class="bi bi-camera me-1"></i>
-                Add Photos
-              </button>
-              <div v-if="form.photos.length > 0" class="photo-preview mt-2">
-                <div 
-                  v-for="(photo, index) in form.photos" 
-                  :key="index"
-                  class="photo-item"
-                >
-                  <img :src="photo" alt="Review photo" class="photo-thumbnail">
-                  <button 
-                    type="button" 
-                    class="btn btn-sm btn-danger photo-remove"
-                    @click="removePhoto(index)"
-                  >
-                    <i class="bi bi-x"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <!-- Anonymous Option -->
           <div class="mb-3">
@@ -256,32 +142,22 @@ const ui = useUiStore();
 const submitting = ref(false);
 
 const form = reactive({
-  subjectType: props.defaultSubjectType,
+  subjectType: props.defaultSubjectType, // Set by parent based on user role
   ratingOverall: 0,
-  ratingsBreakdown: {
-    item_quality: 0,
-    communication_with_owner: 0,
-    care_of_item: 0,
-    punctuality: 0
-  },
   title: '',
   body: '',
-  photos: [],
   isAnonymous: false
 });
 
 const isFormValid = computed(() => {
+  // Only require overall rating
   if (form.ratingOverall === 0) return false;
   
+  // For rental experience, title and body are required
   if (form.subjectType === 'RENTAL_EXPERIENCE') {
-    // For rental experience, body is required
-    if (!form.body.trim()) return false;
-    return form.ratingsBreakdown.item_quality > 0 && 
-           form.ratingsBreakdown.communication_with_owner > 0;
-  } else if (form.subjectType === 'RENTER') {
-    // For renter review, body is optional
-    return form.ratingsBreakdown.care_of_item > 0 && 
-           form.ratingsBreakdown.punctuality > 0;
+    if (!form.title.trim() || !form.body.trim()) {
+      return false;
+    }
   }
   
   return true;
@@ -299,22 +175,6 @@ function getRatingText(rating) {
   return texts[rating] || 'Select rating';
 }
 
-function handlePhotoUpload(event) {
-  const files = Array.from(event.target.files);
-  files.forEach(file => {
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        form.photos.push(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-}
-
-function removePhoto(index) {
-  form.photos.splice(index, 1);
-}
 
 async function handleSubmit() {
   if (!isFormValid.value) return;
@@ -325,14 +185,13 @@ async function handleSubmit() {
     const reviewData = {
       subjectType: form.subjectType,
       ratingOverall: form.ratingOverall,
-      ratingsBreakdown: { ...form.ratingsBreakdown },
       isAnonymous: form.isAnonymous
     };
     
     if (form.subjectType === 'RENTAL_EXPERIENCE') {
+      // For rental experience, include title and body
       reviewData.title = form.title;
       reviewData.body = form.body || '';
-      reviewData.photos = form.photos;
     } else if (form.subjectType === 'RENTER') {
       // For renter reviews, body is optional but can be included if provided
       if (form.body && form.body.trim()) {
@@ -359,15 +218,8 @@ async function handleSubmit() {
 function resetForm() {
   form.subjectType = props.defaultSubjectType;
   form.ratingOverall = 0;
-  form.ratingsBreakdown = {
-    item_quality: 0,
-    communication_with_owner: 0,
-    care_of_item: 0,
-    punctuality: 0
-  };
   form.title = '';
   form.body = '';
-  form.photos = [];
   form.isAnonymous = false;
 }
 </script>
