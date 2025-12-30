@@ -162,10 +162,25 @@
                 </button>
               </div>
 
-              <!-- Confirmed -->
-              <div v-else-if="request.status === 'CONFIRMED'" class="small text-primary">
-                <i class="bi bi-check-circle me-1"></i>
-                {{ $t('bookingRequests.confirmed') }}
+              <!-- Confirmed - Show Leave Review button for both owner and renter -->
+              <div v-else-if="request.status === 'CONFIRMED'" class="d-flex flex-column align-items-end gap-1">
+                <div class="small text-primary mb-1">
+                  <i class="bi bi-check-circle me-1"></i>
+                  {{ $t('bookingRequests.confirmed') }}
+                </div>
+                <button
+                  v-if="!hasLeftReview(request)"
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  @click.stop="openReviewModal(request)"
+                >
+                  <i class="bi bi-star me-1"></i>
+                  {{ $t('bookingRequests.leaveReview') || 'Leave Review' }}
+                </button>
+                <div v-else class="small text-muted">
+                  <i class="bi bi-check-circle-fill me-1"></i>
+                  {{ $t('bookingRequests.reviewSubmitted') || 'Review Submitted' }}
+                </div>
               </div>
 
               <!-- Declined -->
@@ -365,10 +380,22 @@
       </div>
     </div>
   </div>
+
+  <!-- Review Modal -->
+  <ReviewModal
+    v-if="reviewBooking"
+    ref="reviewModal"
+    :key="`review-${reviewBooking.id}`"
+    :order-id="reviewBooking.orderId || reviewBooking.id"
+    :can-review-renter="isOwnerOfBooking(reviewBooking)"
+    :default-subject-type="isOwnerOfBooking(reviewBooking) ? 'RENTER' : 'RENTAL_EXPERIENCE'"
+    @submit="handleReviewSubmit"
+    @close="handleReviewModalClose"
+  />
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { Modal } from 'bootstrap';
 import { useUiStore } from '../stores/ui';
@@ -379,6 +406,7 @@ import {
   approveBookingRequest,
   rejectBookingRequest,
 } from '../services/bookingRequestService';
+import ReviewModal from './ReviewModal.vue';
 
 const { t } = useI18n();
 
@@ -399,6 +427,8 @@ const paymentModifications = ref({ rentalPrice: null, depositAmount: null, total
 
 const approveModal = ref(null);
 const rejectModal = ref(null);
+const reviewModal = ref(null);
+const reviewBooking = ref(null); // Store booking for review separately
 let approveModalInstance = null;
 let rejectModalInstance = null;
 
@@ -656,6 +686,64 @@ function goToPayment(booking) {
     name: 'booking-checkout',
     params: { bookingId },
   });
+}
+
+// Check if user has already left a review for this booking
+function hasLeftReview(booking) {
+  // Check if booking has reviews array and if current user has already reviewed
+  if (!booking.reviews || !Array.isArray(booking.reviews) || !auth.user) {
+    return false;
+  }
+  
+  const userId = auth.user.id;
+  // Check if any review was created by current user
+  return booking.reviews.some(review => review.reviewerId === userId || review.reviewer?.id === userId);
+}
+
+// Open review modal for a booking
+async function openReviewModal(booking) {
+  reviewBooking.value = booking;
+  // Wait for next tick to ensure modal component is mounted
+  await nextTick();
+  // Wait a bit more for Bootstrap modal to initialize
+  await new Promise(resolve => setTimeout(resolve, 100));
+  if (reviewModal.value) {
+    reviewModal.value.show();
+  }
+}
+
+// Handle review modal close
+function handleReviewModalClose() {
+  // Clear review booking after modal closes
+  setTimeout(() => {
+    reviewBooking.value = null;
+  }, 300);
+}
+
+// Handle review submission
+async function handleReviewSubmit(reviewData) {
+  if (!reviewBooking.value) return;
+  
+  try {
+    // The ReviewForm already calls createOrderReview and shows success toast
+    // So we just need to close the modal and reload
+    
+    // Close modal
+    if (reviewModal.value) {
+      reviewModal.value.hide();
+    }
+    
+    // Reload requests to get updated review status
+    await loadRequests();
+    
+    // Clear the review booking
+    setTimeout(() => {
+      reviewBooking.value = null;
+    }, 300);
+  } catch (e) {
+    console.error('Failed to handle review submission:', e);
+    // Error is already shown by ReviewForm, but we can add additional handling if needed
+  }
 }
 </script>
 

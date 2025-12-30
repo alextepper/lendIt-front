@@ -136,8 +136,8 @@
             <div class="form-text">{{ form.title.length }}/100 characters</div>
           </div>
 
-          <!-- Review Body -->
-          <div class="mb-3">
+          <!-- Review Body (only for rental experience) -->
+          <div v-if="form.subjectType === 'RENTAL_EXPERIENCE'" class="mb-3">
             <label for="review-body" class="form-label">Review Details</label>
             <textarea 
               class="form-control" 
@@ -271,12 +271,15 @@ const form = reactive({
 });
 
 const isFormValid = computed(() => {
-  if (form.ratingOverall === 0 || !form.body.trim()) return false;
+  if (form.ratingOverall === 0) return false;
   
   if (form.subjectType === 'RENTAL_EXPERIENCE') {
+    // For rental experience, body is required
+    if (!form.body.trim()) return false;
     return form.ratingsBreakdown.item_quality > 0 && 
            form.ratingsBreakdown.communication_with_owner > 0;
   } else if (form.subjectType === 'RENTER') {
+    // For renter review, body is optional
     return form.ratingsBreakdown.care_of_item > 0 && 
            form.ratingsBreakdown.punctuality > 0;
   }
@@ -328,8 +331,13 @@ async function handleSubmit() {
     
     if (form.subjectType === 'RENTAL_EXPERIENCE') {
       reviewData.title = form.title;
-      reviewData.body = form.body;
+      reviewData.body = form.body || '';
       reviewData.photos = form.photos;
+    } else if (form.subjectType === 'RENTER') {
+      // For renter reviews, body is optional but can be included if provided
+      if (form.body && form.body.trim()) {
+        reviewData.body = form.body;
+      }
     }
     
     await createOrderReview(props.orderId, reviewData);
