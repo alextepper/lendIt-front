@@ -8,7 +8,6 @@
  * 4. After OAuth login, automatically resumes the pending action
  */
 
-import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useAuthModal } from '../composables/useAuthModal';
 import { setPendingAction, getPendingAction, consumePendingAction, runPendingAction } from './pendingActions';
@@ -43,15 +42,17 @@ export async function requireAuth<T = void>(
 
   // Show login modal if requested
   if (showModal) {
-    const router = useRouter();
-    const currentRoute = router.currentRoute.value;
-    // Get current path without modal query params
-    const pathWithoutModal = currentRoute.path;
-    const queryWithoutModal = { ...currentRoute.query };
-    delete queryWithoutModal.modal;
-    delete queryWithoutModal.redirect;
-    const queryString = new URLSearchParams(queryWithoutModal).toString();
-    const returnPath = pathWithoutModal + (queryString ? '?' + queryString : '');
+    // Get current route from window.location (works in all contexts)
+    const currentUrl = new URL(window.location.href);
+    const pathWithoutModal = currentUrl.pathname;
+    
+    // Build query params without modal/redirect
+    const queryParams = new URLSearchParams(currentUrl.search);
+    queryParams.delete('modal');
+    queryParams.delete('redirect');
+    const queryString = queryParams.toString();
+    
+    const returnPath = pathWithoutModal + (queryString ? '?' + queryString : '') + (currentUrl.hash || '');
     
     openLoginModal(returnPath);
   }
