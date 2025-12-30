@@ -18,7 +18,6 @@ import { getItemPhotoUrl } from '../utils/imageUtils';
 import http from '../lib/http';
 import { useAuthModal } from '../composables/useAuthModal';
 import { requireAuth, resumePendingAction } from '../auth/requireAuth';
-import { watch } from 'vue';
 
 const route = useRoute();
 const router = useRouter();
