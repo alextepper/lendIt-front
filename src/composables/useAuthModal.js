@@ -12,22 +12,48 @@ export function useAuthModal() {
   function openLoginModal(redirect = null) {
     // Store the redirect path BEFORE modifying the route
     // Use the provided redirect, or the current path WITHOUT modal query params
-    const currentPath = route.path;
-    const currentQuery = { ...route.query };
-    delete currentQuery.modal;
-    delete currentQuery.redirect;
-    const queryString = new URLSearchParams(currentQuery).toString();
-    const pathWithoutModal = currentPath + (queryString ? '?' + queryString : '');
+    let pathWithoutModal = '/';
+    
+    // Safely access route - it might not be available in all contexts
+    try {
+      if (route && route.path) {
+        const currentPath = route.path;
+        const currentQuery = { ...(route.query || {}) };
+        delete currentQuery.modal;
+        delete currentQuery.redirect;
+        const queryString = new URLSearchParams(currentQuery).toString();
+        pathWithoutModal = currentPath + (queryString ? '?' + queryString : '');
+      } else {
+        // Fallback to window.location if route is not available
+        const url = new URL(window.location.href);
+        const queryParams = new URLSearchParams(url.search);
+        queryParams.delete('modal');
+        queryParams.delete('redirect');
+        const queryString = queryParams.toString();
+        pathWithoutModal = url.pathname + (queryString ? '?' + queryString : '') + (url.hash || '');
+      }
+    } catch (e) {
+      // Fallback if route access fails
+      console.warn('[useAuthModal] Failed to get current route, using window.location:', e);
+      pathWithoutModal = window.location.pathname + window.location.search + window.location.hash;
+    }
     
     redirectPath.value = redirect || pathWithoutModal;
     showRegisterModal.value = false
     showLoginModal.value = true
-    // Update URL without navigation
-    const query = { ...route.query, modal: 'login' }
-    if (redirectPath.value) {
-      query.redirect = redirectPath.value
+    
+    // Update URL without navigation - safely access route
+    try {
+      if (route && router) {
+        const query = { ...(route.query || {}), modal: 'login' }
+        if (redirectPath.value) {
+          query.redirect = redirectPath.value
+        }
+        router.replace({ query })
+      }
+    } catch (e) {
+      console.warn('[useAuthModal] Failed to update route, continuing anyway:', e);
     }
-    router.replace({ query })
   }
 
   function openRegisterModal(redirect = null) {
@@ -56,11 +82,21 @@ export function useAuthModal() {
     showRegisterModal.value = false
     redirectPath.value = null
     // Remove modal and redirect from query, but stay on current path
-    const query = { ...route.query }
-    delete query.modal
-    delete query.redirect
-    // Explicitly use current path to prevent any redirects
-    router.replace({ path: route.path, query })
+    try {
+      if (route && router) {
+        const query = { ...(route.query || {}) }
+        delete query.modal
+        delete query.redirect
+        // Explicitly use current path to prevent any redirects
+        if (route.path) {
+          router.replace({ path: route.path, query })
+        } else {
+          router.replace({ query })
+        }
+      }
+    } catch (e) {
+      console.warn('[useAuthModal] Failed to close modals, continuing anyway:', e);
+    }
   }
 
   function switchToRegister() {
