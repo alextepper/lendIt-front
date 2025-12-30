@@ -6,6 +6,7 @@ const Home = () => import("../views/Home.vue");
 const Login = () => import("../views/auth/Login.vue");
 const Register = () => import("../views/auth/Register.vue");
 const OAuthCallback = () => import("../views/auth/OAuthCallback.vue");
+const OAuthPopupCallback = () => import("../views/auth/OAuthPopupCallback.vue");
 const RequestPasswordReset = () => import("../views/auth/RequestPasswordReset.vue");
 const ResetPassword = () => import("../views/auth/ResetPassword.vue");
 const Search = () => import("../views/Search.vue");
