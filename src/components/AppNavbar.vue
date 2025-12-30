@@ -247,7 +247,8 @@ const totalNotifications = computed(() => {
 const bookingWebSocketCallbacks = {
   booking_created: null,
   booking_updated: null,
-  booking_status_changed: null
+  booking_status_changed: null,
+  customEvent: null
 }
 
 const debugEnabled = computed(() => {
@@ -401,6 +402,48 @@ onBeforeUnmount(() => {
   }
 })
 
+// Set up WebSocket listeners for booking updates
+function setupBookingWebSocketListeners() {
+  // Clean up existing listeners first
+  if (bookingWebSocketCallbacks.booking_created) {
+    websocketService.off('booking_created', bookingWebSocketCallbacks.booking_created)
+  }
+  if (bookingWebSocketCallbacks.booking_updated) {
+    websocketService.off('booking_updated', bookingWebSocketCallbacks.booking_updated)
+  }
+  if (bookingWebSocketCallbacks.booking_status_changed) {
+    websocketService.off('booking_status_changed', bookingWebSocketCallbacks.booking_status_changed)
+  }
+
+  // Create callback functions
+  const handleBookingCreated = () => {
+    loadPendingBookingsCount()
+  }
+  const handleBookingUpdated = () => {
+    loadPendingBookingsCount()
+  }
+  const handleBookingStatusChanged = () => {
+    loadPendingBookingsCount()
+  }
+
+  // Store callbacks for cleanup
+  bookingWebSocketCallbacks.booking_created = handleBookingCreated
+  bookingWebSocketCallbacks.booking_updated = handleBookingUpdated
+  bookingWebSocketCallbacks.booking_status_changed = handleBookingStatusChanged
+
+  // Register listeners
+  websocketService.on('booking_created', handleBookingCreated)
+  websocketService.on('booking_updated', handleBookingUpdated)
+  websocketService.on('booking_status_changed', handleBookingStatusChanged)
+
+  // Also listen for custom events dispatched from other components
+  const handleCustomBookingStatusChange = () => {
+    loadPendingBookingsCount()
+  }
+  window.addEventListener('booking-status-changed', handleCustomBookingStatusChange)
+  bookingWebSocketCallbacks.customEvent = handleCustomBookingStatusChange
+}
+
 // Load pending bookings count
 async function loadPendingBookingsCount() {
   if (!auth.isAuthed || !auth.user) {
@@ -528,6 +571,9 @@ onBeforeUnmount(() => {
   }
   if (bookingWebSocketCallbacks.booking_status_changed) {
     websocketService.off('booking_status_changed', bookingWebSocketCallbacks.booking_status_changed)
+  }
+  if (bookingWebSocketCallbacks.customEvent) {
+    window.removeEventListener('booking-status-changed', bookingWebSocketCallbacks.customEvent)
   }
 })
 

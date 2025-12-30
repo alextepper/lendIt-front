@@ -48,7 +48,8 @@
       "noAccount": "אין לך חשבון?",
       "signUp": "הירשם כאן",
       "fillAllFields": "אנא מלא את כל השדות",
-      "failedToSignIn": "נכשל בהתחברות"
+      "failedToSignIn": "נכשל בהתחברות",
+      "forgotPassword": "שכחת סיסמה?"
     },
     "register": {
       "title": "הרשמה",
@@ -61,6 +62,38 @@
       "signIn": "התחבר כאן",
       "fillAllFields": "אנא מלא את כל השדות",
       "failedToSignUp": "נכשל בהרשמה"
+    },
+    "passwordReset": {
+      "request": {
+        "title": "איפוס סיסמה",
+        "description": "הזן את כתובת האימייל שלך ונשלח לך קישור לאיפוס הסיסמה.",
+        "emailPlaceholder": "הזן את האימייל שלך",
+        "submit": "שלח קישור איפוס",
+        "sending": "שולח...",
+        "success": "אם קיים חשבון עם האימייל הזה, קישור לאיפוס הסיסמה נשלח.",
+        "error": "נכשל בשליחת אימייל איפוס סיסמה. אנא נסה שוב.",
+        "emailRequired": "אנא הזן את כתובת האימייל שלך",
+        "backToLogin": "חזור להתחברות"
+      },
+      "reset": {
+        "title": "הגדר סיסמה חדשה",
+        "description": "הזן את הסיסמה החדשה שלך למטה.",
+        "newPassword": "סיסמה חדשה",
+        "passwordPlaceholder": "הזן סיסמה חדשה",
+        "passwordHint": "הסיסמה חייבת להכיל לפחות 8 תווים",
+        "confirmPassword": "אשר סיסמה",
+        "confirmPasswordPlaceholder": "אשר סיסמה חדשה",
+        "submit": "אפס סיסמה",
+        "resetting": "מאפס...",
+        "success": "הסיסמה אופסה בהצלחה. כעת תוכל להתחבר עם הסיסמה החדשה שלך.",
+        "error": "נכשל באיפוס הסיסמה. אנא נסה שוב.",
+        "missingToken": "אסימון איפוס לא תקין או חסר. אנא בקש איפוס סיסמה חדש.",
+        "fillAllFields": "אנא מלא את כל השדות",
+        "passwordMismatch": "הסיסמאות אינן תואמות",
+        "passwordTooShort": "הסיסמה חייבת להכיל לפחות 8 תווים",
+        "goToLogin": "עבור להתחברות",
+        "backToLogin": "חזור להתחברות"
+      }
     }
   },
   "search": {

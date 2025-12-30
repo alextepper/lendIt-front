@@ -6,6 +6,8 @@ const Home = () => import("../views/Home.vue");
 const Login = () => import("../views/auth/Login.vue");
 const Register = () => import("../views/auth/Register.vue");
 const OAuthCallback = () => import("../views/auth/OAuthCallback.vue");
+const RequestPasswordReset = () => import("../views/auth/RequestPasswordReset.vue");
+const ResetPassword = () => import("../views/auth/ResetPassword.vue");
 const Search = () => import("../views/Search.vue");
 const Item = () => import("../views/Item.vue");
 const Dashboard = () => import("../views/Dashboard.vue");
@@ -44,6 +46,18 @@ const router = createRouter({
       path: "/auth/callback",
       name: "oauth-callback",
       component: OAuthCallback,
+      meta: { guestOnly: true },
+    },
+    {
+      path: "/auth/reset-password-request",
+      name: "request-password-reset",
+      component: RequestPasswordReset,
+      meta: { guestOnly: true },
+    },
+    {
+      path: "/auth/reset-password",
+      name: "reset-password",
+      component: ResetPassword,
       meta: { guestOnly: true },
     },
     { path: "/home", name: "home-old", component: Home },

@@ -39,7 +39,16 @@
                 <input v-model="loginForm.email" class="form-control" type="email" required />
               </div>
               <div class="mb-3">
-                <label class="form-label">{{ $t('auth.login.password') }}</label>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label mb-0">{{ $t('auth.login.password') }}</label>
+                  <router-link
+                    :to="{ name: 'request-password-reset' }"
+                    class="small text-decoration-none"
+                    @click="closeModals"
+                  >
+                    {{ $t('auth.login.forgotPassword') }}
+                  </router-link>
+                </div>
                 <input v-model="loginForm.password" class="form-control" type="password" minlength="6" required />
               </div>
               <button class="btn btn-primary w-100" :disabled="submitting" type="submit">
