@@ -115,8 +115,9 @@ onMounted(async () => {
 
       if (isPopup && window.opener) {
         // We're in a popup - send message to parent window and close
+        // Use OAUTH_SUCCESS to match googlePopup.ts listener
         window.opener.postMessage({
-          type: 'oauth-success',
+          type: 'OAUTH_SUCCESS',
           returnUrl: returnUrl
         }, window.location.origin);
         

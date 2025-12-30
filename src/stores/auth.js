@@ -111,6 +111,10 @@ export const useAuthStore = defineStore("auth", {
         throw e;
       }
     },
+    // Alias for fetchMe - refreshSession is more intuitive for OAuth flows
+    async refreshSession() {
+      return await this.fetchMe();
+    },
     async initialize() {
       // Prevent concurrent initialization calls
       if (this.initialized) return;

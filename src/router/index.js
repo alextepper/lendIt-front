@@ -49,6 +49,12 @@ const router = createRouter({
       meta: { guestOnly: true },
     },
     {
+      path: "/auth/popup/callback",
+      name: "oauth-popup-callback",
+      component: OAuthPopupCallback,
+      meta: { guestOnly: true },
+    },
+    {
       path: "/auth/reset-password-request",
       name: "request-password-reset",
       component: RequestPasswordReset,
@@ -177,8 +183,8 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // Special handling for OAuth callback - allow it to complete even if user becomes authenticated
-  if (to.name === 'oauth-callback') {
+  // Special handling for OAuth callbacks - allow them to complete even if user becomes authenticated
+  if (to.name === 'oauth-callback' || to.name === 'oauth-popup-callback') {
     // Allow navigation to OAuth callback regardless of auth state
     // The callback component will handle its own redirect
     return next();

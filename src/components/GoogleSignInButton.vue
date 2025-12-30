@@ -2,6 +2,10 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { useAuthStore } from '../stores/auth';
+import { useAuthModal } from '../composables/useAuthModal';
+import { loginWithGooglePopup } from '../auth/googlePopup';
+import { getPendingAction } from '../auth/pendingActions';
 
 const props = defineProps({
   returnUrl: {
@@ -17,10 +21,12 @@ const props = defineProps({
 
 const router = useRouter();
 const { t } = useI18n();
+const auth = useAuthStore();
+const { closeModals } = useAuthModal();
 const loading = ref(false);
 const error = ref(null);
 
-function handleGoogleSignIn(event) {
+async function handleGoogleSignIn(event) {
   // Prevent any form submission or default behavior
   if (event) {
     event.preventDefault();
@@ -31,118 +37,32 @@ function handleGoogleSignIn(event) {
   error.value = null;
   
   try {
-    // Use relative URL for OAuth - same origin as the frontend
-    // In production: https://www.sharo-app.com/api/auth/google
-    // In development: Vite proxy forwards /api/auth/google to backend
-    const oauthUrl = '/api/auth/google';
+    // Get pending action if any (set by requireAuth)
+    const pendingAction = getPendingAction();
     
-    // Build full URL with query params
-    let fullUrl = oauthUrl;
-    const params = new URLSearchParams();
+    // Use the new popup OAuth flow
+    await loginWithGooglePopup(pendingAction || undefined);
     
-    // Always pass the current page URL as return_url so user stays on the same page after OAuth
-    // Use the redirectPath prop if provided (from auth modal), otherwise get from query or current route
-    // But remove modal query params from current route to get the actual page path
-    let returnUrl = props.returnUrl;
+    // Success - close modal and refresh auth state
+    closeModals();
+    await auth.fetchMe();
     
-    if (!returnUrl) {
-      returnUrl = router.currentRoute.value.query.redirect;
-    }
+    // Resume pending action will be handled by the component that set it
+    // via the resumePendingAction mechanism
     
-    if (!returnUrl) {
-      // Get current path but remove modal-related query params to get the actual page
-      const currentRoute = router.currentRoute.value;
-      const pathWithoutModal = currentRoute.path;
-      const queryWithoutModal = { ...currentRoute.query };
-      delete queryWithoutModal.modal;
-      delete queryWithoutModal.redirect;
-      
-      // Reconstruct the full path without modal params
-      const queryString = new URLSearchParams(queryWithoutModal).toString();
-      returnUrl = pathWithoutModal + (queryString ? '?' + queryString : '');
-    }
-    
-    // Encode the return URL to preserve it through the OAuth flow
-    console.log('[GoogleSignIn] Setting returnUrl:', returnUrl);
-    params.set('return_url', encodeURIComponent(returnUrl));
-    
-    // Add popup flag to indicate this should be handled as popup
-    params.set('popup', 'true');
-    
-    // Append query string if we have params
-    if (params.toString()) {
-      fullUrl += '?' + params.toString();
-    }
-    
-    console.log('Opening Google OAuth in popup:', fullUrl);
-    
-    // Open OAuth in a popup window
-    const popup = window.open(
-      fullUrl,
-      'google-oauth',
-      'width=500,height=600,scrollbars=yes,resizable=yes'
-    );
-    
-    if (!popup) {
-      // Popup was blocked - fallback to full page redirect
-      console.warn('Popup blocked, falling back to full page redirect');
-      window.location.href = fullUrl;
-      return;
-    }
-    
-    // Listen for messages from the popup
-    const messageListener = (event) => {
-      // Security: Only accept messages from same origin
-      if (event.origin !== window.location.origin) {
-        return;
-      }
-      
-      if (event.data.type === 'oauth-success') {
-        // OAuth completed successfully
-        window.removeEventListener('message', messageListener);
-        popup.close();
-        loading.value = false;
-        
-        // Determine where to go next; prefer the sanitized returnUrl from the callback
-        const target =
-          typeof event.data.returnUrl === 'string' && event.data.returnUrl
-            ? event.data.returnUrl
-            : router.currentRoute.value.fullPath;
-        
-        // Use router navigation instead of window.location to preserve Vue Router state
-        // This keeps the user on the same page (e.g., search page with map) without full reload
-        console.log('[GoogleSignIn] Navigating to target after OAuth success:', target);
-        router.replace(target).catch((err) => {
-          // If navigation fails (e.g., invalid route), fallback to window.location
-          console.warn('Router navigation failed, using window.location:', err);
-          window.location.href = target;
-        });
-      } else if (event.data.type === 'oauth-error') {
-        // OAuth failed
-        window.removeEventListener('message', messageListener);
-        popup.close();
-        loading.value = false;
-        error.value = event.data.error || t('auth.googleSignInFailed');
-      }
-    };
-    
-    window.addEventListener('message', messageListener);
-    
-    // Check if popup was closed manually
-    const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed);
-        window.removeEventListener('message', messageListener);
-        loading.value = false;
-        if (!error.value) {
-          error.value = t('auth.popupClosed');
-        }
-      }
-    }, 1000);
-    
-  } catch (err) {
-    error.value = t('auth.googleSignInFailed');
     loading.value = false;
+  } catch (err) {
+    loading.value = false;
+    
+    // Handle specific error types
+    if (err.message === 'POPUP_BLOCKED') {
+      error.value = t('auth.popupBlocked') || 'Popup was blocked. Please allow popups for this site and try again.';
+    } else if (err.message.includes('cancelled')) {
+      error.value = t('auth.popupClosed') || 'Sign in was cancelled.';
+    } else {
+      error.value = err.message || t('auth.googleSignInFailed') || 'Failed to sign in with Google';
+    }
+    
     console.error('Failed to initiate Google sign in:', err);
   }
 }

@@ -44,30 +44,45 @@ function closeParentModal() {
 }
 
 async function messageOwner() {
-  if (!auth.isAuthed) {
-    closeParentModal()
-    openLoginModal(route.fullPath)
-    return
-  }
-  
-  loading.value = true
-  try {
-    const thread = await chat.createThread(props.owner.id, props.itemId)
-    
-    // Close modal before navigation
-    closeParentModal()
-    
-    // Small delay to ensure modal is closed
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
-    router.push({ name: 'messages', query: { thread: thread.id } })
-  } catch (e) {
-    console.error('Failed to create thread:', e)
-    alert('Failed to start conversation. Please try again.')
-  } finally {
-    loading.value = false
-  }
+  await requireAuth(
+    { type: 'MESSAGE', ownerId: props.owner.id, itemId: props.itemId },
+    async () => {
+      loading.value = true
+      try {
+        const thread = await chat.createThread(props.owner.id, props.itemId)
+        
+        // Close modal before navigation
+        closeParentModal()
+        
+        // Small delay to ensure modal is closed
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        router.push({ name: 'messages', query: { thread: thread.id } })
+      } catch (e) {
+        console.error('Failed to create thread:', e)
+        alert('Failed to start conversation. Please try again.')
+      } finally {
+        loading.value = false
+      }
+    }
+  )
 }
+
+// Resume pending action after auth
+watch(() => auth.isAuthed, async (isAuthed) => {
+  if (isAuthed) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    await resumePendingAction({
+      MESSAGE: async (action) => {
+        // Re-run messageOwner - it will now succeed since user is authenticated
+        await messageOwner();
+      }
+    });
+    
+    closeModals();
+  }
+}, { immediate: false });
 </script>
 
 <template>

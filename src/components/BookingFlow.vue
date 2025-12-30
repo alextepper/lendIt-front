@@ -6,6 +6,9 @@ import { useUiStore } from '../stores/ui';
 import { getQuote } from '../services/orderService';
 import { checkBookingAvailability } from '../services/itemService';
 import { createBookingRequest } from '../services/bookingRequestService';
+import { requireAuth, resumePendingAction } from '../auth/requireAuth';
+import { useAuthModal } from '../composables/useAuthModal';
+import { watch } from 'vue';
 
 const props = defineProps({
   item: { type: Object, required: true },
@@ -16,6 +19,7 @@ const emit = defineEmits(['close', 'booking-created']);
 const auth = useAuthStore();
 const ui = useUiStore();
 const router = useRouter();
+const { closeModals } = useAuthModal();
 
 // Form state
 const step = ref(1); // 1=dates, 2=quote, 3=notes
@@ -131,25 +135,57 @@ function goBack() {
 async function submitBookingRequest() {
   if (!canProceed.value || submitting.value) return;
   
-  submitting.value = true;
-  try {
-    const request = await createBookingRequest({
+  await requireAuth(
+    { 
+      type: 'BOOK', 
       itemId: props.item.id,
       from: dateFrom.value,
       to: dateTo.value,
       notes: notes.value.trim() || undefined,
+    },
+    async () => {
+      submitting.value = true;
+      try {
+        const request = await createBookingRequest({
+          itemId: props.item.id,
+          from: dateFrom.value,
+          to: dateTo.value,
+          notes: notes.value.trim() || undefined,
+        });
+        
+        ui.showToast('Booking request sent to owner. You\'ll be notified when they respond.', 'success');
+        emit('booking-created', request);
+        emit('close');
+      } catch (error) {
+        console.error('Failed to submit booking request:', error);
+        ui.showToast(error.message || 'Failed to send booking request', 'danger');
+      } finally {
+        submitting.value = false;
+      }
+    }
+  );
+}
+
+// Resume pending action after auth
+watch(() => auth.isAuthed, async (isAuthed) => {
+  if (isAuthed) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    await resumePendingAction({
+      BOOK: async (action) => {
+        // Restore form state if available
+        if (action.from) dateFrom.value = action.from;
+        if (action.to) dateTo.value = action.to;
+        if (action.notes) notes.value = action.notes;
+        
+        // Re-run submitBookingRequest - it will now succeed since user is authenticated
+        await submitBookingRequest();
+      }
     });
     
-    ui.showToast('Booking request sent to owner. You\'ll be notified when they respond.', 'success');
-    emit('booking-created', request);
-    emit('close');
-  } catch (error) {
-    console.error('Failed to submit booking request:', error);
-    ui.showToast(error.message || 'Failed to send booking request', 'danger');
-  } finally {
-    submitting.value = false;
+    closeModals();
   }
-}
+}, { immediate: false });
 
 function proceedToNotes() {
   if (!quote.value) return;

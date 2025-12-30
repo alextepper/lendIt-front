@@ -17,13 +17,15 @@ import { Modal } from 'bootstrap';
 import { getItemPhotoUrl } from '../utils/imageUtils';
 import http from '../lib/http';
 import { useAuthModal } from '../composables/useAuthModal';
+import { requireAuth, resumePendingAction } from '../auth/requireAuth';
+import { watch } from 'vue';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const ui = useUiStore();
 const auth = useAuthStore();
-const { openLoginModal } = useAuthModal();
+const { openLoginModal, closeModals } = useAuthModal();
 const item = ref(null);
 const loading = ref(true);
 const error = ref(null);
@@ -198,19 +200,51 @@ async function load() {
 
 onMounted(async () => {
   await load();
+  
+  // Resume pending action after auth completes
+  // Watch for auth state changes
+  watch(() => auth.isAuthed, async (isAuthed) => {
+    if (isAuthed) {
+      // Small delay to ensure everything is ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Resume pending action
+      await resumePendingAction({
+        BOOK: async (action) => {
+          // Open booking modal
+          const modalEl = document.getElementById('bookingModal');
+          if (modalEl) {
+            const modal = new Modal(modalEl);
+            modal.show();
+          }
+        },
+        MESSAGE: async (action) => {
+          // Open owner modal
+          const modalEl = document.getElementById('ownerModal');
+          if (modalEl) {
+            const modal = new Modal(modalEl);
+            modal.show();
+          }
+        }
+      });
+      
+      // Close login modal if open
+      closeModals();
+    }
+  }, { immediate: false });
 });
 
-function showBookingModal() {
-  if (!auth.isAuthed) {
-    openLoginModal(route.fullPath);
-    return;
-  }
-  
-  const modalEl = document.getElementById('bookingModal');
-  if (modalEl) {
-    const modal = new Modal(modalEl);
-    modal.show();
-  }
+async function showBookingModal() {
+  await requireAuth(
+    { type: 'BOOK', itemId: item.value?.id },
+    () => {
+      const modalEl = document.getElementById('bookingModal');
+      if (modalEl) {
+        const modal = new Modal(modalEl);
+        modal.show();
+      }
+    }
+  );
 }
 
 function closeBookingModal() {
@@ -221,18 +255,17 @@ function closeBookingModal() {
   }
 }
 
-function showOwnerModal() {
-  // Redirect to login if not authenticated
-  if (!auth.isAuthed) {
-    openLoginModal(route.fullPath);
-    return;
-  }
-  
-  const modalEl = document.getElementById('ownerModal');
-  if (modalEl) {
-    const modal = new Modal(modalEl);
-    modal.show();
-  }
+async function showOwnerModal() {
+  await requireAuth(
+    { type: 'MESSAGE', ownerId: item.value?.owner?.id, itemId: item.value?.id },
+    () => {
+      const modalEl = document.getElementById('ownerModal');
+      if (modalEl) {
+        const modal = new Modal(modalEl);
+        modal.show();
+      }
+    }
+  );
 }
 
 function onBookingConfirmed(bookingData) {
