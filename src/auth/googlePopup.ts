@@ -97,20 +97,22 @@ export async function loginWithGooglePopup(pendingAction?: {
   type: string;
   [key: string]: any;
 }): Promise<void> {
-  // Import composables dynamically to avoid calling them at module level
-  const { useRouter } = await import('vue-router');
+  // Import auth store dynamically
   const { useAuthStore } = await import('../stores/auth');
-  
-  const router = useRouter();
   const auth = useAuthStore();
 
-  // Save current route state (full path with query and hash)
-  const currentRoute = router.currentRoute.value;
+  // Get current route from window.location (more reliable than Vue Router in async context)
+  const currentUrl = new URL(window.location.href);
   const routeState = {
-    path: currentRoute.path,
-    query: { ...currentRoute.query },
-    hash: currentRoute.hash || '',
+    path: currentUrl.pathname,
+    query: {} as Record<string, string>,
+    hash: currentUrl.hash || '',
   };
+
+  // Parse query params from URL
+  currentUrl.searchParams.forEach((value, key) => {
+    routeState.query[key] = value;
+  });
 
   // Remove modal-related query params from saved state
   delete routeState.query.modal;
@@ -203,20 +205,22 @@ export async function loginWithGooglePopup(pendingAction?: {
             if (savedRoute) {
               try {
                 const routeState = JSON.parse(savedRoute);
+                // Build the full URL to navigate to
+                const queryString = new URLSearchParams(routeState.query).toString();
+                const fullPath = routeState.path + (queryString ? '?' + queryString : '') + (routeState.hash || '');
+                
                 // Only restore if we're not already on that route
-                const currentPath = router.currentRoute.value.path;
-                if (routeState.path !== currentPath || 
-                    JSON.stringify(routeState.query) !== JSON.stringify(router.currentRoute.value.query)) {
-                  router.replace({
-                    path: routeState.path,
-                    query: routeState.query,
-                    hash: routeState.hash,
-                  });
+                const currentPath = window.location.pathname + window.location.search + window.location.hash;
+                if (fullPath !== currentPath) {
+                  // Use window.location for navigation (works in all contexts)
+                  window.location.replace(fullPath);
+                } else {
+                  sessionStorage.removeItem('oauth_return_route');
                 }
               } catch (e) {
                 console.warn('[GooglePopup] Failed to restore route:', e);
+                sessionStorage.removeItem('oauth_return_route');
               }
-              sessionStorage.removeItem('oauth_return_route');
             }
 
             // Resume pending action if any
@@ -263,15 +267,22 @@ export async function loginWithGooglePopup(pendingAction?: {
               if (savedRoute) {
                 try {
                   const routeState = JSON.parse(savedRoute);
-                  router.replace({
-                    path: routeState.path,
-                    query: routeState.query,
-                    hash: routeState.hash,
-                  });
+                  // Build the full URL to navigate to
+                  const queryString = new URLSearchParams(routeState.query).toString();
+                  const fullPath = routeState.path + (queryString ? '?' + queryString : '') + (routeState.hash || '');
+                  
+                  // Only restore if we're not already on that route
+                  const currentPath = window.location.pathname + window.location.search + window.location.hash;
+                  if (fullPath !== currentPath) {
+                    // Use window.location for navigation (works in all contexts)
+                    window.location.replace(fullPath);
+                  } else {
+                    sessionStorage.removeItem('oauth_return_route');
+                  }
                 } catch (e) {
                   console.warn('[GooglePopup] Failed to restore route:', e);
+                  sessionStorage.removeItem('oauth_return_route');
                 }
-                sessionStorage.removeItem('oauth_return_route');
               }
 
               // Resume pending action
