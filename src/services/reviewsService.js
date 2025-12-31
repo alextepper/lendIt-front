@@ -37,17 +37,17 @@ export async function createReview(itemId, payload) {
 // ===== NEW REVIEW SYSTEM API ENDPOINTS =====
 
 /**
- * Create a review for an order
- * @param {string} orderId - Order ID
+ * Create a review for a booking
+ * @param {string} bookingId - Booking ID
  * @param {Object} reviewData - Review data
  * @returns {Promise<Object>} Created review
  */
-export async function createOrderReview(orderId, reviewData) {
+export async function createOrderReview(bookingId, reviewData) {
   try {
-    const { data } = await http.post(`/orders/${orderId}/reviews`, reviewData);
+    const { data } = await http.post(`/api/bookings/${bookingId}/reviews`, reviewData);
     return data;
   } catch (error) {
-    console.error("Failed to create order review:", error);
+    console.error("Failed to create booking review:", error);
     throw error;
   }
 }

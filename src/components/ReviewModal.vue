@@ -25,6 +25,7 @@
           <ReviewForm
             v-if="!isEditing"
             :order-id="orderId"
+            :booking-id="bookingId"
             :can-review-renter="canReviewRenter"
             :default-subject-type="defaultSubjectType"
             @submit="handleReviewSubmit"
@@ -50,6 +51,10 @@ const props = defineProps({
   orderId: {
     type: [String, Number],
     required: true
+  },
+  bookingId: {
+    type: [String, Number],
+    default: null
   },
   canReviewRenter: {
     type: Boolean,

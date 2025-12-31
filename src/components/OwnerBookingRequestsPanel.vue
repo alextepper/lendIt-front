@@ -387,6 +387,7 @@
     ref="reviewModal"
     :key="`review-${reviewBooking.id}`"
     :order-id="reviewBooking.orderId || reviewBooking.id"
+    :booking-id="reviewBooking.id"
     :can-review-renter="false"
     :default-subject-type="isOwnerOfBooking(reviewBooking) ? 'RENTER' : 'RENTAL_EXPERIENCE'"
     @submit="handleReviewSubmit"

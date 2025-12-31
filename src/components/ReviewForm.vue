@@ -3,8 +3,12 @@
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0">
-          <i class="bi bi-star-fill me-2"></i>
-          Write a Review
+          <span v-if="form.subjectType === 'RENTER'">
+                You are reviewing the renter for this booking.
+              </span>
+              <span v-else>
+                You are reviewing your rental experience.
+              </span>
         </h5>
       </div>
       <div class="card-body">
@@ -59,8 +63,7 @@
           <div class="mb-3">
             <label for="review-body" class="form-label">
               Review Details
-              <span v-if="form.subjectType === 'RENTAL_EXPERIENCE'" class="text-danger">*</span>
-              <span v-else class="text-muted small">(Optional)</span>
+              <span class="text-muted small">(Optional)</span>
             </label>
             <textarea 
               class="form-control" 
@@ -69,7 +72,6 @@
               rows="4"
               :placeholder="form.subjectType === 'RENTAL_EXPERIENCE' ? 'Tell others about your experience...' : 'Add any additional comments about the renter...'"
               maxlength="1000"
-              :required="form.subjectType === 'RENTAL_EXPERIENCE'"
             ></textarea>
             <div class="form-text">{{ form.body.length }}/1000 characters</div>
           </div>
@@ -125,6 +127,10 @@ const props = defineProps({
     type: [String, Number],
     required: true
   },
+  bookingId: {
+    type: [String, Number],
+    default: null
+  },
   canReviewRenter: {
     type: Boolean,
     default: false
@@ -153,9 +159,9 @@ const isFormValid = computed(() => {
   // Only require overall rating
   if (form.ratingOverall === 0) return false;
   
-  // For rental experience, title and body are required
+  // For rental experience, title is required
   if (form.subjectType === 'RENTAL_EXPERIENCE') {
-    if (!form.title.trim() || !form.body.trim()) {
+    if (!form.title.trim()) {
       return false;
     }
   }
@@ -199,7 +205,9 @@ async function handleSubmit() {
       }
     }
     
-    await createOrderReview(props.orderId, reviewData);
+    // Use bookingId if provided, otherwise fall back to orderId
+    const idToUse = props.bookingId || props.orderId;
+    await createOrderReview(idToUse, reviewData);
     
     ui.showToast('Review submitted successfully!', 'success');
     emit('submit', reviewData);
