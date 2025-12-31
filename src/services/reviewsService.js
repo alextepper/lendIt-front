@@ -44,7 +44,8 @@ export async function createReview(itemId, payload) {
  */
 export async function createOrderReview(bookingId, reviewData) {
   try {
-    const { data } = await http.post(`/api/bookings/${bookingId}/reviews`, reviewData);
+    // HTTP client already has baseURL: "/api", so we don't need to include /api in the path
+    const { data } = await http.post(`/bookings/${bookingId}/reviews`, reviewData);
     return data;
   } catch (error) {
     console.error("Failed to create booking review:", error);
