@@ -66,43 +66,43 @@
     "completingSignIn": "Completing sign in...",
     "pleaseWait": "Please wait while we complete your authentication",
     "signInFailed": "Sign in failed",
-      "redirectingToLogin": "Redirecting to login page...",
-      "loading": "Loading...",
-      "or": "OR",
-      "forgotPassword": "Forgot password?"
+    "redirectingToLogin": "Redirecting to login page...",
+    "loading": "Loading...",
+    "or": "OR",
+    "forgotPassword": "Forgot password?"
+  },
+  "passwordReset": {
+    "request": {
+      "title": "Reset Password",
+      "description": "Enter your email address and we'll send you a link to reset your password.",
+      "emailPlaceholder": "Enter your email",
+      "submit": "Send Reset Link",
+      "sending": "Sending...",
+      "success": "If an account with that email exists, a password reset link has been sent.",
+      "error": "Failed to send password reset email. Please try again.",
+      "emailRequired": "Please enter your email address",
+      "backToLogin": "Back to Login"
     },
-    "passwordReset": {
-      "request": {
-        "title": "Reset Password",
-        "description": "Enter your email address and we'll send you a link to reset your password.",
-        "emailPlaceholder": "Enter your email",
-        "submit": "Send Reset Link",
-        "sending": "Sending...",
-        "success": "If an account with that email exists, a password reset link has been sent.",
-        "error": "Failed to send password reset email. Please try again.",
-        "emailRequired": "Please enter your email address",
-        "backToLogin": "Back to Login"
-      },
-      "reset": {
-        "title": "Set New Password",
-        "description": "Enter your new password below.",
-        "newPassword": "New Password",
-        "passwordPlaceholder": "Enter new password",
-        "passwordHint": "Password must be at least 8 characters long",
-        "confirmPassword": "Confirm Password",
-        "confirmPasswordPlaceholder": "Confirm new password",
-        "submit": "Reset Password",
-        "resetting": "Resetting...",
-        "success": "Password has been reset successfully. You can now log in with your new password.",
-        "error": "Failed to reset password. Please try again.",
-        "missingToken": "Invalid or missing reset token. Please request a new password reset.",
-        "fillAllFields": "Please fill in all fields",
-        "passwordMismatch": "Passwords do not match",
-        "passwordTooShort": "Password must be at least 8 characters long",
-        "goToLogin": "Go to Login",
-        "backToLogin": "Back to Login"
-      }
-    },
+    "reset": {
+      "title": "Set New Password",
+      "description": "Enter your new password below.",
+      "newPassword": "New Password",
+      "passwordPlaceholder": "Enter new password",
+      "passwordHint": "Password must be at least 8 characters long",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm new password",
+      "submit": "Reset Password",
+      "resetting": "Resetting...",
+      "success": "Password has been reset successfully. You can now log in with your new password.",
+      "error": "Failed to reset password. Please try again.",
+      "missingToken": "Invalid or missing reset token. Please request a new password reset.",
+      "fillAllFields": "Please fill in all fields",
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 8 characters long",
+      "goToLogin": "Go to Login",
+      "backToLogin": "Back to Login"
+    }
+  },
   "search": {
     "title": "Search",
     "keyword": "Keyword",
@@ -311,6 +311,30 @@
       "helpful": "Most Helpful"
     }
   },
+  "reviewForm": {
+    "reviewingRenter": "You are reviewing the renter for this booking.",
+    "reviewingRentalExperience": "You are reviewing your rental experience.",
+    "overallRating": "Overall Rating",
+    "selectRating": "Select rating",
+    "poor": "Poor",
+    "fair": "Fair",
+    "good": "Good",
+    "veryGood": "Very Good",
+    "excellent": "Excellent",
+    "reviewTitle": "Review Title",
+    "titlePlaceholder": "Summarize your experience",
+    "reviewDetails": "Review Details",
+    "optional": "(Optional)",
+    "rentalExperiencePlaceholder": "Tell others about your experience...",
+    "renterReviewPlaceholder": "Add any additional comments about the renter...",
+    "postAnonymously": "Post anonymously",
+    "submitting": "Submitting...",
+    "submitReview": "Submit Review",
+    "cancel": "Cancel",
+    "characters": "characters",
+    "reviewSubmittedSuccess": "Review submitted successfully!",
+    "reviewSubmitFailed": "Failed to submit review"
+  },
   "calendar": {
     "title": "Booking Calendar",
     "subtitle": "View all bookings and taken dates for this item",
@@ -454,6 +478,10 @@
     "youAreOwner": "You are owner",
     "itemLabel": "Item",
     "noTitle": "Untitled item",
+    "leaveReview": "Leave Review",
+    "reviewSubmitted": "Review Submitted",
+    "review": "Review",
+    "reviewPlaceholder": "Write a review...",
     "approveModal": {
       "title": "Approve Booking Request",
       "renter": "Renter",

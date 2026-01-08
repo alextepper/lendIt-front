@@ -303,6 +303,30 @@
       "helpful": "Самые полезные"
     }
   },
+  "reviewForm": {
+    "reviewingRenter": "Вы оцениваете арендатора для этого бронирования.",
+    "reviewingRentalExperience": "Вы оцениваете свой опыт аренды.",
+    "overallRating": "Общая оценка",
+    "selectRating": "Выберите оценку",
+    "poor": "Плохо",
+    "fair": "Удовлетворительно",
+    "good": "Хорошо",
+    "veryGood": "Очень хорошо",
+    "excellent": "Отлично",
+    "reviewTitle": "Заголовок отзыва",
+    "titlePlaceholder": "Опишите ваш опыт",
+    "reviewDetails": "Детали отзыва",
+    "optional": "(Необязательно)",
+    "rentalExperiencePlaceholder": "Расскажите другим о вашем опыте...",
+    "renterReviewPlaceholder": "Добавьте дополнительные комментарии об арендаторе...",
+    "postAnonymously": "Опубликовать анонимно",
+    "submitting": "Отправка...",
+    "submitReview": "Отправить отзыв",
+    "cancel": "Отмена",
+    "characters": "символов",
+    "reviewSubmittedSuccess": "Отзыв успешно отправлен!",
+    "reviewSubmitFailed": "Не удалось отправить отзыв"
+  },
   "calendar": {
     "title": "Календарь бронирований",
     "subtitle": "Просмотр всех бронирований и занятых дат для этого товара",
@@ -446,6 +470,10 @@
     "youAreOwner": "Вы владелец",
     "itemLabel": "Товар",
     "noTitle": "Товар без названия",
+    "leaveReview": "Оставить отзыв",
+    "reviewSubmitted": "Отзыв отправлен",
+    "review": "Отзыв",
+    "reviewPlaceholder": "Напишите отзыв...",
     "approveModal": {
       "title": "Одобрить запрос на бронирование",
       "renter": "Арендатор",

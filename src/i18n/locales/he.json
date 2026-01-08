@@ -383,6 +383,30 @@
       "helpful": "הכי מועיל"
     }
   },
+  "reviewForm": {
+    "reviewingRenter": "אתה מעריך את השוכר עבור ההשכרה הזו.",
+    "reviewingRentalExperience": "אתה מעריך את חוויית ההשכרה שלך.",
+    "overallRating": "דירוג כללי",
+    "selectRating": "בחר דירוג",
+    "poor": "גרוע",
+    "fair": "בינוני",
+    "good": "טוב",
+    "veryGood": "טוב מאוד",
+    "excellent": "מצוין",
+    "reviewTitle": "כותרת הביקורת",
+    "titlePlaceholder": "סכם את החוויה שלך",
+    "reviewDetails": "פרטי הביקורת",
+    "optional": "(אופציונלי)",
+    "rentalExperiencePlaceholder": "ספר לאחרים על החוויה שלך...",
+    "renterReviewPlaceholder": "הוסף הערות נוספות על השוכר...",
+    "postAnonymously": "פרסם בעילום שם",
+    "submitting": "שולח...",
+    "submitReview": "שלח ביקורת",
+    "cancel": "ביטול",
+    "characters": "תווים",
+    "reviewSubmittedSuccess": "הביקורת נשלחה בהצלחה!",
+    "reviewSubmitFailed": "שליחת הביקורת נכשלה"
+  },
   "calendar": {
     "title": "לוח השכרות",
     "subtitle": "צפה בכל ההשכרות והתאריכים התפוסים עבור פריט זה",
@@ -526,6 +550,10 @@
     "youAreOwner": "אתה בעלים",
     "itemLabel": "פריט",
     "noTitle": "פריט ללא כותרת",
+    "leaveReview": "כתוב ביקורת",
+    "reviewSubmitted": "ביקורת נשלחה",
+    "review": "ביקורת",
+    "reviewPlaceholder": "כתוב ביקורת...",
     "approveModal": {
       "title": "אשר הזמנה",
       "renter": "שוכר",

@@ -4,10 +4,10 @@
       <div class="card-header">
         <h5 class="mb-0">
           <span v-if="form.subjectType === 'RENTER'">
-                You are reviewing the renter for this booking.
+                {{ $t('reviewForm.reviewingRenter') }}
               </span>
               <span v-else>
-                You are reviewing your rental experience.
+                {{ $t('reviewForm.reviewingRentalExperience') }}
               </span>
         </h5>
       </div>
@@ -18,17 +18,17 @@
             <div class="alert alert-info mb-0">
               <i class="bi bi-info-circle me-2"></i>
               <span v-if="form.subjectType === 'RENTER'">
-                You are reviewing the renter for this booking.
+                {{ $t('reviewForm.reviewingRenter') }}
               </span>
               <span v-else>
-                You are reviewing your rental experience.
+                {{ $t('reviewForm.reviewingRentalExperience') }}
               </span>
             </div>
           </div>
 
           <!-- Overall Rating -->
           <div class="mb-3">
-            <label class="form-label">Overall Rating</label>
+            <label class="form-label">{{ $t('reviewForm.overallRating') }}</label>
             <div class="rating-input">
               <div class="stars">
                 <i 
@@ -46,34 +46,34 @@
 
           <!-- Title (for rental experience only) -->
           <div v-if="form.subjectType === 'RENTAL_EXPERIENCE'" class="mb-3">
-            <label for="review-title" class="form-label">Review Title <span class="text-danger">*</span></label>
+            <label for="review-title" class="form-label">{{ $t('reviewForm.reviewTitle') }} <span class="text-danger">*</span></label>
             <input 
               type="text" 
               class="form-control" 
               id="review-title"
               v-model="form.title"
-              placeholder="Summarize your experience"
+              :placeholder="$t('reviewForm.titlePlaceholder')"
               maxlength="100"
               required
             >
-            <div class="form-text">{{ form.title.length }}/100 characters</div>
+            <div class="form-text">{{ form.title.length }}/100 {{ $t('reviewForm.characters') }}</div>
           </div>
 
           <!-- Review Body -->
           <div class="mb-3">
             <label for="review-body" class="form-label">
-              Review Details
-              <span class="text-muted small">(Optional)</span>
+              {{ $t('reviewForm.reviewDetails') }}
+              <span class="text-muted small">{{ $t('reviewForm.optional') }}</span>
             </label>
             <textarea 
               class="form-control" 
               id="review-body"
               v-model="form.body"
               rows="4"
-              :placeholder="form.subjectType === 'RENTAL_EXPERIENCE' ? 'Tell others about your experience...' : 'Add any additional comments about the renter...'"
+              :placeholder="form.subjectType === 'RENTAL_EXPERIENCE' ? $t('reviewForm.rentalExperiencePlaceholder') : $t('reviewForm.renterReviewPlaceholder')"
               maxlength="1000"
             ></textarea>
-            <div class="form-text">{{ form.body.length }}/1000 characters</div>
+            <div class="form-text">{{ form.body.length }}/1000 {{ $t('reviewForm.characters') }}</div>
           </div>
 
 
@@ -87,7 +87,7 @@
                 v-model="form.isAnonymous"
               >
               <label class="form-check-label" for="anonymous-review">
-                Post anonymously
+                {{ $t('reviewForm.postAnonymously') }}
               </label>
             </div>
           </div>
@@ -101,14 +101,14 @@
             >
               <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
               <i v-else class="bi bi-check-circle me-1"></i>
-              {{ submitting ? 'Submitting...' : 'Submit Review' }}
+              {{ submitting ? $t('reviewForm.submitting') : $t('reviewForm.submitReview') }}
             </button>
             <button 
               type="button" 
               class="btn btn-outline-secondary"
               @click="$emit('cancel')"
             >
-              Cancel
+              {{ $t('reviewForm.cancel') }}
             </button>
           </div>
         </form>
@@ -119,6 +119,7 @@
 
 <script setup>
 import { ref, computed, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { createOrderReview } from '../services/reviewsService';
 import { useUiStore } from '../stores/ui';
 
@@ -143,6 +144,7 @@ const props = defineProps({
 
 const emit = defineEmits(['submit', 'cancel']);
 
+const { t } = useI18n();
 const ui = useUiStore();
 
 const submitting = ref(false);
@@ -171,14 +173,14 @@ const isFormValid = computed(() => {
 
 function getRatingText(rating) {
   const texts = {
-    0: 'Select rating',
-    1: 'Poor',
-    2: 'Fair', 
-    3: 'Good',
-    4: 'Very Good',
-    5: 'Excellent'
+    0: t('reviewForm.selectRating'),
+    1: t('reviewForm.poor'),
+    2: t('reviewForm.fair'), 
+    3: t('reviewForm.good'),
+    4: t('reviewForm.veryGood'),
+    5: t('reviewForm.excellent')
   };
-  return texts[rating] || 'Select rating';
+  return texts[rating] || t('reviewForm.selectRating');
 }
 
 
@@ -209,7 +211,7 @@ async function handleSubmit() {
     const idToUse = props.bookingId || props.orderId;
     await createOrderReview(idToUse, reviewData);
     
-    ui.showToast('Review submitted successfully!', 'success');
+    ui.showToast(t('reviewForm.reviewSubmittedSuccess'), 'success');
     emit('submit', reviewData);
     
     // Reset form
@@ -217,7 +219,7 @@ async function handleSubmit() {
     
   } catch (error) {
     console.error('Failed to submit review:', error);
-    ui.showToast(error?.response?.data?.message || 'Failed to submit review', 'danger');
+    ui.showToast(error?.response?.data?.message || t('reviewForm.reviewSubmitFailed'), 'danger');
   } finally {
     submitting.value = false;
   }

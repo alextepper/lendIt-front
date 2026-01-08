@@ -303,6 +303,30 @@
       "helpful": "الأكثر فائدة"
     }
   },
+  "reviewForm": {
+    "reviewingRenter": "أنت تقيم المستأجر لهذه الحجز.",
+    "reviewingRentalExperience": "أنت تقيم تجربة الإيجار الخاصة بك.",
+    "overallRating": "التقييم العام",
+    "selectRating": "اختر التقييم",
+    "poor": "ضعيف",
+    "fair": "متوسط",
+    "good": "جيد",
+    "veryGood": "جيد جداً",
+    "excellent": "ممتاز",
+    "reviewTitle": "عنوان التقييم",
+    "titlePlaceholder": "لخص تجربتك",
+    "reviewDetails": "تفاصيل التقييم",
+    "optional": "(اختياري)",
+    "rentalExperiencePlaceholder": "أخبر الآخرين عن تجربتك...",
+    "renterReviewPlaceholder": "أضف أي تعليقات إضافية حول المستأجر...",
+    "postAnonymously": "نشر بشكل مجهول",
+    "submitting": "جاري الإرسال...",
+    "submitReview": "إرسال التقييم",
+    "cancel": "إلغاء",
+    "characters": "أحرف",
+    "reviewSubmittedSuccess": "تم إرسال التقييم بنجاح!",
+    "reviewSubmitFailed": "فشل إرسال التقييم"
+  },
   "calendar": {
     "title": "تقويم الحجوزات",
     "subtitle": "عرض جميع الحجوزات والتواريخ المحجوزة لهذا العنصر",
@@ -446,6 +470,10 @@
     "youAreOwner": "أنت مالك",
     "itemLabel": "العنصر",
     "noTitle": "عنصر بدون عنوان",
+    "leaveReview": "أترك تقييم",
+    "reviewSubmitted": "تم تقييمك",
+    "review": "تقييم",
+    "reviewPlaceholder": "اكتب تقييمك...",
     "approveModal": {
       "title": "الموافقة على طلب الحجز",
       "renter": "المستأجر",
