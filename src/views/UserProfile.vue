@@ -53,11 +53,17 @@ const totalInactiveListings = computed(() => {
   return inactiveListings.value.length;
 });
 
+const displayReviews = computed(() => {
+  if (reviews.value && reviews.value.length > 0) return reviews.value;
+  const embedded = user.value?.reviews;
+  return Array.isArray(embedded) ? embedded : [];
+});
+
 const totalReviews = computed(() => {
   return (
     user.value?.totalReviews ??
     user.value?._count?.reviewsAsSubject ??
-    reviews.value.length
+    displayReviews.value.length
   );
 });
 
@@ -114,6 +120,35 @@ function getRatingText(rating) {
   if (rating >= 2.5) return 'Average';
   if (rating >= 1.5) return 'Below Average';
   return 'Poor';
+}
+
+function getReviewDate(review) {
+  const date =
+    review?.createdAt ||
+    review?.created_at ||
+    review?.updatedAt ||
+    review?.updated_at;
+  return date ? formatDate(date) : '';
+}
+
+function getReviewRating(review) {
+  return review?.ratingOverall ?? review?.rating ?? 0;
+}
+
+function getReviewBody(review) {
+  return review?.body || review?.comment || '';
+}
+
+function getReviewSubjectType(review) {
+  return review?.subjectType || review?.type || 'REVIEW';
+}
+
+function getReviewItemTitle(review) {
+  return review?.booking?.item?.title || review?.item?.title || '';
+}
+
+function getReviewer(review) {
+  return review?.reviewer || review?.user || null;
 }
 
 async function loadInactiveListings() {
@@ -416,9 +451,9 @@ onMounted(() => {
 
           <!-- Reviews Tab -->
           <div v-if="activeTab === 'reviews'" class="tab-pane active">
-            <div v-if="reviews.length > 0" class="reviews-list">
+            <div v-if="displayReviews.length > 0" class="reviews-list">
               <div 
-                v-for="review in reviews" 
+                v-for="review in displayReviews" 
                 :key="review.id" 
                 class="review-card"
               >
@@ -426,33 +461,35 @@ onMounted(() => {
                   <div class="reviewer-info">
                     <div class="reviewer-avatar">
                       <img 
-                        v-if="review.reviewer?.profilePicture" 
-                        :src="review.reviewer.profilePicture" 
-                        :alt="review.reviewer.username"
+                        v-if="getReviewer(review)?.profilePicture" 
+                        :src="getReviewer(review).profilePicture" 
+                        :alt="getReviewer(review).username"
                       />
                       <div v-else class="avatar-placeholder">
                         <i class="bi bi-person-fill"></i>
                       </div>
                     </div>
                     <div class="reviewer-details">
-                      <h6 class="reviewer-name">{{ review.reviewer?.username || 'Anonymous' }}</h6>
-                      <p class="reviewer-username">{{ review.reviewer?.id || '' }}</p>
+                      <h6 class="reviewer-name">{{ getReviewer(review)?.username || 'Anonymous' }}</h6>
+                      <p class="reviewer-username">{{ getReviewer(review)?.id || '' }}</p>
                     </div>
                   </div>
                   <div class="review-rating">
-                    <StarRating :rating="review.ratingOverall" :size="'sm'" />
-                    <span class="rating-date">{{ formatDate(review.createdAt) }}</span>
+                    <StarRating :rating="getReviewRating(review)" :size="'sm'" />
+                    <span class="rating-date">{{ getReviewDate(review) }}</span>
                   </div>
                 </div>
                 
                 <div class="review-content">
-                  <p class="review-text">{{ review.body || 'No review comment provided.' }}</p>
+                  <p class="review-text">
+                    {{ getReviewBody(review) || 'No review comment provided.' }}
+                  </p>
                   <div class="review-meta">
                     <span class="review-type badge bg-primary">
-                      {{ review.subjectType }}
+                      {{ getReviewSubjectType(review) }}
                     </span>
-                    <span v-if="review.booking?.item" class="review-item">
-                      for <strong>{{ review.booking.item.title }}</strong>
+                    <span v-if="getReviewItemTitle(review)" class="review-item">
+                      for <strong>{{ getReviewItemTitle(review) }}</strong>
                     </span>
                   </div>
                 </div>
@@ -866,6 +903,77 @@ onMounted(() => {
 .empty-state h5 {
   color: #4a5568;
   margin-bottom: 0.5rem;
+}
+
+/* Dark Mode */
+:global([data-bs-theme="dark"]) .user-profile-page {
+  color: #e9ecef;
+}
+
+:global([data-bs-theme="dark"]) .profile-card,
+:global([data-bs-theme="dark"]) .tabs-section,
+:global([data-bs-theme="dark"]) .stat-card {
+  background: #1f1f1f;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+:global([data-bs-theme="dark"]) .rating-card,
+:global([data-bs-theme="dark"]) .review-card {
+  background: #232323;
+  border-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .rating-card:hover,
+:global([data-bs-theme="dark"]) .review-card:hover {
+  border-color: #495057;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+:global([data-bs-theme="dark"]) .profile-name,
+:global([data-bs-theme="dark"]) .score-number,
+:global([data-bs-theme="dark"]) .stat-number,
+:global([data-bs-theme="dark"]) .reviewer-name {
+  color: #f1f3f5;
+}
+
+:global([data-bs-theme="dark"]) .profile-username,
+:global([data-bs-theme="dark"]) .meta-item,
+:global([data-bs-theme="dark"]) .rating-header,
+:global([data-bs-theme="dark"]) .rating-count,
+:global([data-bs-theme="dark"]) .stat-label,
+:global([data-bs-theme="dark"]) .reviewer-username,
+:global([data-bs-theme="dark"]) .rating-date,
+:global([data-bs-theme="dark"]) .review-text,
+:global([data-bs-theme="dark"]) .review-item,
+:global([data-bs-theme="dark"]) .empty-state,
+:global([data-bs-theme="dark"]) .empty-state h5 {
+  color: #ced4da;
+}
+
+:global([data-bs-theme="dark"]) .ratings-section {
+  border-top-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .nav-tabs {
+  border-bottom-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .nav-link {
+  color: #adb5bd;
+}
+
+:global([data-bs-theme="dark"]) .nav-link:hover {
+  color: #e9ecef;
+  background: #2b2b2b;
+}
+
+:global([data-bs-theme="dark"]) .nav-link.active {
+  color: #8ab4ff;
+  border-bottom-color: #8ab4ff;
+}
+
+:global([data-bs-theme="dark"]) .empty-icon {
+  color: #495057;
 }
 
 /* Mobile Responsiveness */

@@ -45,7 +45,7 @@ function formatPrice(amount) {
 </script>
 
 <template>
-  <div class="card h-100">
+  <div class="card h-100 item-card">
     <div class="ratio ratio-16x9 bg-light">
       <img
         v-if="thumbnailUrl"
@@ -136,5 +136,31 @@ function formatPrice(amount) {
   outline: 2px solid #0d6efd;
   outline-offset: 2px;
   border-radius: 2px;
+}
+
+:global([data-bs-theme="dark"]) .item-card {
+  background: #1f1f1f;
+  border-color: #343a40;
+  color: #e9ecef;
+}
+
+:global([data-bs-theme="dark"]) .item-card .card-title {
+  color: #f1f3f5;
+}
+
+:global([data-bs-theme="dark"]) .item-card .ratio {
+  background: #2b2b2b;
+}
+
+:global([data-bs-theme="dark"]) .item-card .text-secondary {
+  color: #adb5bd !important;
+}
+
+:global([data-bs-theme="dark"]) .item-card .location-toggle {
+  color: #adb5bd;
+}
+
+:global([data-bs-theme="dark"]) .item-card .location-toggle:hover {
+  color: #8ab4ff;
 }
 </style>
