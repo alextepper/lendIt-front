@@ -1597,6 +1597,29 @@ watch(fullscreenCarousel, (isOpen) => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
+:global([data-bs-theme="dark"]) .item-header .item-title {
+  color: #f1f3f5;
+}
+
+:global([data-bs-theme="dark"]) .item-header .item-rating {
+  background: #3b2f1a;
+  color: #f8f9fa;
+}
+
+:global([data-bs-theme="dark"]) .item-header .item-address,
+:global([data-bs-theme="dark"]) .item-header .text-muted,
+:global([data-bs-theme="dark"]) .item-header .price-secondary .text-muted {
+  color: #adb5bd !important;
+}
+
+:global([data-bs-theme="dark"]) .item-header .text-primary {
+  color: #8ab4ff !important;
+}
+
+:global([data-bs-theme="dark"]) .item-header .badge.bg-primary {
+  background-color: #3b82f6;
+}
+
 .item-title-section {
   margin-bottom: 0.75rem;
 }

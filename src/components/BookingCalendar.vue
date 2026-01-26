@@ -1870,6 +1870,243 @@ function getStatusColor(status) {
   margin: 8px 0;
 }
 
+/* Dark Mode */
+:global([data-bs-theme="dark"]) .booking-calendar .card {
+  background: #1f1f1f;
+  color: #e9ecef;
+}
+
+:global([data-bs-theme="dark"]) .calendar-stats {
+  background: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .stat-item {
+  background: #1f1f1f;
+}
+
+:global([data-bs-theme="dark"]) .stat-value {
+  color: #f1f3f5;
+}
+
+:global([data-bs-theme="dark"]) .stat-label {
+  color: #adb5bd;
+}
+
+:global([data-bs-theme="dark"]) .month-navigation {
+  background: #232323;
+  border-bottom-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .nav-btn {
+  background: #1f1f1f;
+  border-color: #343a40;
+  color: #e9ecef;
+}
+
+:global([data-bs-theme="dark"]) .nav-btn:hover:not(:disabled) {
+  border-color: #8ab4ff;
+  background: #2b2b2b;
+  color: #e9ecef;
+}
+
+:global([data-bs-theme="dark"]) .month-title {
+  color: #f1f3f5;
+}
+
+:global([data-bs-theme="dark"]) .calendar-container {
+  background: #1f1f1f;
+}
+
+:global([data-bs-theme="dark"]) .custom-calendar {
+  border-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .calendar-header-row {
+  background: #232323;
+  border-bottom-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .day-header {
+  color: #ced4da;
+  border-right-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day {
+  border-right-color: #343a40;
+  border-bottom-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day:hover {
+  background: #2b2b2b;
+}
+
+:global([data-bs-theme="dark"]) .day-number {
+  color: #e9ecef;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.other-month {
+  background: #232323;
+  color: #6c757d;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.other-month .day-number {
+  color: #6c757d;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.today {
+  background: #1d2b3a;
+  border-color: #3b82f6;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.today .day-number {
+  color: #8ab4ff;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.available {
+  background: #0f2f27;
+  border-left-color: #10b981;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.available .day-number {
+  color: #34d399;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.available:hover {
+  background: #123a30;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.has-bookings {
+  background: #2b1414;
+  border-left-color: #dc2626;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.has-bookings .day-number {
+  color: #f87171;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.booking-start {
+  background: linear-gradient(135deg, #2b1414 0%, #3a1b1b 100%);
+  border-left-color: #dc2626;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.booking-start .day-number {
+  color: #f87171;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.booking-middle {
+  background: linear-gradient(135deg, #3a1b1b 0%, #4a1f1f 100%);
+  border-left-color: #ef4444;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.booking-middle .day-number {
+  color: #fca5a5;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.booking-end {
+  background: linear-gradient(135deg, #2b1414 0%, #3a1b1b 100%);
+  border-left-color: #dc2626;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.booking-end .day-number {
+  color: #f87171;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.booking-single-day {
+  background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+  border-left-color: #991b1b;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.booking-single-day .day-number {
+  color: #fff5f5;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.booking-single-day .booking-indicator {
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.blocked-date {
+  background: #3b2a08;
+  border-left-color: #f59e0b;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.blocked-date .day-number {
+  color: #fbbf24;
+}
+
+:global([data-bs-theme="dark"]) .calendar-day.blocked-date:hover {
+  background: #4a340a;
+}
+
+:global([data-bs-theme="dark"]) .calendar-legend {
+  background: #232323;
+  border-top-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .legend-item {
+  color: #ced4da;
+}
+
+:global([data-bs-theme="dark"]) .recent-bookings {
+  background: #1f1f1f;
+  border-top-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .bookings-title {
+  color: #e9ecef;
+}
+
+:global([data-bs-theme="dark"]) .booking-item {
+  background: #232323;
+  border-color: #343a40;
+}
+
+:global([data-bs-theme="dark"]) .booking-item:hover {
+  background: #2b2b2b;
+  border-color: #495057;
+}
+
+:global([data-bs-theme="dark"]) .booking-dates {
+  color: #f1f3f5;
+}
+
+:global([data-bs-theme="dark"]) .booking-customer {
+  color: #adb5bd;
+}
+
+:global([data-bs-theme="dark"]) .empty-state {
+  background: #1f1f1f;
+  color: #adb5bd;
+}
+
+:global([data-bs-theme="dark"]) .empty-state h6 {
+  color: #e9ecef;
+}
+
+:global([data-bs-theme="dark"]) .empty-icon {
+  color: #495057;
+}
+
+:global([data-bs-theme="dark"]) .debug-section {
+  background: #232323;
+  border-top-color: #343a40;
+  color: #adb5bd;
+}
+
+:global([data-bs-theme="dark"]) .debug-section pre {
+  background: #1f1f1f;
+  color: #ced4da;
+}
+
+:global([data-bs-theme="dark"]) .blocked-dates-modal {
+  background: #1f1f1f;
+  color: #e9ecef;
+}
+
+:global([data-bs-theme="dark"]) .blocked-dates-modal-overlay {
+  background: rgba(0, 0, 0, 0.65);
+}
+
 /* Blocked Dates Modal */
 .blocked-dates-modal-overlay {
   position: fixed;
