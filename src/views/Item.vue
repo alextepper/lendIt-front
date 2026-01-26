@@ -959,87 +959,140 @@ watch(fullscreenCarousel, (isOpen) => {
     </div>
 
     <!-- Item Content -->
-    <div v-else-if="item">
-      <!-- Item Header - Always at top -->
-      <div class="item-header mb-4" :class="{ 'edit-mode': editMode }">
-        <div class="d-flex justify-content-between align-items-start gap-4">
-          <!-- Left Content -->
-          <div class="flex-grow-1">
-            <!-- Title with Rating (View Mode) -->
-            <div v-if="!editMode" class="item-title-section mb-2">
-              <div class="d-flex align-items-center gap-3 flex-wrap">
-                <!-- Thumbnail (Owners Only) -->
-                <div v-if="isOwner" class="item-thumbnail">
-                <img 
-                  v-if="item.photos && item.photos.length > 0"
-                  :src="getItemPhotoUrl(item.photos)" 
-                  :alt="item.title"
-                  class="thumbnail-image"
-                />
-                <div v-else class="thumbnail-placeholder">
-                  <i class="bi bi-image"></i>
-                </div>
-              </div>
-                <!-- Title -->
-              <h1 class="item-title mb-0">{{ item.title }}</h1>
-                <!-- Rating -->
-                <div class="item-rating d-flex align-items-center gap-1">
-                  <i class="bi bi-star-fill text-warning"></i>
-                  <span class="fw-semibold">{{ item.rating || '0.0' }}</span>
-                  <span class="text-muted small">({{ item.reviews_count || 0 }})</span>
-            </div>
-                <!-- Category Badge -->
-                <span class="badge bg-primary">{{ item.category }}</span>
-              </div>
-            </div>
-            
-            <!-- Title Input (Edit Mode) -->
-            <div v-else class="mb-3">
-              <label class="form-label small fw-bold">{{ $t('item.title') }}</label>
-              <input 
-                v-model="editForm.title" 
-                type="text" 
-                class="form-control form-control-lg" 
-                :placeholder="$t('item.itemTitle')"
-                :disabled="saving"
+    <div v-else-if="item" class="item-layout">
+      <section class="item-hero">
+        <div
+          class="hero-media"
+          @touchstart="handleTouchStart"
+          @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd"
+        >
+          <div v-if="displayPhotos?.length > 0" class="hero-image">
+            <transition name="carousel-fade" mode="out-in">
+              <img
+                :key="currentPhotoIndex"
+                :src="getCarouselPhotoUrl(displayPhotos[currentPhotoIndex])"
+                :alt="`${item.title} - Photo ${currentPhotoIndex + 1}`"
+                class="hero-image-img"
+                @click="openFullscreenCarousel"
               />
+            </transition>
+          </div>
+          <div v-else class="hero-image hero-image-placeholder">
+            <div class="text-center text-muted">
+              <i class="bi bi-image display-4 d-block mb-2"></i>
+              <p class="mb-0">{{ $t('item.noPhotosAvailable') }}</p>
             </div>
+          </div>
 
-            <!-- Address (View Mode) -->
-            <div v-if="!editMode" class="item-address mb-2">
-              <div class="d-flex align-items-center gap-1 text-muted">
-                <i class="bi bi-geo-alt"></i>
-                <span>{{ item.location || item.address }}</span>
+          <template v-if="displayPhotos?.length > 1">
+            <button class="hero-nav hero-nav-prev" @click="previousPhoto" :aria-label="$t('item.previousPhoto')">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="hero-nav hero-nav-next" @click="nextPhoto" :aria-label="$t('item.nextPhoto')">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="hero-counter">
+              {{ currentPhotoIndex + 1 }} / {{ displayPhotos.length }}
+            </div>
+          </template>
+
+          <div class="hero-card">
+            <div class="hero-meta">
+              <span class="hero-category">{{ item.category }}</span>
+              <div class="hero-rating">
+                <i class="bi bi-star-fill"></i>
+                <span>{{ item.rating || '0.0' }}</span>
+                <span class="hero-rating-count">({{ item.reviews_count || 0 }})</span>
               </div>
             </div>
-
-            <!-- Prices (View Mode) -->
-            <div v-if="!editMode" class="item-prices d-flex flex-wrap align-items-center gap-3">
-              <div class="price-main">
-                <span class="fw-bold fs-5 text-primary">{{ formatPrice(item.pricePerDay) }}</span>
-                <span class="text-muted ms-1">{{ $t('item.perDay') }}</span>
-              </div>
-              <template v-if="item.initialPrice">
-                <span class="text-muted">·</span>
-                <div class="price-secondary">
-                  <span class="small text-muted">{{ $t('item.initial') }}</span>
-                  <span class="fw-semibold ms-1">{{ formatPrice(item.initialPrice) }}</span>
-                </div>
-              </template>
-              <template v-if="item.deposit">
-                <span class="text-muted">·</span>
-                <div class="price-secondary">
-                  <span class="small text-muted">{{ $t('item.deposit') }}</span>
-                  <span class="fw-semibold ms-1">{{ formatPrice(item.deposit) }}</span>
-                </div>
-              </template>
+            <h1 class="hero-title">{{ item.title }}</h1>
+            <p class="hero-location">
+              <i class="bi bi-geo-alt"></i>
+              <span>{{ item.location || item.address }}</span>
+            </p>
+            <div class="hero-price">
+              <span class="hero-price-value">{{ formatPrice(item.pricePerDay) }}</span>
+              <span class="hero-price-unit">{{ $t('item.perDay') }}</span>
             </div>
-            <div v-else class="row g-3">
-              <!-- Tags editor -->
+          </div>
+
+          <div v-if="isOwner" class="hero-actions">
+            <button
+              class="btn btn-sm"
+              :class="editMode ? 'btn-success' : 'btn-primary'"
+              @click="toggleEditMode"
+              :disabled="saving"
+            >
+              <span v-if="saving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <i v-else class="bi" :class="editMode ? 'bi-check-lg' : 'bi-pencil'"></i>
+              <span class="d-none d-lg-inline ms-1">{{ saving ? $t('item.saving') : (editMode ? $t('item.save') : $t('item.edit')) }}</span>
+            </button>
+            <button
+              v-if="editMode"
+              class="btn btn-sm btn-outline-secondary"
+              @click="cancelEdit"
+              :disabled="saving"
+            >
+              <i class="bi bi-x-lg"></i>
+              <span class="d-none d-lg-inline ms-1">{{ $t('item.cancel') }}</span>
+            </button>
+            <button
+              v-if="editMode"
+              class="btn btn-sm"
+              :class="(item?.isActive !== false && item?.active !== false) ? 'btn-outline-warning' : 'btn-outline-success'"
+              @click="toggleActive"
+              :disabled="saving || togglingActive"
+            >
+              <span v-if="togglingActive" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <i v-else class="bi" :class="(item?.isActive !== false && item?.active !== false) ? 'bi-eye-slash' : 'bi-eye'"></i>
+              <span class="d-none d-lg-inline ms-1">{{ (item?.isActive !== false && item?.active !== false) ? $t('item.deactivate') : $t('item.activate') }}</span>
+            </button>
+            <button
+              v-if="editMode"
+              class="btn btn-sm btn-outline-danger"
+              @click="deleteItem"
+              :disabled="saving || deleting"
+            >
+              <span v-if="deleting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <i v-else class="bi bi-trash"></i>
+              <span class="d-none d-lg-inline ms-1">{{ $t('item.delete') }}</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div v-if="displayPhotos?.length > 1" class="hero-thumbnails hide-scrollbar">
+        <button
+          v-for="(photo, index) in displayPhotos"
+          :key="index"
+          class="hero-thumb"
+          :class="{ active: index === currentPhotoIndex }"
+          @click="currentPhotoIndex = index"
+          :aria-label="$t('item.viewPhoto', { index: index + 1 })"
+        >
+          <img :src="getCarouselPhotoUrl(photo)" :alt="`Thumbnail ${index + 1}`" />
+        </button>
+      </div>
+
+      <div class="item-grid">
+        <div class="item-main">
+          <div v-if="editMode && isOwner" class="item-card edit-card">
+            <h2 class="section-title">{{ $t('listing.editListing') }}</h2>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label small fw-bold">{{ $t('item.title') }}</label>
+                <input
+                  v-model="editForm.title"
+                  type="text"
+                  class="form-control form-control-lg"
+                  :placeholder="$t('item.itemTitle')"
+                  :disabled="saving"
+                />
+              </div>
+
               <div class="col-md-6">
-                <label class="form-label small fw-bold">
-                  {{ $t('item.tags') }}
-                </label>
+                <label class="form-label small fw-bold">{{ $t('item.tags') }}</label>
                 <div class="mb-2">
                   <div class="input-group">
                     <input
@@ -1060,9 +1113,7 @@ watch(fullscreenCarousel, (isOpen) => {
                       {{ $t('item.addTag') }}
                     </button>
                   </div>
-                  <small class="text-muted d-block mt-1">
-                    {{ $t('item.tagsHelp') }}
-                  </small>
+                  <small class="text-muted d-block mt-1">{{ $t('item.tagsHelp') }}</small>
                 </div>
                 <div v-if="editForm.tags && editForm.tags.length" class="d-flex flex-wrap gap-1">
                   <span
@@ -1084,7 +1135,9 @@ watch(fullscreenCarousel, (isOpen) => {
               </div>
 
               <div class="col-md-6">
-                <label class="form-label small fw-bold">{{ $t('item.location') }} <span class="text-danger">*</span></label>
+                <label class="form-label small fw-bold">
+                  {{ $t('item.location') }} <span class="text-danger">*</span>
+                </label>
                 <div class="position-relative">
                   <div class="input-group">
                     <span class="input-group-text">
@@ -1118,42 +1171,43 @@ watch(fullscreenCarousel, (isOpen) => {
                   </div>
                 </div>
               </div>
-              <div class="col-md-2">
+
+              <div class="col-md-4">
                 <label class="form-label small fw-bold">{{ $t('item.price') }}</label>
-                <input 
-                  v-model.number="editForm.pricePerDay" 
-                  type="number" 
-                  min="0" 
-                  step="1" 
+                <input
+                  v-model.number="editForm.pricePerDay"
+                  type="number"
+                  min="0"
+                  step="1"
                   class="form-control"
                   :disabled="saving"
                 />
               </div>
-              <div class="col-md-2">
+              <div class="col-md-4">
                 <label class="form-label small fw-bold">{{ $t('item.initial') }}</label>
-                <input 
-                  v-model.number="editForm.initialPrice" 
-                  type="number" 
-                  min="0" 
-                  step="1" 
+                <input
+                  v-model.number="editForm.initialPrice"
+                  type="number"
+                  min="0"
+                  step="1"
                   class="form-control"
                   :disabled="saving"
                   placeholder="0"
                 />
               </div>
-              <div class="col-md-2">
+              <div class="col-md-4">
                 <label class="form-label small fw-bold">{{ $t('item.deposit') }}</label>
-                <input 
-                  v-model.number="editForm.deposit" 
-                  type="number" 
-                  min="0" 
-                  step="1" 
+                <input
+                  v-model.number="editForm.deposit"
+                  type="number"
+                  min="0"
+                  step="1"
                   class="form-control"
                   :disabled="saving"
                   placeholder="0"
                 />
               </div>
-              <div class="col-12 col-md-12">
+              <div class="col-12">
                 <label class="form-label small fw-bold">{{ $t('item.currency') }}</label>
                 <select v-model="editForm.currency" class="form-select" :disabled="saving">
                   <option value="ILS">ILS (₪)</option>
@@ -1164,195 +1218,20 @@ watch(fullscreenCarousel, (isOpen) => {
               </div>
             </div>
           </div>
-          
-          <!-- Action Buttons - Top Right Corner -->
-          <div class="d-flex flex-column gap-2 item-actions">
-            <!-- Owner Actions -->
-            <template v-if="isOwner">
-              <button
-                class="btn btn-sm"
-                :class="editMode ? 'btn-success' : 'btn-primary'"
-                @click="toggleEditMode"
-                title="Toggle edit mode"
-                :disabled="saving"
-              >
-                <span v-if="saving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                <i v-else class="bi" :class="editMode ? 'bi-check-lg' : 'bi-pencil'"></i>
-                <span class="d-none d-lg-inline ms-1">{{ saving ? $t('item.saving') : (editMode ? $t('item.save') : $t('item.edit')) }}</span>
-              </button>
-              <button
-                v-if="editMode"
-                class="btn btn-sm btn-outline-secondary"
-                @click="cancelEdit"
-                title="Cancel editing"
-                :disabled="saving"
-              >
-                <i class="bi bi-x-lg"></i>
-                <span class="d-none d-lg-inline ms-1">{{ $t('item.cancel') }}</span>
-              </button>
-              <button
-                v-if="editMode"
-                class="btn btn-sm"
-                :class="(item?.isActive !== false && item?.active !== false) ? 'btn-outline-warning' : 'btn-outline-success'"
-                @click="toggleActive"
-                :title="(item?.isActive !== false && item?.active !== false) ? $t('item.deactivateListing') : $t('item.activateListing')"
-                :disabled="saving || togglingActive"
-              >
-                <span v-if="togglingActive" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                <i v-else class="bi" :class="(item?.isActive !== false && item?.active !== false) ? 'bi-eye-slash' : 'bi-eye'"></i>
-                <span class="d-none d-lg-inline ms-1">{{ (item?.isActive !== false && item?.active !== false) ? $t('item.deactivate') : $t('item.activate') }}</span>
-              </button>
-              <button
-                v-if="editMode"
-                class="btn btn-sm btn-outline-danger"
-                @click="deleteItem"
-                title="Delete listing"
-                :disabled="saving || deleting"
-              >
-                <span v-if="deleting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                <i v-else class="bi bi-trash"></i>
-                <span class="d-none d-lg-inline ms-1">{{ $t('item.delete') }}</span>
-              </button>
-            </template>
-            
-            <!-- Non-Owner Actions -->
-            <template v-else>
-              <!-- TODO: Booking functionality - Coming soon -->
-              <button
-                class="btn btn-sm btn-primary"
-                @click="showBookingModal"
-                title="Book this item"
-              >
-                <i class="bi bi-calendar-check"></i>
-                <span class="d-none d-lg-inline ms-1">{{ $t('item.bookNow') }}</span>
-              </button>
-              
-              <button
-                class="btn btn-sm btn-primary"
-                @click="showOwnerModal"
-                title="Message owner"
-              >
-                <i class="bi bi-chat-dots"></i>
-                <span class="d-none d-lg-inline ms-1">{{ $t('item.message') }}</span>
-              </button>
-              <!-- <button
-                class="btn btn-sm btn-outline-danger"
-                type="button"
-                title="Report"
-              >
-                <i class="bi bi-flag"></i>
-                <span class="d-none d-lg-inline ms-1">{{ $t('item.report') }}</span>
-              </button> -->
-            </template>
-            
-            <!-- Share button (always visible) -->
-            <button
-              class="btn btn-outline-secondary btn-sm"
-              @click="navigator.clipboard.writeText(location.href)"
-              title="Share"
-            >
-              <i class="bi bi-share"></i>
-              <span class="d-none d-lg-inline ms-1">{{ $t('item.share') }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
 
-      <!-- Main Layout -->
-      <div class="row g-4">
-        <!-- Main Content Column -->
-        <div class="col-lg-8">
-          <!-- Image Carousel (Non-Owners or Owners in Edit Mode) -->
-          <div v-if="!isOwner || editMode" class="image-carousel-container mb-4">
-            <div v-if="displayPhotos?.length > 0" class="image-carousel">
-              <!-- Main Image Display -->
-              <div 
-                class="carousel-main"
-                @touchstart="handleTouchStart"
-                @touchmove="handleTouchMove"
-                @touchend="handleTouchEnd"
-              >
-                <div class="ratio ratio-16x9 bg-light rounded carousel-image-wrapper">
-                  <transition name="carousel-fade" mode="out-in">
-                    <img
-                      :key="currentPhotoIndex"
-                      :src="getCarouselPhotoUrl(displayPhotos[currentPhotoIndex])"
-                      class="w-100 h-100 object-fit-cover rounded carousel-image-clickable carousel-image"
-                      :alt="`${item.title} - Photo ${currentPhotoIndex + 1}`"
-                      @click="openFullscreenCarousel"
-                      style="cursor: pointer;"
-                    />
-                  </transition>
-                </div>
-                <!-- Navigation Arrows (only if more than 1 photo) -->
-                <template v-if="displayPhotos.length > 1">
-                  <button
-                    class="carousel-btn carousel-btn-prev"
-                    @click="previousPhoto"
-                    :aria-label="$t('item.previousPhoto')"
-                  >
-                    <i class="bi bi-chevron-left"></i>
-                  </button>
-                  <button
-                    class="carousel-btn carousel-btn-next"
-                    @click="nextPhoto"
-                    :aria-label="$t('item.nextPhoto')"
-                  >
-                    <i class="bi bi-chevron-right"></i>
-                  </button>
-                  <!-- Photo Counter -->
-                  <div class="carousel-counter">
-                    {{ currentPhotoIndex + 1 }} / {{ displayPhotos.length }}
-                  </div>
-                </template>
-              </div>
-              <!-- Thumbnail Strip (only if more than 1 photo) -->
-              <div v-if="displayPhotos.length > 1" class="carousel-thumbnails">
-                <button
-                  v-for="(photo, index) in displayPhotos"
-                  :key="index"
-                  class="thumbnail-btn"
-                  :class="{ active: index === currentPhotoIndex }"
-                  @click="currentPhotoIndex = index"
-                  :aria-label="$t('item.viewPhoto', { index: index + 1 })"
-                >
-                  <img
-                    :src="getCarouselPhotoUrl(photo)"
-                    :alt="`Thumbnail ${index + 1}`"
-                    class="thumbnail-img"
-                  />
-                </button>
-              </div>
-            </div>
-            <div v-else class="no-photos-placeholder">
-              <div class="ratio ratio-16x9 bg-light rounded d-flex align-items-center justify-content-center">
-                <div class="text-center text-muted">
-                  <i class="bi bi-image display-4 d-block mb-2"></i>
-                  <p class="mb-0">{{ $t('item.noPhotosAvailable') }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Photo Management (Edit Mode Only) -->
-          <div v-if="editMode && isOwner" class="card p-3 p-md-4 mt-3 mt-md-4">
-            <h2 class="h5 mb-3">
-              <i class="bi bi-images me-2"></i>
-              {{ $t('item.managePhotos') }}
-            </h2>
-            
-            <input 
+          <div v-if="editMode && isOwner" class="item-card">
+            <h2 class="section-title">{{ $t('item.managePhotos') }}</h2>
+            <input
               ref="photoInput"
-              type="file" 
+              type="file"
               @change="handlePhotoUpload"
               multiple
               accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
               class="d-none"
             />
-            
             <div class="mb-3">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 class="btn btn-outline-primary w-100"
                 @click="photoInput?.click()"
                 :disabled="uploadingPhotos || editPhotos.length >= 10"
@@ -1365,22 +1244,20 @@ watch(fullscreenCarousel, (isOpen) => {
                 {{ $t('item.photoUploadInfo') }}
               </small>
             </div>
-            
-            <!-- Photo Preview Grid -->
             <div v-if="editPhotos.length > 0" class="photo-preview-grid">
-              <div 
-                v-for="(photo, index) in editPhotos" 
+              <div
+                v-for="(photo, index) in editPhotos"
                 :key="photo.id || index"
                 class="photo-preview-item"
                 :class="{ 'is-primary': photo.position === 0 }"
               >
-                <img 
-                  :src="photo.preview || (photo.url ? getItemPhotoUrl(photo.url) : null) || (photo.publicUrl ? getItemPhotoUrl(photo.publicUrl) : null)" 
-                  :alt="`Photo ${index + 1}`" 
-                  class="photo-thumbnail" 
+                <img
+                  :src="photo.preview || (photo.url ? getItemPhotoUrl(photo.url) : null) || (photo.publicUrl ? getItemPhotoUrl(photo.publicUrl) : null)"
+                  :alt="`Photo ${index + 1}`"
+                  class="photo-thumbnail"
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   class="btn btn-sm btn-danger photo-remove-btn"
                   @click="removePhoto(index)"
                   title="Remove photo"
@@ -1412,35 +1289,76 @@ watch(fullscreenCarousel, (isOpen) => {
             </div>
           </div>
 
-          <!-- Description Card -->
-          <div class="card p-3 p-md-4">
-            <h2 class="h5 mb-3">{{ $t('item.aboutThisItem') }}</h2>
-            <p v-if="!editMode" class="mb-0 text-muted">{{ item.description }}</p>
+          <div class="item-card">
+            <h2 class="section-title">{{ $t('item.aboutThisItem') }}</h2>
+            <p v-if="!editMode" class="section-text">{{ item.description }}</p>
             <div v-else>
               <label class="form-label small fw-bold">{{ $t('item.description') }}</label>
-              <textarea 
-                v-model="editForm.description" 
-                class="form-control" 
-                rows="6" 
+              <textarea
+                v-model="editForm.description"
+                class="form-control"
+                rows="6"
                 :placeholder="$t('item.description')"
                 :disabled="saving"
               ></textarea>
             </div>
           </div>
 
-          <!-- Availability Calendar (Owner Only) -->
-          <!-- <div v-if="isOwner" class="mt-3 mt-md-4">
-            <AvailabilityCalendar
-              :item-id="item.id"
-              :unavailable-dates="unavailableDates"
-              :availability-data="availabilityData"
-              :disabled="updatingAvailability"
-              @update="handleAvailabilityUpdate"
-            />
-          </div> -->
+          <div v-if="item?.owner" class="item-card lender-card">
+            <div class="lender-header">
+              <h2 class="section-title">{{ $t('item.contactOwner') }}</h2>
+              <router-link
+                v-if="item.owner?.id"
+                class="lender-link"
+                :to="{ name: 'user-profile', params: { id: item.owner.id } }"
+              >
+                View Profile
+              </router-link>
+            </div>
+            <div class="lender-body">
+              <div class="lender-avatar">
+                <img
+                  v-if="item.owner.profilePicture"
+                  :src="item.owner.profilePicture"
+                  :alt="item.owner.username"
+                />
+                <div v-else class="avatar-placeholder">
+                  <i class="bi bi-person-fill"></i>
+                </div>
+              </div>
+              <div class="lender-info">
+                <h3 class="lender-name">{{ item.owner.username }}</h3>
+                <div class="lender-meta">
+                  <span v-if="item.owner.city">
+                    <i class="bi bi-geo-alt me-1"></i>{{ item.owner.city }}
+                  </span>
+                  <span v-if="item.owner.createdAt">
+                    <i class="bi bi-calendar me-1"></i>{{ formatDate(item.owner.createdAt) }}
+                  </span>
+                </div>
+                <button
+                  v-if="!isOwner"
+                  class="btn btn-outline-primary btn-sm mt-2"
+                  @click="showOwnerModal"
+                >
+                  {{ $t('item.message') }}
+                </button>
+              </div>
+            </div>
+          </div>
 
-          <!-- Booking Calendar (Owner Only) -->
-          <div v-if="isOwner" class="mt-3 mt-md-4">
+          <div class="item-card reviews-card">
+            <ReviewsSection
+              :item="item"
+              :can-review="!isOwner"
+              :reviews="reviews"
+              :loading="false"
+              :error="null"
+              @refresh="handleReviewsRefresh"
+            />
+          </div>
+
+          <div v-if="isOwner" class="item-card">
             <BookingCalendar
               :item-id="item.id"
               :item="item"
@@ -1452,18 +1370,44 @@ watch(fullscreenCarousel, (isOpen) => {
           </div>
         </div>
 
-        <!-- Sidebar Column -->
-        <div class="col-lg-4">
-          <div class="sidebar-content">
-            <!-- Reviews Section -->
-            <ReviewsSection 
-              :item="item" 
-              :can-review="!isOwner"
-              :reviews="reviews"
-              :loading="false"
-              :error="null"
-              @refresh="handleReviewsRefresh"
-            />
+        <div class="item-sidebar">
+          <div class="sidebar-card">
+            <div class="sidebar-header">
+              <h3 class="sidebar-title">{{ $t('item.availability') }}</h3>
+            </div>
+            <div class="sidebar-price">
+              <span class="sidebar-price-value">{{ formatPrice(item.pricePerDay) }}</span>
+              <span class="sidebar-price-unit">{{ $t('item.perDay') }}</span>
+            </div>
+            <div class="sidebar-details">
+              <div v-if="item.initialPrice" class="sidebar-line">
+                <span class="text-muted">{{ $t('item.initial') }}</span>
+                <span class="fw-semibold">{{ formatPrice(item.initialPrice) }}</span>
+              </div>
+              <div v-if="item.deposit" class="sidebar-line">
+                <span class="text-muted">{{ $t('item.deposit') }}</span>
+                <span class="fw-semibold">{{ formatPrice(item.deposit) }}</span>
+              </div>
+            </div>
+            <div class="sidebar-actions">
+              <template v-if="!isOwner">
+                <button class="btn btn-primary w-100" @click="showBookingModal">
+                  <i class="bi bi-calendar-check me-2"></i>
+                  {{ $t('item.bookNow') }}
+                </button>
+                <button class="btn btn-outline-primary w-100" @click="showOwnerModal">
+                  <i class="bi bi-chat-dots me-2"></i>
+                  {{ $t('item.message') }}
+                </button>
+                <button class="btn btn-outline-secondary w-100" @click="navigator.clipboard.writeText(location.href)">
+                  <i class="bi bi-share me-2"></i>
+                  {{ $t('item.share') }}
+                </button>
+              </template>
+              <div v-else class="text-muted small">
+                {{ $t('bookingRequests.youAreOwner') }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1578,46 +1522,428 @@ watch(fullscreenCarousel, (isOpen) => {
 
 <style scoped>
 .item-page {
-  max-width: 1400px;
+  max-width: 1280px;
   margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
 }
 
-.item-header {
+.item-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.item-hero {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.15);
+}
+
+.hero-media {
+  position: relative;
+}
+
+.hero-image {
+  aspect-ratio: 21 / 9;
+  width: 100%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-image-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  transition: all 0.2s ease;
+}
+
+.hero-nav:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.hero-nav-prev {
+  left: 16px;
+}
+
+.hero-nav-next {
+  right: 16px;
+}
+
+.hero-counter {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+}
+
+.hero-card {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  padding: 18px 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.2);
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.hero-category {
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.hero-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f59e0b;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.hero-rating-count {
+  font-weight: 400;
+  color: #64748b;
+}
+
+.hero-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+  color: #0f172a;
+}
+
+.hero-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 12px 0;
+}
+
+.hero-price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.hero-price-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #2563eb;
+}
+
+.hero-price-unit {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.hero-actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hero-thumbnails {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.hero-thumb {
+  border: 2px solid transparent;
+  border-radius: 14px;
+  overflow: hidden;
+  flex: 0 0 auto;
+  width: 88px;
+  height: 88px;
+  padding: 0;
+  background: none;
+}
+
+.hero-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-thumb.active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.item-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 2rem;
+}
+
+.item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.item-sidebar {
+  position: relative;
+}
+
+.item-card {
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  padding: 1.75rem;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+}
+
+.reviews-card .card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.section-text {
+  color: #475569;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.lender-card .lender-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.lender-link {
+  font-weight: 600;
+  font-size: 13px;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.lender-body {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.lender-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lender-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lender-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.lender-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.sidebar-card {
+  position: sticky;
+  top: 96px;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
   padding: 1.5rem;
-  margin-bottom: 2rem;
-  border-bottom: 2px solid #e0e0e0;
-  background: #fff;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-:global([data-bs-theme="dark"]) .item-header {
-  background: #1f1f1f;
-  border-bottom-color: #3a3a3a;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
 }
 
-:global([data-bs-theme="dark"]) .item-header .item-title {
-  color: #f1f3f5;
+.sidebar-price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
-:global([data-bs-theme="dark"]) .item-header .item-rating {
-  background: #3b2f1a;
-  color: #f8f9fa;
+.sidebar-price-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #2563eb;
 }
 
-:global([data-bs-theme="dark"]) .item-header .item-address,
-:global([data-bs-theme="dark"]) .item-header .text-muted,
-:global([data-bs-theme="dark"]) .item-header .price-secondary .text-muted {
-  color: #adb5bd !important;
+.sidebar-price-unit {
+  color: #64748b;
+  font-size: 14px;
 }
 
-:global([data-bs-theme="dark"]) .item-header .text-primary {
-  color: #8ab4ff !important;
+.sidebar-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-:global([data-bs-theme="dark"]) .item-header .badge.bg-primary {
-  background-color: #3b82f6;
+.sidebar-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.sidebar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+:global([data-bs-theme="dark"]) .item-hero {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-bs-theme="dark"]) .hero-card {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+:global([data-bs-theme="dark"]) .hero-title {
+  color: #f8fafc;
+}
+
+:global([data-bs-theme="dark"]) .hero-rating-count,
+:global([data-bs-theme="dark"]) .hero-location,
+:global([data-bs-theme="dark"]) .hero-price-unit {
+  color: #cbd5f5;
+}
+
+:global([data-bs-theme="dark"]) .hero-category {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+:global([data-bs-theme="dark"]) .hero-thumb {
+  border-color: transparent;
+}
+
+:global([data-bs-theme="dark"]) .hero-thumb.active {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+}
+
+:global([data-bs-theme="dark"]) .item-card,
+:global([data-bs-theme="dark"]) .sidebar-card {
+  background: #0f172a;
+  border-color: #1f2937;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+:global([data-bs-theme="dark"]) .section-text,
+:global([data-bs-theme="dark"]) .lender-meta,
+:global([data-bs-theme="dark"]) .sidebar-price-unit,
+:global([data-bs-theme="dark"]) .sidebar-line .text-muted {
+  color: #94a3b8 !important;
+}
+
+:global([data-bs-theme="dark"]) .section-title,
+:global([data-bs-theme="dark"]) .lender-name,
+:global([data-bs-theme="dark"]) .sidebar-title {
+  color: #f8fafc;
+}
+
+:global([data-bs-theme="dark"]) .lender-avatar {
+  background: #1e293b;
+}
+
+:global([data-bs-theme="dark"]) .sidebar-price-value {
+  color: #60a5fa;
+}
+
+@media (max-width: 992px) {
+  .item-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-card {
+    position: static;
+  }
 }
 
 .item-title-section {
