@@ -38,11 +38,11 @@ const ownerRating = computed(() => {
 });
 
 const renterReviewCount = computed(() => {
-  return user.value?.renterReviewCount || 0;
+  return user.value?.renterRatingCount || 0;
 });
 
 const ownerReviewCount = computed(() => {
-  return user.value?.ownerReviewCount || 0;
+  return user.value?.ownerRatingCount || 0;
 });
 
 const totalListings = computed(() => {
@@ -54,7 +54,11 @@ const totalInactiveListings = computed(() => {
 });
 
 const totalReviews = computed(() => {
-  return reviews.value.length;
+  return (
+    user.value?.totalReviews ??
+    user.value?._count?.reviewsAsSubject ??
+    reviews.value.length
+  );
 });
 
 // Methods
@@ -73,8 +77,8 @@ async function loadUserProfile() {
     const listingsData = await fetchUserListings(userId);
     listings.value = listingsData;
     
-    // Load user's reviews from their listings
-    await loadUserReviews(userId);
+    // Load user's reviews (prefer embedded reviews)
+    await loadUserReviews(userId, userData);
     
     // Load inactive listings if viewing own profile (check after user is loaded)
     if (auth.user && user.value && auth.user.id === user.value.id) {
@@ -130,8 +134,15 @@ async function loadInactiveListings() {
   }
 }
 
-async function loadUserReviews(userId) {
+async function loadUserReviews(userId, userData = null) {
   try {
+    if (userData?.reviews) {
+      reviews.value = [...userData.reviews].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      return;
+    }
+
     // Get all user's listings first
     const userListings = await fetchUserListings(userId);
     
@@ -157,7 +168,7 @@ async function loadUserReviews(userId) {
     }
     
     // Sort reviews by creation date (newest first)
-    reviews.value = allReviews.sort((a, b) => 
+    reviews.value = allReviews.sort((a, b) =>
       new Date(b.created_at) - new Date(a.created_at)
     );
   } catch (error) {
@@ -206,8 +217,8 @@ onMounted(() => {
           <div class="profile-main">
             <div class="profile-avatar">
               <img 
-                v-if="user.avatar" 
-                :src="user.avatar" 
+                v-if="user.profilePicture" 
+                :src="user.profilePicture" 
                 :alt="user.username"
                 class="avatar-image"
               />
@@ -217,13 +228,12 @@ onMounted(() => {
             </div>
             
             <div class="profile-info">
-              <h1 class="profile-name">{{ user.firstName }} {{ user.lastName }}</h1>
+              <h1 class="profile-name">{{ user.username }}</h1>
               <p class="profile-username">@{{ user.username }}</p>
-              <p v-if="user.bio" class="profile-bio">{{ user.bio }}</p>
               <div class="profile-meta">
                 <span class="meta-item">
                   <i class="bi bi-geo-alt me-1"></i>
-                  {{ user.location || 'Location not specified' }}
+                  {{ user.city || 'Location not specified' }}
                 </span>
                 <span class="meta-item">
                   <i class="bi bi-calendar me-1"></i>
@@ -290,7 +300,7 @@ onMounted(() => {
               <i class="bi bi-box"></i>
             </div>
             <div class="stat-content">
-              <div class="stat-number">{{ totalListings }}</div>
+              <div class="stat-number">{{ user?._count?.items ?? totalListings }}</div>
               <div class="stat-label">Listings</div>
             </div>
           </div>
@@ -310,7 +320,9 @@ onMounted(() => {
               <i class="bi bi-calendar-check"></i>
             </div>
             <div class="stat-content">
-              <div class="stat-number">{{ user.totalBookings || 0 }}</div>
+              <div class="stat-number">
+                {{ (user?._count?.renterOrders || 0) + (user?._count?.ownerOrders || 0) }}
+              </div>
               <div class="stat-label">Total Bookings</div>
             </div>
           </div>
@@ -320,8 +332,8 @@ onMounted(() => {
               <i class="bi bi-award"></i>
             </div>
             <div class="stat-content">
-              <div class="stat-number">{{ user.responseRate || 0 }}%</div>
-              <div class="stat-label">Response Rate</div>
+              <div class="stat-number">{{ user?._count?.reviewsAsSubject || 0 }}</div>
+              <div class="stat-label">Reviews as Subject</div>
             </div>
           </div>
         </div>
@@ -414,33 +426,33 @@ onMounted(() => {
                   <div class="reviewer-info">
                     <div class="reviewer-avatar">
                       <img 
-                        v-if="review.user?.avatar" 
-                        :src="review.user.avatar" 
-                        :alt="review.user.name"
+                        v-if="review.reviewer?.profilePicture" 
+                        :src="review.reviewer.profilePicture" 
+                        :alt="review.reviewer.username"
                       />
                       <div v-else class="avatar-placeholder">
                         <i class="bi bi-person-fill"></i>
                       </div>
                     </div>
                     <div class="reviewer-details">
-                      <h6 class="reviewer-name">{{ review.user?.name || 'Anonymous' }}</h6>
-                      <p class="reviewer-username">{{ review.user?.email || '' }}</p>
+                      <h6 class="reviewer-name">{{ review.reviewer?.username || 'Anonymous' }}</h6>
+                      <p class="reviewer-username">{{ review.reviewer?.id || '' }}</p>
                     </div>
                   </div>
                   <div class="review-rating">
-                    <StarRating :rating="review.rating" :size="'sm'" />
-                    <span class="rating-date">{{ formatDate(review.created_at) }}</span>
+                    <StarRating :rating="review.ratingOverall" :size="'sm'" />
+                    <span class="rating-date">{{ formatDate(review.createdAt) }}</span>
                   </div>
                 </div>
                 
                 <div class="review-content">
-                  <p class="review-text">{{ review.comment }}</p>
+                  <p class="review-text">{{ review.body || 'No review comment provided.' }}</p>
                   <div class="review-meta">
                     <span class="review-type badge bg-primary">
-                      {{ $t('reviews.itemReview') }}
+                      {{ review.subjectType }}
                     </span>
-                    <span v-if="review.item" class="review-item">
-                      for <strong>{{ review.item.title }}</strong>
+                    <span v-if="review.booking?.item" class="review-item">
+                      for <strong>{{ review.booking.item.title }}</strong>
                     </span>
                   </div>
                 </div>

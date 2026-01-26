@@ -46,7 +46,7 @@
                     class="small text-decoration-none"
                     @click="closeModals"
                   >
-                    {{ $t('auth.login.forgotPassword') }}
+                    {{ $t('auth.forgotPassword') }}
                   </router-link>
                 </div>
                 <input v-model="loginForm.password" class="form-control" type="password" minlength="6" required />

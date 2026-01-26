@@ -1591,6 +1591,12 @@ watch(fullscreenCarousel, (isOpen) => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+:global([data-bs-theme="dark"]) .item-header {
+  background: #1f1f1f;
+  border-bottom-color: #3a3a3a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
 .item-title-section {
   margin-bottom: 0.75rem;
 }
