@@ -471,11 +471,11 @@ onMounted(() => {
                     </div>
                     <div class="reviewer-details">
                       <h6 class="reviewer-name">{{ getReviewer(review)?.username || 'Anonymous' }}</h6>
-                      <p class="reviewer-username">{{ getReviewer(review)?.id || '' }}</p>
+                      <!-- <p class="reviewer-username">{{ getReviewer(review)?.id || '' }}</p> -->
                     </div>
                   </div>
                   <div class="review-rating">
-                    <StarRating :rating="getReviewRating(review)" :size="'sm'" />
+                    <StarRating :rating="review.ratingOverall" :size="'sm'" />
                     <span class="rating-date">{{ getReviewDate(review) }}</span>
                   </div>
                 </div>
@@ -912,8 +912,10 @@ onMounted(() => {
 
 :global([data-bs-theme="dark"]) .profile-card,
 :global([data-bs-theme="dark"]) .tabs-section,
-:global([data-bs-theme="dark"]) .stat-card {
+:global([data-bs-theme="dark"]) .stat-card,
+:global([data-bs-theme="dark"]) .tab-content {
   background: #1f1f1f;
+  border-color: #343a40;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
@@ -939,6 +941,7 @@ onMounted(() => {
 :global([data-bs-theme="dark"]) .profile-username,
 :global([data-bs-theme="dark"]) .meta-item,
 :global([data-bs-theme="dark"]) .rating-header,
+:global([data-bs-theme="dark"]) .rating-title,
 :global([data-bs-theme="dark"]) .rating-count,
 :global([data-bs-theme="dark"]) .stat-label,
 :global([data-bs-theme="dark"]) .reviewer-username,
@@ -974,6 +977,21 @@ onMounted(() => {
 
 :global([data-bs-theme="dark"]) .empty-icon {
   color: #495057;
+}
+
+:global([data-bs-theme="dark"]) .breadcrumb,
+:global([data-bs-theme="dark"]) .breadcrumb-item,
+:global([data-bs-theme="dark"]) .breadcrumb-item a {
+  color: #ced4da;
+}
+
+:global([data-bs-theme="dark"]) .breadcrumb-item.active {
+  color: #f1f3f5;
+}
+
+:global([data-bs-theme="dark"]) .user-profile-page .text-muted,
+:global([data-bs-theme="dark"]) .user-profile-page .text-secondary {
+  color: #adb5bd !important;
 }
 
 /* Mobile Responsiveness */

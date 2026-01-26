@@ -689,16 +689,59 @@ function goToPayment(booking) {
   });
 }
 
+function getBookingReviews(booking) {
+  if (!booking) return [];
+  const candidates = [
+    booking.reviews,
+    booking.booking?.reviews,
+    booking.order?.reviews,
+    booking.review,
+  ];
+
+  const reviews = [];
+  for (const value of candidates) {
+    if (Array.isArray(value)) {
+      reviews.push(...value);
+    } else if (value && typeof value === 'object') {
+      reviews.push(value);
+    }
+  }
+  return reviews;
+}
+
 // Check if user has already left a review for this booking
 function hasLeftReview(booking) {
-  // Check if booking has reviews array and if current user has already reviewed
-  if (!booking.reviews || !Array.isArray(booking.reviews) || !auth.user) {
+  if (!auth.user || !booking) {
     return false;
   }
-  
+
   const userId = auth.user.id;
-  // Check if any review was created by current user
-  return booking.reviews.some(review => review.reviewerId === userId || review.reviewer?.id === userId);
+  const reviews = getBookingReviews(booking);
+
+  if (reviews.length === 0) {
+    // Fall back to role-based flags if present
+    const ownerFlags = [
+      booking.ownerReviewed,
+      booking.owner_reviewed,
+      booking.reviewedByOwner,
+    ];
+    const renterFlags = [
+      booking.renterReviewed,
+      booking.renter_reviewed,
+      booking.reviewedByRenter,
+    ];
+    return isOwnerOfBooking(booking)
+      ? ownerFlags.some(Boolean)
+      : renterFlags.some(Boolean);
+  }
+
+  return reviews.some(
+    (review) =>
+      review.reviewerId === userId ||
+      review.reviewer?.id === userId ||
+      review.user?.id === userId ||
+      review.userId === userId
+  );
 }
 
 // Open review modal for a booking
