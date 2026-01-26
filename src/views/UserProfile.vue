@@ -914,14 +914,18 @@ onMounted(() => {
 :global([data-bs-theme="dark"]) .tabs-section,
 :global([data-bs-theme="dark"]) .stat-card,
 :global([data-bs-theme="dark"]) .tab-content {
-  background: #1f1f1f;
   border-color: #343a40;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
+:global([data-bs-theme="dark"]) .profile-card,
+:global([data-bs-theme="dark"]) .rating-card {
+  background: transparent;
+  box-shadow: none;
+}
+
 :global([data-bs-theme="dark"]) .rating-card,
 :global([data-bs-theme="dark"]) .review-card {
-  background: #232323;
   border-color: #343a40;
 }
 

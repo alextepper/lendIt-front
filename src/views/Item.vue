@@ -1606,12 +1606,12 @@ watch(fullscreenCarousel, (isOpen) => {
   left: 20px;
   bottom: 20px;
   max-width: 420px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.35));
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 20px;
   padding: 18px 20px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
 }
 
 .hero-meta {
@@ -1880,8 +1880,9 @@ watch(fullscreenCarousel, (isOpen) => {
 }
 
 :global([data-bs-theme="dark"]) .hero-card {
-  background: rgba(15, 23, 42, 0.85);
-  border-color: rgba(148, 163, 184, 0.2);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.4));
+  border-color: rgba(148, 163, 184, 0.25);
+  backdrop-filter: blur(18px) saturate(140%);
 }
 
 :global([data-bs-theme="dark"]) .hero-title {
@@ -1910,9 +1911,9 @@ watch(fullscreenCarousel, (isOpen) => {
 
 :global([data-bs-theme="dark"]) .item-card,
 :global([data-bs-theme="dark"]) .sidebar-card {
-  background: #0f172a;
+  background: transparent;
   border-color: #1f2937;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: none;
 }
 
 :global([data-bs-theme="dark"]) .section-text,
