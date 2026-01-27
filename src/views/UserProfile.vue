@@ -49,6 +49,9 @@ const ownerReviewCount = computed(() => {
   return user.value?.ownerRatingCount || 0;
 });
 
+const hasRenterRating = computed(() => renterReviewCount.value > 0);
+const hasOwnerRating = computed(() => ownerReviewCount.value > 0);
+
 const totalListings = computed(() => {
   return listings.value.length;
 });
@@ -287,19 +290,24 @@ watch(targetUserId, (userId) => {
                 <span class="rating-title">{{ $t('userProfile.rating.asRenter') }}</span>
               </div>
               <div class="rating-content">
-                <div class="rating-score">
-                  <span class="score-number">{{ renterRating.toFixed(1) }}</span>
-                  <div class="rating-stars">
-                    <StarRating :rating="renterRating" :size="'sm'" />
+                <div v-if="hasRenterRating">
+                  <div class="rating-score">
+                    <span class="score-number">{{ renterRating.toFixed(1) }}</span>
+                    <div class="rating-stars">
+                      <StarRating :rating="renterRating" :size="'sm'" />
+                    </div>
+                  </div>
+                  <div class="rating-text">
+                    <span :class="`text-${getRatingColor(renterRating)}`">
+                      {{ getRatingText(renterRating) }}
+                    </span>
+                  </div>
+                  <div class="rating-count">
+                    {{ $t('userProfile.reviewCount', { count: renterReviewCount }) }}
                   </div>
                 </div>
-                <div class="rating-text">
-                  <span :class="`text-${getRatingColor(renterRating)}`">
-                    {{ getRatingText(renterRating) }}
-                  </span>
-                </div>
-                <div class="rating-count">
-                  {{ $t('userProfile.reviewCount', { count: renterReviewCount }) }}
+                <div v-else class="rating-empty">
+                  {{ $t('userProfile.noRatingsYet') }}
                 </div>
               </div>
             </div>
@@ -310,19 +318,24 @@ watch(targetUserId, (userId) => {
                 <span class="rating-title">{{ $t('userProfile.rating.asOwner') }}</span>
               </div>
               <div class="rating-content">
-                <div class="rating-score">
-                  <span class="score-number">{{ ownerRating.toFixed(1) }}</span>
-                  <div class="rating-stars">
-                    <StarRating :rating="ownerRating" :size="'sm'" />
+                <div v-if="hasOwnerRating">
+                  <div class="rating-score">
+                    <span class="score-number">{{ ownerRating.toFixed(1) }}</span>
+                    <div class="rating-stars">
+                      <StarRating :rating="ownerRating" :size="'sm'" />
+                    </div>
+                  </div>
+                  <div class="rating-text">
+                    <span :class="`text-${getRatingColor(ownerRating)}`">
+                      {{ getRatingText(ownerRating) }}
+                    </span>
+                  </div>
+                  <div class="rating-count">
+                    {{ $t('userProfile.reviewCount', { count: ownerReviewCount }) }}
                   </div>
                 </div>
-                <div class="rating-text">
-                  <span :class="`text-${getRatingColor(ownerRating)}`">
-                    {{ getRatingText(ownerRating) }}
-                  </span>
-                </div>
-                <div class="rating-count">
-                  {{ $t('userProfile.reviewCount', { count: ownerReviewCount }) }}
+                <div v-else class="rating-empty">
+                  {{ $t('userProfile.noRatingsYet') }}
                 </div>
               </div>
             </div>
@@ -668,6 +681,13 @@ watch(targetUserId, (userId) => {
 .rating-count {
   font-size: 0.9rem;
   color: #718096;
+}
+
+.rating-empty {
+  font-size: 0.95rem;
+  color: #718096;
+  text-align: center;
+  padding: 0.75rem 0;
 }
 
 /* Statistics Grid */

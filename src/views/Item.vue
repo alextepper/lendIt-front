@@ -1304,7 +1304,7 @@ watch(fullscreenCarousel, (isOpen) => {
             </div>
           </div>
 
-          <div v-if="item?.owner" class="item-card lender-card">
+          <div v-if="item?.owner && !isOwner" class="item-card lender-card">
             <div class="lender-header">
               <h2 class="section-title">{{ $t('item.contactOwner') }}</h2>
               <router-link

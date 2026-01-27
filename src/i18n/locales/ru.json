@@ -596,6 +596,7 @@
     "noReviewComment": "Комментарий к отзыву отсутствует.",
     "forItem": "для",
     "reviewCount": "{count} отзыв(ов)",
+    "noRatingsYet": "Пока нет оценок",
     "rating": {
       "asRenter": "Как арендатор",
       "asOwner": "Как владелец",

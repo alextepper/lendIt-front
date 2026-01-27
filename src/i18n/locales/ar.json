@@ -596,6 +596,7 @@
     "noReviewComment": "لا توجد ملاحظة مراجعة.",
     "forItem": "عن",
     "reviewCount": "{count} مراجعات",
+    "noRatingsYet": "لا توجد تقييمات بعد",
     "rating": {
       "asRenter": "كمستأجر",
       "asOwner": "كمالك",

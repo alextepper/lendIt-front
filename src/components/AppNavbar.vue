@@ -123,7 +123,7 @@
                 type="button"
               >
                 <img 
-                  :src="auth.user?.avatar || auth.user?.profilePicture || 'https://placehold.co/40x40?text=' + (auth.user?.username?.[0] || 'U')" 
+                  :src="profileImageSrc" 
                   :alt="auth.user?.username || $t('nav.user')"
                   class="rounded-circle border border-2 border-primary profile-img"
                   width="40" 
@@ -230,6 +230,7 @@ const chat = useChatStore()
 const language = useLanguageStore()
 const debug = useDebugStore()
 const { openLoginModal, openRegisterModal } = useAuthModal()
+const baseURL = import.meta.env.VITE_API_BASE_URL
 
 const showDebug = ref(false)
 const navOpen = ref(false)
@@ -267,6 +268,24 @@ const debugEnabled = computed(() => {
 })
 
 const reversedLogs = computed(() => [...debug.logs].reverse())
+
+function getProfilePictureUrl(profilePicture) {
+  if (!profilePicture) {
+    return null
+  }
+  if (profilePicture.startsWith('http://') || profilePicture.startsWith('https://')) {
+    return profilePicture
+  }
+  if (profilePicture.startsWith('/uploads/')) {
+    return `${baseURL}${profilePicture}`
+  }
+  return `${baseURL}/${profilePicture}`
+}
+
+const profileImageSrc = computed(() => {
+  const raw = auth.user?.avatar || auth.user?.profilePicture || ''
+  return getProfilePictureUrl(raw) || `https://placehold.co/40x40?text=${auth.user?.username?.[0] || 'U'}`
+})
 
 async function copyLogs() {
   try {

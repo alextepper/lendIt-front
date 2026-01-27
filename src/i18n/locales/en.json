@@ -611,6 +611,7 @@
     "noReviewComment": "No review comment provided.",
     "forItem": "for",
     "reviewCount": "{count} review(s)",
+    "noRatingsYet": "No ratings yet",
     "rating": {
       "asRenter": "As Renter",
       "asOwner": "As Owner",

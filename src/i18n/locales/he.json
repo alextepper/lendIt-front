@@ -601,6 +601,7 @@
     "noReviewComment": "לא סופקה הערת ביקורת.",
     "forItem": "עבור",
     "reviewCount": "{count} ביקורות",
+    "noRatingsYet": "אין דירוגים עדיין",
     "rating": {
       "asRenter": "כשוכר",
       "asOwner": "כבעלים",
