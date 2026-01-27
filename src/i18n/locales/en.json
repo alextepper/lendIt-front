@@ -641,6 +641,21 @@
   "introBanner": {
     "title": "Welcome to Sharo",
     "body": "Rent and lend items in your community. Find great deals or earn by sharing what you own.",
-    "cta": "Got it"
+    "cta": "Get Started",
+    "learnMore": "Learn more about how it works",
+    "steps": {
+      "find": {
+        "title": "1. Find",
+        "body": "Search for tools, electronics, or camping gear nearby."
+      },
+      "borrow": {
+        "title": "2. Borrow",
+        "body": "Request items and book instantly with secure payments."
+      },
+      "return": {
+        "title": "3. Return",
+        "body": "Meet your neighbor, use the item, and return it easily."
+      }
+    }
   }
 }
