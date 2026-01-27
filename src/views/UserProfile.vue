@@ -87,17 +87,18 @@ async function loadUserProfile(userId) {
     const userData = await getUserById(userId);
     user.value = userData;
     
-    // Load user's listings
-    const listingsData = await fetchUserListings(userId);
-    listings.value = listingsData;
+    if (auth.user && user.value && auth.user.id === user.value.id) {
+      await loadOwnListings();
+    } else {
+      const listingsData = await fetchUserListings(userId);
+      listings.value = listingsData;
+      inactiveListings.value = [];
+    }
     
     // Load user's reviews (prefer embedded reviews)
     await loadUserReviews(userId, userData);
     
-    // Load inactive listings if viewing own profile (check after user is loaded)
-    if (auth.user && user.value && auth.user.id === user.value.id) {
-      await loadInactiveListings();
-    }
+    // Inactive listings are loaded in loadOwnListings for current user
     
   } catch (e) {
     console.error('Failed to load user profile:', e);
@@ -160,18 +161,18 @@ function getReviewer(review) {
   return review?.reviewer || review?.user || null;
 }
 
-async function loadInactiveListings() {
+async function loadOwnListings() {
   loadingInactive.value = true;
   try {
-    const data = await fetchListings({
-      mine: true,
-      inactive: true,
-      page: 1,
-      pageSize: 100, // Load all inactive listings
-    });
-    inactiveListings.value = data.items || [];
+    const [activeRes, inactiveRes] = await Promise.all([
+      fetchListings({ mine: true, page: 1, pageSize: 1000 }),
+      fetchListings({ mine: true, inactive: true, page: 1, pageSize: 1000 }),
+    ]);
+    listings.value = activeRes.items || [];
+    inactiveListings.value = inactiveRes.items || [];
   } catch (error) {
-    console.error('Failed to load inactive listings:', error);
+    console.error('Failed to load own listings:', error);
+    listings.value = [];
     inactiveListings.value = [];
   } finally {
     loadingInactive.value = false;

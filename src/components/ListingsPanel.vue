@@ -10,18 +10,33 @@ const ui = useUiStore();
 const items = ref([]);
 const page = ref(1);
 const totalPages = ref(1);
-const per = 12;
+const per = 1000;
 const showModal = ref(false);
 const editing = ref(null);
 
 async function load() {
-  const { items: rows, total_pages } = await fetchListings({
-    mine: true,
-    page: page.value,
-    pageSize: per,
-  });
-  items.value = rows;
-  totalPages.value = total_pages;
+  const [activeRes, inactiveRes] = await Promise.all([
+    fetchListings({
+      mine: true,
+      page: 1,
+      pageSize: per,
+    }),
+    fetchListings({
+      mine: true,
+      inactive: true,
+      page: 1,
+      pageSize: per,
+    }),
+  ]);
+
+  const combined = [...(activeRes.items || []), ...(inactiveRes.items || [])];
+  const unique = new Map();
+  for (const item of combined) {
+    unique.set(item.id, item);
+  }
+  items.value = Array.from(unique.values());
+  totalPages.value = 1;
+  page.value = 1;
 }
 onMounted(load);
 

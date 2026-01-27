@@ -637,5 +637,10 @@
       "inactiveTitle": "No Inactive Listings",
       "inactiveBody": "You don't have any inactive listings."
     }
+  },
+  "introBanner": {
+    "title": "Welcome to Sharo",
+    "body": "Rent and lend items in your community. Find great deals or earn by sharing what you own.",
+    "cta": "Got it"
   }
 }
