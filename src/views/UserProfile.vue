@@ -1,6 +1,7 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import { getUserById } from '../services/userService';
@@ -11,6 +12,7 @@ import StarRating from '../components/StarRating.vue';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const ui = useUiStore();
 const auth = useAuthStore();
 
@@ -26,7 +28,9 @@ const activeTab = ref('listings');
 
 // Computed
 const isOwnProfile = computed(() => {
-  return auth.user && user.value && auth.user.id === user.value.id;
+  if (!auth.user || !user.value) return false;
+  if (!route.params.id) return true;
+  return auth.user.id === user.value.id;
 });
 
 const renterRating = computed(() => {
@@ -67,13 +71,17 @@ const totalReviews = computed(() => {
   );
 });
 
+const targetUserId = computed(() => route.params.id || auth.user?.id);
+
 // Methods
-async function loadUserProfile() {
+async function loadUserProfile(userId) {
   loading.value = true;
   error.value = null;
   
   try {
-    const userId = route.params.id;
+    if (!userId) {
+      throw new Error(t('userProfile.failedToLoad'));
+    }
     
     // Load user profile data
     const userData = await getUserById(userId);
@@ -93,7 +101,8 @@ async function loadUserProfile() {
     
   } catch (e) {
     console.error('Failed to load user profile:', e);
-    error.value = e?.response?.data?.message || e.message || 'Failed to load user profile';
+    error.value =
+      e?.response?.data?.message || e.message || t('userProfile.failedToLoad');
   } finally {
     loading.value = false;
   }
@@ -115,11 +124,11 @@ function getRatingColor(rating) {
 }
 
 function getRatingText(rating) {
-  if (rating >= 4.5) return 'Excellent';
-  if (rating >= 3.5) return 'Good';
-  if (rating >= 2.5) return 'Average';
-  if (rating >= 1.5) return 'Below Average';
-  return 'Poor';
+  if (rating >= 4.5) return t('userProfile.rating.excellent');
+  if (rating >= 3.5) return t('userProfile.rating.good');
+  if (rating >= 2.5) return t('userProfile.rating.average');
+  if (rating >= 1.5) return t('userProfile.rating.belowAverage');
+  return t('userProfile.rating.poor');
 }
 
 function getReviewDate(review) {
@@ -212,24 +221,15 @@ async function loadUserReviews(userId, userData = null) {
   }
 }
 
-onMounted(() => {
-  loadUserProfile();
-});
+watch(targetUserId, (userId) => {
+  if (userId) {
+    loadUserProfile(userId);
+  }
+}, { immediate: true });
 </script>
 
 <template>
   <div class="user-profile-page">
-    <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
-      <ol class="breadcrumb small mb-0">
-        <li class="breadcrumb-item">
-          <router-link to="/">Home</router-link>
-        </li>
-        <li class="breadcrumb-item active" aria-current="page">
-          {{ user?.username || 'User Profile' }}
-        </li>
-      </ol>
-    </nav>
 
     <!-- Error State -->
     <div v-if="error" class="alert alert-danger">
@@ -240,7 +240,7 @@ onMounted(() => {
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"></div>
-      <div class="small text-secondary mt-2">Loading profile...</div>
+      <div class="small text-secondary mt-2">{{ $t('userProfile.loadingProfile') }}</div>
     </div>
 
     <!-- Profile Content -->
@@ -266,13 +266,13 @@ onMounted(() => {
               <h1 class="profile-name">{{ user.username }}</h1>
               <p class="profile-username">@{{ user.username }}</p>
               <div class="profile-meta">
-                <span class="meta-item">
+                <!-- <span class="meta-item">
                   <i class="bi bi-geo-alt me-1"></i>
                   {{ user.city || 'Location not specified' }}
-                </span>
+                </span> -->
                 <span class="meta-item">
                   <i class="bi bi-calendar me-1"></i>
-                  Joined {{ formatDate(user.createdAt) }}
+                  {{ $t('userProfile.joined', { date: formatDate(user.createdAt) }) }}
                 </span>
               </div>
             </div>
@@ -283,7 +283,7 @@ onMounted(() => {
             <div class="rating-card renter-rating">
               <div class="rating-header">
                 <i class="bi bi-person-check me-2"></i>
-                <span class="rating-title">As Renter</span>
+                <span class="rating-title">{{ $t('userProfile.rating.asRenter') }}</span>
               </div>
               <div class="rating-content">
                 <div class="rating-score">
@@ -298,7 +298,7 @@ onMounted(() => {
                   </span>
                 </div>
                 <div class="rating-count">
-                  {{ renterReviewCount }} review{{ renterReviewCount !== 1 ? 's' : '' }}
+                  {{ $t('userProfile.reviewCount', { count: renterReviewCount }) }}
                 </div>
               </div>
             </div>
@@ -306,7 +306,7 @@ onMounted(() => {
             <div class="rating-card owner-rating">
               <div class="rating-header">
                 <i class="bi bi-house-check me-2"></i>
-                <span class="rating-title">As Owner</span>
+                <span class="rating-title">{{ $t('userProfile.rating.asOwner') }}</span>
               </div>
               <div class="rating-content">
                 <div class="rating-score">
@@ -321,7 +321,7 @@ onMounted(() => {
                   </span>
                 </div>
                 <div class="rating-count">
-                  {{ ownerReviewCount }} review{{ ownerReviewCount !== 1 ? 's' : '' }}
+                  {{ $t('userProfile.reviewCount', { count: ownerReviewCount }) }}
                 </div>
               </div>
             </div>
@@ -336,7 +336,7 @@ onMounted(() => {
             </div>
             <div class="stat-content">
               <div class="stat-number">{{ user?._count?.items ?? totalListings }}</div>
-              <div class="stat-label">Listings</div>
+              <div class="stat-label">{{ $t('userProfile.stats.listings') }}</div>
             </div>
           </div>
           
@@ -346,7 +346,7 @@ onMounted(() => {
             </div>
             <div class="stat-content">
               <div class="stat-number">{{ totalReviews }}</div>
-              <div class="stat-label">Reviews</div>
+              <div class="stat-label">{{ $t('userProfile.stats.reviews') }}</div>
             </div>
           </div>
           
@@ -358,7 +358,7 @@ onMounted(() => {
               <div class="stat-number">
                 {{ (user?._count?.renterOrders || 0) + (user?._count?.ownerOrders || 0) }}
               </div>
-              <div class="stat-label">Total Bookings</div>
+              <div class="stat-label">{{ $t('userProfile.stats.totalBookings') }}</div>
             </div>
           </div>
           
@@ -368,7 +368,7 @@ onMounted(() => {
             </div>
             <div class="stat-content">
               <div class="stat-number">{{ user?._count?.reviewsAsSubject || 0 }}</div>
-              <div class="stat-label">Reviews as Subject</div>
+              <div class="stat-label">{{ $t('userProfile.stats.reviewsAsSubject') }}</div>
             </div>
           </div>
         </div>
@@ -384,7 +384,7 @@ onMounted(() => {
               @click="activeTab = 'listings'"
             >
               <i class="bi bi-box me-2"></i>
-              Listings ({{ totalListings }})
+              {{ $t('userProfile.tabs.listings', { count: totalListings }) }}
             </button>
           </li>
           <li v-if="isOwnProfile" class="nav-item" role="presentation">
@@ -394,7 +394,7 @@ onMounted(() => {
               @click="activeTab = 'inactive'"
             >
               <i class="bi bi-eye-slash me-2"></i>
-              Inactive ({{ totalInactiveListings }})
+              {{ $t('userProfile.tabs.inactive', { count: totalInactiveListings }) }}
             </button>
           </li>
           <li class="nav-item" role="presentation">
@@ -404,7 +404,7 @@ onMounted(() => {
               @click="activeTab = 'reviews'"
             >
               <i class="bi bi-star me-2"></i>
-              Reviews ({{ totalReviews }})
+              {{ $t('userProfile.tabs.reviews', { count: totalReviews }) }}
             </button>
           </li>
         </ul>
@@ -423,8 +423,8 @@ onMounted(() => {
             </div>
             <div v-else class="empty-state">
               <i class="bi bi-box empty-icon"></i>
-              <h5>No Listings Yet</h5>
-              <p class="text-muted">This user hasn't created any listings yet.</p>
+              <h5>{{ $t('userProfile.empty.listingsTitle') }}</h5>
+              <p class="text-muted">{{ $t('userProfile.empty.listingsBody') }}</p>
             </div>
           </div>
 
@@ -432,7 +432,7 @@ onMounted(() => {
           <div v-if="activeTab === 'inactive' && isOwnProfile" class="tab-pane active">
             <div v-if="loadingInactive" class="text-center py-4">
               <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-              <div class="small text-secondary mt-2">Loading inactive listings...</div>
+              <div class="small text-secondary mt-2">{{ $t('userProfile.loadingInactive') }}</div>
             </div>
             <div v-else-if="inactiveListings.length > 0" class="listings-grid">
               <ItemCard 
@@ -444,8 +444,8 @@ onMounted(() => {
             </div>
             <div v-else class="empty-state">
               <i class="bi bi-eye-slash empty-icon"></i>
-              <h5>No Inactive Listings</h5>
-              <p class="text-muted">You don't have any inactive listings.</p>
+              <h5>{{ $t('userProfile.empty.inactiveTitle') }}</h5>
+              <p class="text-muted">{{ $t('userProfile.empty.inactiveBody') }}</p>
             </div>
           </div>
 
@@ -470,7 +470,7 @@ onMounted(() => {
                       </div>
                     </div>
                     <div class="reviewer-details">
-                      <h6 class="reviewer-name">{{ getReviewer(review)?.username || 'Anonymous' }}</h6>
+                      <h6 class="reviewer-name">{{ getReviewer(review)?.username || $t('userProfile.anonymous') }}</h6>
                       <!-- <p class="reviewer-username">{{ getReviewer(review)?.id || '' }}</p> -->
                     </div>
                   </div>
@@ -482,14 +482,14 @@ onMounted(() => {
                 
                 <div class="review-content">
                   <p class="review-text">
-                    {{ getReviewBody(review) || 'No review comment provided.' }}
+                    {{ getReviewBody(review) || $t('userProfile.noReviewComment') }}
                   </p>
                   <div class="review-meta">
                     <span class="review-type badge bg-primary">
                       {{ getReviewSubjectType(review) }}
                     </span>
                     <span v-if="getReviewItemTitle(review)" class="review-item">
-                      for <strong>{{ getReviewItemTitle(review) }}</strong>
+                      {{ $t('userProfile.forItem') }} <strong>{{ getReviewItemTitle(review) }}</strong>
                     </span>
                   </div>
                 </div>

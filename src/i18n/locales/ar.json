@@ -586,5 +586,41 @@
       "refunded": "مسترد",
       "failed": "فشل"
     }
+  },
+  "userProfile": {
+    "loadingProfile": "جاري تحميل الملف الشخصي...",
+    "loadingInactive": "جاري تحميل العناصر غير النشطة...",
+    "failedToLoad": "فشل تحميل ملف المستخدم",
+    "joined": "انضم {date}",
+    "anonymous": "مجهول",
+    "noReviewComment": "لا توجد ملاحظة مراجعة.",
+    "forItem": "عن",
+    "reviewCount": "{count} مراجعات",
+    "rating": {
+      "asRenter": "كمستأجر",
+      "asOwner": "كمالك",
+      "excellent": "ممتاز",
+      "good": "جيد",
+      "average": "متوسط",
+      "belowAverage": "أقل من المتوسط",
+      "poor": "ضعيف"
+    },
+    "stats": {
+      "listings": "الإعلانات",
+      "reviews": "المراجعات",
+      "totalBookings": "إجمالي الحجوزات",
+      "reviewsAsSubject": "المراجعات كموضوع"
+    },
+    "tabs": {
+      "listings": "الإعلانات ({count})",
+      "inactive": "غير نشط ({count})",
+      "reviews": "المراجعات ({count})"
+    },
+    "empty": {
+      "listingsTitle": "لا توجد إعلانات بعد",
+      "listingsBody": "لم يقم هذا المستخدم بإنشاء أي إعلانات بعد.",
+      "inactiveTitle": "لا توجد إعلانات غير نشطة",
+      "inactiveBody": "ليس لديك أي إعلانات غير نشطة."
+    }
   }
 }

@@ -591,5 +591,41 @@
       "failedToApprove": "נכשל באישור ההזמנה.",
       "failedToDecline": "נכשל בדחיית ההזמנה."
     }
+  },
+  "userProfile": {
+    "loadingProfile": "טוען פרופיל...",
+    "loadingInactive": "טוען פריטים לא פעילים...",
+    "failedToLoad": "נכשל בטעינת פרופיל משתמש",
+    "joined": "הצטרף {date}",
+    "anonymous": "אנונימי",
+    "noReviewComment": "לא סופקה הערת ביקורת.",
+    "forItem": "עבור",
+    "reviewCount": "{count} ביקורות",
+    "rating": {
+      "asRenter": "כשוכר",
+      "asOwner": "כבעלים",
+      "excellent": "מצוין",
+      "good": "טוב",
+      "average": "ממוצע",
+      "belowAverage": "מתחת לממוצע",
+      "poor": "גרוע"
+    },
+    "stats": {
+      "listings": "פריטים",
+      "reviews": "ביקורות",
+      "totalBookings": "סה\"כ הזמנות",
+      "reviewsAsSubject": "ביקורות על המשתמש"
+    },
+    "tabs": {
+      "listings": "פריטים ({count})",
+      "inactive": "לא פעילים ({count})",
+      "reviews": "ביקורות ({count})"
+    },
+    "empty": {
+      "listingsTitle": "אין פריטים עדיין",
+      "listingsBody": "למשתמש זה אין פריטים שפורסמו עדיין.",
+      "inactiveTitle": "אין פריטים לא פעילים",
+      "inactiveBody": "אין לך פריטים לא פעילים."
+    }
   }
 }

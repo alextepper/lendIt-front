@@ -41,7 +41,7 @@ async function loadUserItems() {
       <h3 class="h6 mb-0">{{ t('dashboard.myItemsForRent') }}</h3>
       <router-link 
         v-if="totalItems > 4" 
-        to="/dashboard?tab=listings" 
+        to="/my/listings" 
         class="btn btn-outline-primary btn-sm"
       >
         <i class="bi bi-arrow-right me-1"></i>
@@ -64,7 +64,7 @@ async function loadUserItems() {
       <div class="mt-2">
         <h6 class="text-muted">{{ t('dashboard.noItemsYet') }}</h6>
         <p class="small text-muted mb-3">{{ t('dashboard.startEarningByListingItemsForRent') }}</p>
-        <router-link to="/dashboard?tab=listings" class="btn btn-primary btn-sm">
+        <router-link to="/my/listings" class="btn btn-primary btn-sm">
           <i class="bi bi-plus-lg me-1"></i>
           {{ t('dashboard.addYourFirstItem') }}
         </router-link>
@@ -81,7 +81,7 @@ async function loadUserItems() {
 
     <!-- Show More Button for mobile/tablet when there are more items -->
     <div v-if="totalItems > 4" class="text-center mt-3 d-lg-none">
-      <router-link to="/dashboard?tab=listings" class="btn btn-outline-primary">
+      <router-link to="/my/listings" class="btn btn-outline-primary">
         <i class="bi bi-arrow-right me-1"></i>
         <span>{{ t('dashboard.viewAll') }} {{ totalItems }} {{ t('dashboard.items') }}</span>
       </router-link>

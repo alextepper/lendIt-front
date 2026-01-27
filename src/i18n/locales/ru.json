@@ -586,5 +586,41 @@
       "refunded": "Возвращено",
       "failed": "Не удалось"
     }
+  },
+  "userProfile": {
+    "loadingProfile": "Загрузка профиля...",
+    "loadingInactive": "Загрузка неактивных объявлений...",
+    "failedToLoad": "Не удалось загрузить профиль пользователя",
+    "joined": "Присоединился {date}",
+    "anonymous": "Аноним",
+    "noReviewComment": "Комментарий к отзыву отсутствует.",
+    "forItem": "для",
+    "reviewCount": "{count} отзыв(ов)",
+    "rating": {
+      "asRenter": "Как арендатор",
+      "asOwner": "Как владелец",
+      "excellent": "Отлично",
+      "good": "Хорошо",
+      "average": "Средне",
+      "belowAverage": "Ниже среднего",
+      "poor": "Плохо"
+    },
+    "stats": {
+      "listings": "Объявления",
+      "reviews": "Отзывы",
+      "totalBookings": "Всего бронирований",
+      "reviewsAsSubject": "Отзывы о пользователе"
+    },
+    "tabs": {
+      "listings": "Объявления ({count})",
+      "inactive": "Неактивные ({count})",
+      "reviews": "Отзывы ({count})"
+    },
+    "empty": {
+      "listingsTitle": "Нет объявлений",
+      "listingsBody": "Этот пользователь ещё не создал ни одного объявления.",
+      "inactiveTitle": "Нет неактивных объявлений",
+      "inactiveBody": "У вас нет неактивных объявлений."
+    }
   }
 }

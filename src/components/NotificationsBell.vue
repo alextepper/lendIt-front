@@ -175,7 +175,7 @@ function getTargetRoute(n) {
     return { name: 'my-bookings' };
   }
   if (n.type === 'NEW_BOOKING_REQUEST') {
-    return { name: 'dashboard', query: { tab: 'booking-requests' } };
+    return { name: 'booking-requests' };
   }
   return null;
 }

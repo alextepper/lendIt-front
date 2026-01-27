@@ -266,11 +266,8 @@ function onDateClick(date) {
   const bookings = getBookingsForDate(date);
   if (bookings.length > 0) {
     // Redirect to booking list/dashboard instead of showing modal
-    // Navigate to dashboard with booking-requests tab active
-    router.push({
-      name: 'dashboard',
-      query: { tab: 'booking-requests' }
-    });
+    // Navigate to booking requests page
+    router.push({ name: 'booking-requests' });
   }
 }
 

@@ -601,5 +601,41 @@
       "refunded": "Refunded",
       "failed": "Failed"
     }
+  },
+  "userProfile": {
+    "loadingProfile": "Loading profile...",
+    "loadingInactive": "Loading inactive listings...",
+    "failedToLoad": "Failed to load user profile",
+    "joined": "Joined {date}",
+    "anonymous": "Anonymous",
+    "noReviewComment": "No review comment provided.",
+    "forItem": "for",
+    "reviewCount": "{count} review(s)",
+    "rating": {
+      "asRenter": "As Renter",
+      "asOwner": "As Owner",
+      "excellent": "Excellent",
+      "good": "Good",
+      "average": "Average",
+      "belowAverage": "Below Average",
+      "poor": "Poor"
+    },
+    "stats": {
+      "listings": "Listings",
+      "reviews": "Reviews",
+      "totalBookings": "Total Bookings",
+      "reviewsAsSubject": "Reviews as Subject"
+    },
+    "tabs": {
+      "listings": "Listings ({count})",
+      "inactive": "Inactive ({count})",
+      "reviews": "Reviews ({count})"
+    },
+    "empty": {
+      "listingsTitle": "No Listings Yet",
+      "listingsBody": "This user hasn't created any listings yet.",
+      "inactiveTitle": "No Inactive Listings",
+      "inactiveBody": "You don't have any inactive listings."
+    }
   }
 }

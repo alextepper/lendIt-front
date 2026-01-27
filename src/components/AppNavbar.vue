@@ -35,7 +35,7 @@
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item ms-3">
-            <router-link class="nav-link position-relative" to="/dashboard?tab=booking-requests">
+            <router-link class="nav-link position-relative" to="/my/booking-requests">
               <i class="bi bi-calendar-check"></i> {{ $t('bookingRequests.navTitle') }}
               <span v-if="pendingBookingsCount > 0" class="position-absolute top-10 start-0 translate-middle badge rounded-pill bg-warning" style="font-size: 0.7rem; padding: 0.25em 0.5em;">
                 {{ pendingBookingsCount > 99 ? '99+' : pendingBookingsCount }}
@@ -146,7 +146,7 @@
                   </router-link>
                 </li>
                 <li>
-                  <router-link class="dropdown-item" to="/dashboard?tab=listings">
+                  <router-link class="dropdown-item" to="/my/listings">
                     <i class="bi bi-box-seam me-2"></i>{{ $t('nav.myListings') }}
                   </router-link>
                 </li>

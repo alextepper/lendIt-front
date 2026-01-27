@@ -11,7 +11,8 @@ const RequestPasswordReset = () => import("../views/auth/RequestPasswordReset.vu
 const ResetPassword = () => import("../views/auth/ResetPassword.vue");
 const Search = () => import("../views/Search.vue");
 const Item = () => import("../views/Item.vue");
-const Dashboard = () => import("../views/Dashboard.vue");
+const MyListings = () => import("../views/MyListings.vue");
+const BookingRequests = () => import("../views/BookingRequests.vue");
 const MyBookings = () => import("../views/MyBookings.vue");
 const Messages = () => import("../views/Messages.vue");
 const Settings = () => import("../views/Settings.vue");
@@ -79,7 +80,19 @@ const router = createRouter({
     {
       path: "/dashboard",
       name: "dashboard",
-      component: Dashboard,
+      component: UserProfile,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/my/listings",
+      name: "my-listings",
+      component: MyListings,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/my/booking-requests",
+      name: "booking-requests",
+      component: BookingRequests,
       meta: { requiresAuth: true },
     },
     {
