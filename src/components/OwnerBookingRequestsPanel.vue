@@ -37,15 +37,21 @@
     </div>
 
     <!-- Requests List -->
-    <div v-else class="vstack gap-3">
-      <div
-        v-for="request in filteredRequests"
-        :key="request.id"
-        class="card booking-request-card"
-        :class="{ 'border-warning': request.status === 'PENDING_OWNER' }"
-      >
-        <div class="card-body">
-          <div class="d-flex flex-column flex-md-row gap-3 align-items-start">
+    <div v-else class="vstack gap-4">
+      <div v-if="ownerRequests.length" class="request-group">
+        <div class="group-header">
+          <i class="bi bi-house-check me-2"></i>
+          {{ $t('bookingRequests.youAreOwner') }}
+        </div>
+        <div class="vstack gap-3">
+          <div
+            v-for="request in ownerRequests"
+            :key="request.id"
+            class="card booking-request-card"
+            :class="{ 'border-warning': request.status === 'PENDING_OWNER' }"
+          >
+            <div class="card-body">
+              <div class="d-flex flex-column flex-md-row gap-3 align-items-start">
             <!-- Item Info -->
             <div class="flex-grow-1">
               <div class="d-flex align-items-start gap-2 mb-2">
@@ -187,6 +193,171 @@
               <div v-else-if="request.status === 'OWNER_DECLINED'" class="small text-danger">
                 <i class="bi bi-x-circle me-1"></i>
                 {{ $t('bookingRequests.declined') }}
+              </div>
+            </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="renterRequests.length" class="request-group">
+        <div class="group-header">
+          <i class="bi bi-box-arrow-in-right me-2"></i>
+          {{ $t('bookingRequests.youAreRenter') }}
+        </div>
+        <div class="vstack gap-3">
+          <div
+            v-for="request in renterRequests"
+            :key="request.id"
+            class="card booking-request-card"
+            :class="{ 'border-warning': request.status === 'PENDING_OWNER' }"
+          >
+            <div class="card-body">
+              <div class="d-flex flex-column flex-md-row gap-3 align-items-start">
+            <!-- Item Info -->
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-start gap-2 mb-2">
+                <img
+                  v-if="request.item?.mainPhotoUrl || request.item?.thumbnail"
+                  :src="request.item.mainPhotoUrl || request.item.thumbnail"
+                  :alt="request.item.title"
+                  class="rounded"
+                  style="width: 60px; height: 60px; object-fit: cover;"
+                />
+                <div class="flex-grow-1">
+                  <router-link
+                    v-if="request.item"
+                    :to="{ name: 'item', params: { id: request.item.id } }"
+                    class="text-decoration-none"
+                  >
+                    <h3 class="h6 mb-1">
+                      {{ request.item.title }}
+                      <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                    </h3>
+                  </router-link>
+                </div>
+              </div>
+
+              <div class="text-muted small mb-2">
+                <i class="bi bi-calendar me-1"></i>
+                {{ formatDate(request.startDate || request.from) }} → {{ formatDate(request.endDate || request.to) }}
+                <span v-if="request.days"> · {{ request.days }} {{ $t('bookingRequests.days') }}</span>
+                <span v-else-if="request.startDate && request.endDate">
+                  · {{ calculateDays(request.startDate || request.from, request.endDate || request.to) }} {{ $t('bookingRequests.days') }}
+                </span>
+              </div>
+
+              <!-- Show counterparty (renter if user is owner, owner if user is renter) -->
+              <div v-if="request.counterparty || request.renter" class="mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <router-link
+                    :to="{ name: 'user-profile', params: { id: (request.counterparty || request.renter).id } }"
+                    class="text-decoration-none"
+                  >
+                    <i class="bi bi-person-circle me-1"></i>
+                    <strong>{{ (request.counterparty || request.renter).displayName || (request.counterparty || request.renter).username || (request.counterparty || request.renter).name }}</strong>
+                  </router-link>
+                  <span v-if="(request.counterparty || request.renter).renterRating" class="badge bg-info">
+                    <i class="bi bi-star-fill me-1"></i>
+                    {{ (request.counterparty || request.renter).renterRating.toFixed(1) }}
+                  </span>
+                  <span v-if="request.role" class="badge bg-secondary">
+                    {{ request.role === 'renter' ? $t('bookingRequests.youAreRenter') : $t('bookingRequests.youAreOwner') }}
+                  </span>
+                </div>
+              </div>
+
+              <div v-if="request.notes" class="alert alert-light small mb-0">
+                <i class="bi bi-chat-quote me-1"></i>
+                <strong>{{ $t('bookingRequests.notes') }}:</strong> {{ request.notes }}
+              </div>
+            </div>
+
+            <!-- Status & Actions -->
+            <div class="d-flex flex-column align-items-end gap-2 ms-md-3">
+              <div class="text-end">
+                <div class="fw-semibold mb-1">
+                  {{ formatCurrency(request.totalAmount || request.estimatedTotal || request.total, request.currency || 'ILS') }}
+                </div>
+                <div v-if="request.rentalPrice || request.depositAmount" class="small text-muted mb-1">
+                  <div v-if="request.rentalPrice">
+                    {{ $t('bookingRequests.rental') }}: {{ formatCurrency(request.rentalPrice, request.currency || 'ILS') }}
+                  </div>
+                  <div v-if="request.depositAmount">
+                    {{ $t('bookingRequests.deposit') }}: {{ formatCurrency(request.depositAmount, request.currency || 'ILS') }}
+                  </div>
+                </div>
+                <div class="small">
+                  <span class="badge" :class="getStatusBadgeClass(request.status)">
+                    {{ $t(`bookingRequests.status.${request.status}`) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Pending Actions - Only show if user is the owner -->
+              <div v-if="request.status === 'PENDING_OWNER' && isOwnerOfBooking(request)" class="d-flex gap-2 flex-wrap justify-content-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-success"
+                  :disabled="actionLoadingId === request.id"
+                  @click="openApproveModal(request)"
+                >
+                  <i class="bi bi-check-circle me-1"></i>
+                  {{ $t('bookingRequests.approve') }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  :disabled="actionLoadingId === request.id"
+                  @click="openRejectModal(request)"
+                >
+                  <i class="bi bi-x-circle me-1"></i>
+                  {{ $t('bookingRequests.decline') }}
+                </button>
+              </div>
+
+              <!-- Awaiting Payment - Show status + Pay button (only for renter) -->
+              <div v-else-if="request.status === 'AWAITING_PAYMENT'" class="d-flex flex-column align-items-end gap-1">
+                
+                <button
+                  v-if="isRenterOfBooking(request)"
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  @click.stop="goToPayment(request)"
+                >
+                  <i class="bi bi-credit-card me-1"></i>
+                  {{ $t('bookingRequests.goToPayment') }}
+                </button>
+              </div>
+
+              <!-- Confirmed - Show Leave Review button for both owner and renter -->
+              <div v-else-if="request.status === 'CONFIRMED'" class="d-flex flex-column align-items-end gap-1">
+                <div class="small text-primary mb-1">
+                  <i class="bi bi-check-circle me-1"></i>
+                  {{ $t('bookingRequests.confirmed') }}
+                </div>
+                <button
+                  v-if="!hasLeftReview(request)"
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  @click.stop="openReviewModal(request)"
+                >
+                  <i class="bi bi-star me-1"></i>
+                  {{ $t('bookingRequests.leaveReview') || 'Leave Review' }}
+                </button>
+                <div v-else class="small text-muted">
+                  <i class="bi bi-check-circle-fill me-1"></i>
+                  {{ $t('bookingRequests.reviewSubmitted') || 'Review Submitted' }}
+                </div>
+              </div>
+
+              <!-- Declined -->
+              <div v-else-if="request.status === 'OWNER_DECLINED'" class="small text-danger">
+                <i class="bi bi-x-circle me-1"></i>
+                {{ $t('bookingRequests.declined') }}
+              </div>
+            </div>
               </div>
             </div>
           </div>
@@ -503,6 +674,14 @@ const filteredRequests = computed(() => {
   return requests.value.filter((r) => r.status === statusFilter.value);
 });
 
+const ownerRequests = computed(() =>
+  filteredRequests.value.filter((r) => isOwnerOfBooking(r))
+);
+
+const renterRequests = computed(() =>
+  filteredRequests.value.filter((r) => isRenterOfBooking(r))
+);
+
 function formatDate(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -808,6 +987,15 @@ async function handleReviewSubmit(reviewData) {
 
 .booking-request-card.border-warning {
   border-left: 4px solid #ffc107;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: #495057;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
 }
 </style>
 
