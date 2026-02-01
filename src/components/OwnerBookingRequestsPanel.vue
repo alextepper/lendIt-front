@@ -393,12 +393,13 @@ async function handleReviewSubmit(reviewData) {
                   </div>
                 </div>
                 <div class="request-pricing">
-                  <div class="price-total">{{ formatCurrency(request.totalAmount || request.estimatedTotal || request.total, request.currency || 'ILS') }}</div>
-                  <div v-if="request.rentalPrice" class="price-detail">
-                    {{ $t('bookingRequests.rental') }}: {{ formatCurrency(request.rentalPrice, request.currency || 'ILS') }}
-                  </div>
+                  <div class="price-total">{{ formatCurrency(request.rentalPrice, request.currency || 'ILS') }}</div>
+                  
                   <div v-if="request.depositAmount" class="price-detail">
                     {{ $t('bookingRequests.deposit') }}: {{ formatCurrency(request.depositAmount, request.currency || 'ILS') }}
+                  </div>
+                  <div v-if="request.rentalPrice" class="price-detail">
+                    {{ $t('bookingRequests.total') }}: {{ formatCurrency(request.totalAmount || request.estimatedTotal || request.total, request.currency || 'ILS') }}
                   </div>
                   <div class="request-status-wrapper">
                     <span class="status-badge" :class="`status-${request.status.toLowerCase().replace('_', '-')}`">
@@ -859,8 +860,7 @@ async function handleReviewSubmit(reviewData) {
 .item-thumb img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  padding: 0.5rem;
+  object-fit: cover;
 }
 
 .request-info {
