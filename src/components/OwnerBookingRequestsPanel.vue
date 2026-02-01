@@ -8,7 +8,7 @@ import { useAuthStore } from '../stores/auth';
 import {
   fetchAllBookings,
   approveBookingRequest,
-  declineBookingRequest,
+  rejectBookingRequest,
 } from '../services/bookingRequestService';
 import ReviewModal from './ReviewModal.vue';
 
@@ -211,7 +211,7 @@ async function declineRequest() {
   if (!selectedRequest.value) return;
   rejecting.value = true;
   try {
-    await declineBookingRequest(selectedRequest.value.id, rejectReason.value);
+    await rejectBookingRequest(selectedRequest.value.id, rejectReason.value);
     ui.showToast(t('bookingRequests.messages.declined'), 'info');
     if (rejectModalInstance) {
       rejectModalInstance.hide();
