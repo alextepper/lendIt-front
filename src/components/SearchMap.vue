@@ -388,52 +388,45 @@ function updateMarkers() {
       const rating = item.rating ? item.rating.toFixed(1) : null;
       const reviewsCount = item.reviews_count || 0;
       
+      const currencySymbols = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
+      const currencySymbol = currencySymbols[currency] || currency;
+      const distanceInMiles = distance ? (distance * 0.621371).toFixed(1) : null;
+      
       const popupContent = `
         <div class="map-popup">
-          ${photoUrl ? `
-            <div class="map-popup-image">
-              <img src="${safePhotoUrl}" alt="${safeTitle}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div class="map-popup-image-container">
+            ${photoUrl ? `
+              <img src="${safePhotoUrl}" alt="${safeTitle}" class="map-popup-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
               <div class="map-popup-image-placeholder" style="display: none;">
                 <i class="bi bi-image"></i>
               </div>
-            </div>
-          ` : `
-            <div class="map-popup-image-placeholder">
-              <i class="bi bi-image"></i>
-            </div>
-          `}
+            ` : `
+              <div class="map-popup-image-placeholder">
+                <i class="bi bi-image"></i>
+              </div>
+            `}
+          </div>
           <div class="map-popup-content">
-            <div class="map-popup-header">
-              <h6 class="map-popup-title">${safeTitle}</h6>
-              ${item.category ? `<span class="map-popup-category">${item.category}</span>` : ''}
-            </div>
-            
-            <div class="map-popup-price">
-              <span class="map-popup-price-amount">${price}</span>
-              <span class="map-popup-price-currency">${currency}</span>
-              <span class="map-popup-price-period">/day</span>
-            </div>
-            
-            <div class="map-popup-meta">
-              ${rating ? `
-                <div class="map-popup-rating">
-                  <i class="bi bi-star-fill"></i>
-                  <span class="map-popup-rating-value">${rating}</span>
-                  <span class="map-popup-reviews-count">(${reviewsCount})</span>
+            <div class="map-popup-body">
+              ${item.category ? `<span class="map-popup-category">${item.category.toUpperCase()}</span>` : ''}
+              <h3 class="map-popup-title">${safeTitle}</h3>
+              <div class="map-popup-footer">
+                <div class="map-popup-price-wrapper">
+                  <span class="map-popup-price-amount">${currencySymbol}${price.toFixed(0)}</span>
+                  <span class="map-popup-price-period">/day</span>
                 </div>
-              ` : ''}
-              ${distance ? `
-                <div class="map-popup-distance">
-                  <i class="bi bi-geo-alt-fill"></i>
-                  <span>${distance} km</span>
-                </div>
-              ` : ''}
+                ${distance ? `
+                  <div class="map-popup-distance">
+                    <i class="bi bi-geo-alt"></i>
+                    <span>${distance} km away</span>
+                  </div>
+                ` : ''}
+              </div>
+              <button onclick="window.location.href='/item/${item.id}'" class="map-popup-button" type="button">
+                View Details
+                <i class="bi bi-arrow-right map-popup-button-icon"></i>
+              </button>
             </div>
-            
-            <button onclick="window.location.href='/item/${item.id}'" class="map-popup-button" type="button">
-              <span class="map-popup-button-text">View Details</span>
-              <i class="bi bi-arrow-right map-popup-button-icon"></i>
-            </button>
           </div>
         </div>
       `;
@@ -727,72 +720,84 @@ onUnmounted(() => {
 }
 
 :deep(.map-popup) {
-  min-width: 280px;
-  max-width: 320px;
-  padding: 10px;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  width: 288px;
   background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+:deep(.map-popup:hover) {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+}
+
+:deep(.map-popup-image-container) {
+  position: relative;
+  height: 176px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
 }
 
 :deep(.map-popup-image) {
-  width: 100% !important;
-  aspect-ratio: 16 / 9 !important;
-  max-height: 200px !important;
-  overflow: hidden !important;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
-  position: relative !important;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px 16px 0 0;
+  transition: transform 0.3s ease;
 }
 
-:deep(.map-popup-image img) {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  display: block !important;
-  transition: transform 0.3s ease !important;
-}
-
-:deep(.map-popup:hover .map-popup-image img) {
-  transform: scale(1.05) !important;
+:deep(.map-popup:hover .map-popup-image) {
+  transform: scale(1.05);
 }
 
 :deep(.map-popup-image-placeholder) {
-  width: 100% !important;
-  aspect-ratio: 16 / 9 !important;
-  max-height: 200px !important;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  color: #adb5bd !important;
+  width: 100%;
+  height: 176px;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
 }
 
 :deep(.map-popup-image-placeholder i) {
-  font-size: 3rem !important;
+  font-size: 3rem;
   opacity: 0.5;
 }
 
-.map-popup-content {
+:deep(.map-popup-content) {
   padding: 1rem;
   background: white;
 }
 
-.map-popup-header {
+:deep(.map-popup-body) {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+:deep(.map-popup-category) {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  width: fit-content;
 }
 
 :deep(.map-popup-title) {
-  font-size: 1.1rem !important;
-  font-weight: 700 !important;
-  margin: 0 !important;
-  color: #212529 !important;
-  line-height: 1.3 !important;
-  flex: 1;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -800,164 +805,86 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-:deep(.map-popup-category) {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  background: #e7f3ff;
-  color: #0d6efd;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
+:deep(.map-popup-footer) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.map-popup-price {
+:deep(.map-popup-price-wrapper) {
   display: flex;
-  align-items: baseline;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e9ecef;
+  flex-direction: column;
 }
 
 :deep(.map-popup-price-amount) {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  color: #0d6efd;
+  color: #2563eb;
   line-height: 1;
 }
 
-:deep(.map-popup-price-currency) {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #0d6efd;
+:deep(.map-popup-price-period) {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.125rem;
 }
 
-:deep(.map-popup-price-period) {
-  font-size: 0.875rem;
-  color: #6c757d;
+:deep(.map-popup-distance) {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #64748b;
   font-weight: 500;
 }
 
-.map-popup-meta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-:deep(.map-popup-rating) {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem;
-  margin: 5px 0
-}
-
-:deep(.map-popup-rating i) {
-  color: #ffc107;
-  font-size: 0.875rem;
-}
-
-:deep(.map-popup-rating-value) {
-  font-weight: 600;
-  color: #212529;
-}
-
-:deep(.map-popup-reviews-count) {
-  color: #6c757d;
-  font-size: 0.8rem;
-}
-
-.map-popup-distance {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem;
-  color: #6c757d;
-}
-
 :deep(.map-popup-distance i) {
-  color: #4285F4;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
 }
 
-.map-popup-button {
+:deep(.map-popup-button) {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 2px solid #2563eb;
+  background: transparent;
+  color: #2563eb;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
-  width: 100%;
-  padding: 0.75rem 1.25rem;
-  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  gap: 0.5rem;
+}
+
+:deep(.map-popup-button:hover) {
+  background: #2563eb;
   color: white;
-  border: none;
-  border-radius: 0.625rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25), 
-              0 2px 4px rgba(13, 110, 253, 0.15);
-  position: relative;
-  overflow: hidden;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
-.map-popup-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.map-popup-button:hover::before {
-  left: 100%;
-}
-
-.map-popup-button:hover {
-  background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(13, 110, 253, 0.35), 
-              0 4px 8px rgba(13, 110, 253, 0.2);
-}
-
-.map-popup-button:active {
+:deep(.map-popup-button:active) {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
 }
 
-.map-popup-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.3),
-              0 4px 12px rgba(13, 110, 253, 0.25);
+:deep(.map-popup-button-icon) {
+  font-size: 0.875rem;
+  transition: transform 0.2s ease;
 }
 
-.map-popup-button-text {
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.map-popup-button-icon {
-  font-size: 1rem;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-}
-
-.map-popup-button:hover .map-popup-button-icon {
+:deep(.map-popup-button:hover .map-popup-button-icon) {
   transform: translateX(4px);
 }
 
 :deep(.leaflet-popup-content-wrapper) {
   padding: 0;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2) !important;
+  background: transparent;
 }
 
 :deep(.leaflet-popup-content) {
@@ -967,7 +894,63 @@ onUnmounted(() => {
 
 :deep(.leaflet-popup-tip) {
   background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode styles */
+:global([data-bs-theme="dark"]) .map-popup {
+  background: #1e293b !important;
+  border-color: rgba(51, 65, 85, 0.5) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+}
+
+:global([data-bs-theme="dark"]) .map-popup-content {
+  background: #1e293b !important;
+}
+
+:global([data-bs-theme="dark"]) .map-popup-title {
+  color: #f8fafc !important;
+}
+
+:global([data-bs-theme="dark"]) .map-popup-category {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #93c5fd !important;
+}
+
+:global([data-bs-theme="dark"]) .map-popup-price-amount {
+  color: #60a5fa !important;
+}
+
+:global([data-bs-theme="dark"]) .map-popup-price-period,
+:global([data-bs-theme="dark"]) .map-popup-distance {
+  color: #94a3b8 !important;
+}
+
+:global([data-bs-theme="dark"]) .map-popup-distance i {
+  color: #64748b !important;
+}
+
+:global([data-bs-theme="dark"]) .map-popup-button {
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+}
+
+:global([data-bs-theme="dark"]) .map-popup-button:hover {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+:global([data-bs-theme="dark"]) .map-popup-image-container {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+}
+
+:global([data-bs-theme="dark"]) .map-popup-image-placeholder {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  color: #475569 !important;
+}
+
+:global([data-bs-theme="dark"]) .leaflet-popup-tip {
+  background: #1e293b !important;
 }
 </style>
 
@@ -1005,112 +988,116 @@ onUnmounted(() => {
   font-size: 24px !important;
 }
 
-.map-popup-image {
-  width: 100% !important;
-  aspect-ratio: 16 / 9 !important;
-  max-height: 200px !important;
+.map-popup {
+  width: 288px !important;
+  background: white !important;
+  border-radius: 16px !important;
   overflow: hidden !important;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
-  position: relative !important;
 }
 
-.map-popup-image img {
+.map-popup-image-container {
+  position: relative !important;
+  height: 176px !important;
+  overflow: hidden !important;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
+}
+
+.map-popup-image {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
-  display: block !important;
   transition: transform 0.3s ease !important;
 }
 
-.map-popup:hover .map-popup-image img {
+.map-popup:hover .map-popup-image {
   transform: scale(1.05) !important;
 }
 
 .map-popup-image-placeholder {
   width: 100% !important;
-  aspect-ratio: 16 / 9 !important;
-  max-height: 200px !important;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  height: 176px !important;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: #adb5bd !important;
+  color: #cbd5e1 !important;
 }
 
 .map-popup-image-placeholder i {
   font-size: 3rem !important;
-  opacity: 0.5;
+  opacity: 0.5 !important;
 }
 
 .map-popup-button {
+  width: 100% !important;
+  padding: 0.625rem 1rem !important;
+  border: 2px solid #2563eb !important;
+  background: transparent !important;
+  color: #2563eb !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 0.625rem !important;
-  width: 100% !important;
-  padding: 0.75rem 1.25rem !important;
-  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
-  color: white !important;
-  border: none !important;
-  border-radius: 0.625rem !important;
-  font-weight: 600 !important;
-  font-size: 0.95rem !important;
-  cursor: pointer !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25), 
-              0 2px 4px rgba(13, 110, 253, 0.15) !important;
-  position: relative !important;
-  overflow: hidden !important;
+  gap: 0.5rem !important;
   font-family: inherit !important;
 }
 
-.map-popup-button::before {
-  content: '' !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: -100% !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent) !important;
-  transition: left 0.5s ease !important;
-}
-
-.map-popup-button:hover::before {
-  left: 100% !important;
-}
-
 .map-popup-button:hover {
-  background: linear-gradient(135deg, #0a58ca 0%, #084298 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(13, 110, 253, 0.35), 
-              0 4px 8px rgba(13, 110, 253, 0.2) !important;
+  background: #2563eb !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
 }
 
 .map-popup-button:active {
   transform: translateY(0) !important;
-  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3) !important;
 }
 
 .map-popup-button:focus {
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.3),
-              0 4px 12px rgba(13, 110, 253, 0.25) !important;
-}
-
-.map-popup-button-text {
-  font-weight: 600 !important;
-  letter-spacing: 0.3px !important;
+  outline: 2px solid #60a5fa !important;
+  outline-offset: 2px !important;
 }
 
 .map-popup-button-icon {
-  font-size: 1rem !important;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  display: flex !important;
-  align-items: center !important;
+  font-size: 0.875rem !important;
+  transition: transform 0.2s ease !important;
 }
 
 .map-popup-button:hover .map-popup-button-icon {
   transform: translateX(4px) !important;
+}
+
+/* Dark mode global styles */
+[data-bs-theme="dark"] .map-popup {
+  background: #1e293b !important;
+  border-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+[data-bs-theme="dark"] .map-popup-content {
+  background: #1e293b !important;
+}
+
+[data-bs-theme="dark"] .map-popup-image-container {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+}
+
+[data-bs-theme="dark"] .map-popup-image-placeholder {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  color: #475569 !important;
+}
+
+[data-bs-theme="dark"] .map-popup-button {
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+}
+
+[data-bs-theme="dark"] .map-popup-button:hover {
+  background: #3b82f6 !important;
+  color: white !important;
 }
 </style>
 
