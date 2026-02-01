@@ -1033,20 +1033,6 @@ watch(fullscreenCarousel, (isOpen) => {
             </p>
           </div>
 
-          <!-- Price & Book Section -->
-          <div class="mobile-price-section">
-            <div class="mobile-price-wrapper">
-              <div class="mobile-price">
-                <span class="mobile-price-value">{{ formatPrice(item.pricePerDay) }}</span>
-                <span class="mobile-price-unit">{{ $t('item.perDay') }}</span>
-              </div>
-              <button class="mobile-price-details">{{ $t('item.viewDetails') }}</button>
-            </div>
-            <button v-if="!isOwner" class="mobile-book-btn" @click="showBookingModal">
-              {{ $t('item.bookNow') }}
-            </button>
-          </div>
-
           <!-- Description -->
           <div class="mobile-section">
             <h2 class="mobile-section-title">{{ $t('item.aboutThisItem') }}</h2>
@@ -1156,8 +1142,7 @@ watch(fullscreenCarousel, (isOpen) => {
         <!-- Fixed Bottom Bar -->
         <div v-if="!isOwner" class="mobile-bottom-bar">
           <div class="mobile-bottom-price">
-            <div class="mobile-bottom-price-value">{{ formatPrice(item.pricePerDay) }}</div>
-            <div class="mobile-bottom-price-unit">{{ $t('item.perDay') }}</div>
+            <div class="mobile-bottom-price-value">{{ formatPrice(item.pricePerDay) }}/{{ $t('item.perDay') }}</div>
           </div>
           <button class="mobile-bottom-book-btn" @click="showBookingModal">
             {{ $t('item.bookNow') }}
