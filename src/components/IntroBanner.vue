@@ -46,7 +46,7 @@ onMounted(() => {
 
       <div class="intro-header">
         <div class="intro-icon">
-          <span class="material-symbols-outlined">waving_hand</span>
+          <i class="bi bi-hand-thumbs-up"></i>
         </div>
         <h1 class="intro-title">{{ t('introBanner.title') }}</h1>
         <p class="intro-subtitle">{{ t('introBanner.body') }}</p>
@@ -55,21 +55,21 @@ onMounted(() => {
       <div class="intro-steps">
         <div class="intro-step">
           <div class="step-icon">
-            <span class="material-symbols-outlined">travel_explore</span>
+            <i class="bi bi-search"></i>
           </div>
           <h3 class="step-title">{{ t('introBanner.steps.find.title') }}</h3>
           <p class="step-text">{{ t('introBanner.steps.find.body') }}</p>
         </div>
         <div class="intro-step">
           <div class="step-icon">
-            <span class="material-symbols-outlined">handshake</span>
+            <i class="bi bi-handshake"></i>
           </div>
           <h3 class="step-title">{{ t('introBanner.steps.borrow.title') }}</h3>
           <p class="step-text">{{ t('introBanner.steps.borrow.body') }}</p>
         </div>
         <div class="intro-step">
           <div class="step-icon">
-            <span class="material-symbols-outlined">assignment_return</span>
+            <i class="bi bi-arrow-return-left"></i>
           </div>
           <h3 class="step-title">{{ t('introBanner.steps.return.title') }}</h3>
           <p class="step-text">{{ t('introBanner.steps.return.body') }}</p>

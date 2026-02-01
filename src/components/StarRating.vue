@@ -3,12 +3,16 @@ import { computed } from 'vue';
 
 const props = defineProps({
   modelValue: { type: Number, default: 0 },
+  rating: { type: Number, default: null },
   readonly: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue']);
 
 const stars = computed(() => Array.from({ length: 5 }, (_, i) => i + 1));
+const displayRating = computed(() =>
+  typeof props.rating === 'number' ? props.rating : props.modelValue
+);
 
 function handleClick(rating) {
   if (!props.readonly) {
@@ -23,7 +27,7 @@ function handleClick(rating) {
       v-for="star in stars"
       :key="star"
       class="bi"
-      :class="star <= modelValue ? 'bi-star-fill text-warning' : 'bi-star'"
+      :class="star <= displayRating ? 'bi-star-fill text-warning' : 'bi-star'"
       @click="handleClick(star)"
       :style="{ cursor: readonly ? 'default' : 'pointer' }"
     ></i>
