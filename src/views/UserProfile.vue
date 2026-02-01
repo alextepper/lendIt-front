@@ -33,24 +33,10 @@ const isOwnProfile = computed(() => {
   return auth.user.id === user.value.id;
 });
 
-const renterRating = computed(() => {
-  return user.value?.renterRating || 0;
-});
-
-const ownerRating = computed(() => {
-  return user.value?.ownerRating || 0;
-});
-
-const renterReviewCount = computed(() => {
-  return user.value?.renterRatingCount || 0;
-});
-
-const ownerReviewCount = computed(() => {
-  return user.value?.ownerRatingCount || 0;
-});
-
-const hasRenterRating = computed(() => renterReviewCount.value > 0);
-const hasOwnerRating = computed(() => ownerReviewCount.value > 0);
+const renterRating = computed(() => user.value?.renterRating || 0);
+const ownerRating = computed(() => user.value?.ownerRating || 0);
+const renterReviewCount = computed(() => user.value?.renterRatingCount || 0);
+const ownerReviewCount = computed(() => user.value?.ownerRatingCount || 0);
 
 const totalListings = computed(() => {
   return listings.value.length;
@@ -65,6 +51,42 @@ const displayReviews = computed(() => {
   const embedded = user.value?.reviews;
   return Array.isArray(embedded) ? embedded : [];
 });
+
+const renterReviews = computed(() =>
+  displayReviews.value.filter((review) => review?.subjectType === 'RENTER')
+);
+
+const ownerReviews = computed(() =>
+  displayReviews.value.filter((review) => review?.subjectType === 'RENTAL_EXPERIENCE')
+);
+
+function averageRating(items) {
+  if (!items.length) return 0;
+  const total = items.reduce((sum, review) => {
+    const rating = review?.ratingOverall ?? review?.rating ?? 0;
+    return sum + rating;
+  }, 0);
+  return total / items.length;
+}
+
+const renterReviewCountDisplay = computed(() =>
+  renterReviewCount.value || renterReviews.value.length
+);
+
+const ownerReviewCountDisplay = computed(() =>
+  ownerReviewCount.value || ownerReviews.value.length
+);
+
+const renterRatingDisplay = computed(() =>
+  renterRating.value || averageRating(renterReviews.value)
+);
+
+const ownerRatingDisplay = computed(() =>
+  ownerRating.value || averageRating(ownerReviews.value)
+);
+
+const hasRenterRating = computed(() => renterReviewCountDisplay.value > 0);
+const hasOwnerRating = computed(() => ownerReviewCountDisplay.value > 0);
 
 const totalReviews = computed(() => {
   return (
@@ -292,18 +314,18 @@ watch(targetUserId, (userId) => {
               <div class="rating-content">
                 <div v-if="hasRenterRating">
                   <div class="rating-score">
-                    <span class="score-number">{{ renterRating.toFixed(1) }}</span>
+                  <span class="score-number">{{ renterRatingDisplay.toFixed(1) }}</span>
                     <div class="rating-stars">
-                      <StarRating :rating="renterRating" :size="'sm'" />
+                    <StarRating :rating="renterRatingDisplay" :size="'sm'" />
                     </div>
                   </div>
                   <div class="rating-text">
-                    <span :class="`text-${getRatingColor(renterRating)}`">
-                      {{ getRatingText(renterRating) }}
+                  <span :class="`text-${getRatingColor(renterRatingDisplay)}`">
+                    {{ getRatingText(renterRatingDisplay) }}
                     </span>
                   </div>
                   <div class="rating-count">
-                    {{ $t('userProfile.reviewCount', { count: renterReviewCount }) }}
+                  {{ $t('userProfile.reviewCount', { count: renterReviewCountDisplay }) }}
                   </div>
                 </div>
                 <div v-else class="rating-empty">
@@ -320,18 +342,18 @@ watch(targetUserId, (userId) => {
               <div class="rating-content">
                 <div v-if="hasOwnerRating">
                   <div class="rating-score">
-                    <span class="score-number">{{ ownerRating.toFixed(1) }}</span>
+                  <span class="score-number">{{ ownerRatingDisplay.toFixed(1) }}</span>
                     <div class="rating-stars">
-                      <StarRating :rating="ownerRating" :size="'sm'" />
+                    <StarRating :rating="ownerRatingDisplay" :size="'sm'" />
                     </div>
                   </div>
                   <div class="rating-text">
-                    <span :class="`text-${getRatingColor(ownerRating)}`">
-                      {{ getRatingText(ownerRating) }}
+                  <span :class="`text-${getRatingColor(ownerRatingDisplay)}`">
+                    {{ getRatingText(ownerRatingDisplay) }}
                     </span>
                   </div>
                   <div class="rating-count">
-                    {{ $t('userProfile.reviewCount', { count: ownerReviewCount }) }}
+                  {{ $t('userProfile.reviewCount', { count: ownerReviewCountDisplay }) }}
                   </div>
                 </div>
                 <div v-else class="rating-empty">

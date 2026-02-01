@@ -703,7 +703,12 @@ function getBookingReviews(booking) {
     if (Array.isArray(value)) {
       reviews.push(...value);
     } else if (value && typeof value === 'object') {
-      reviews.push(value);
+      if (value.rentalExperience || value.renter) {
+        if (value.rentalExperience) reviews.push(value.rentalExperience);
+        if (value.renter) reviews.push(value.renter);
+      } else {
+        reviews.push(value);
+      }
     }
   }
   return reviews;

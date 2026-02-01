@@ -13,6 +13,7 @@ const props = defineProps({
 const auth = useAuthStore();
 const orders = ref([]);
 const loading = ref(true);
+let loadPromise = null;
 const selectedOrder = ref(null);
 const activeFilter = ref('all'); // 'all', 'PENDING', 'PAID', 'HANDED_OVER', 'RETURNED', 'CANCELLED'
 
@@ -34,19 +35,28 @@ onMounted(async () => {
 });
 
 async function loadOrders() {
-  loading.value = true;
-  try {
-    const response = await fetchOrders({
-      role: props.role,
-      page: 1,
-      pageSize: 50,
-    });
-    orders.value = response.data || [];
-  } catch (error) {
-    console.error('Failed to load orders:', error);
-  } finally {
-    loading.value = false;
+  if (loadPromise) {
+    return loadPromise;
   }
+
+  loading.value = true;
+  loadPromise = (async () => {
+    try {
+      const response = await fetchOrders({
+        role: props.role,
+        page: 1,
+        pageSize: 50,
+      });
+      orders.value = response.data || [];
+    } catch (error) {
+      console.error('Failed to load orders:', error);
+    } finally {
+      loading.value = false;
+      loadPromise = null;
+    }
+  })();
+
+  return loadPromise;
 }
 
 function showOrderDetails(order) {

@@ -43,6 +43,11 @@
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item ms-3">
+            <router-link class="nav-link" to="/my/listings">
+              <i class="bi bi-box-seam"></i> {{ $t('nav.myListings') }}
+            </router-link>
+          </li>
+          <li v-if="auth.isAuthed" class="nav-item ms-3">
             <router-link class="nav-link position-relative" to="/messages">
               <i class="bi bi-chat-dots"></i> {{ $t('nav.messages') }}
               <span v-if="chat.unreadTotal > 0" class="position-absolute top-10 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.25em 0.5em;">
