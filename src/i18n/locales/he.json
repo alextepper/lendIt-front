@@ -212,7 +212,15 @@
     "tags": "תגיות",
     "tagsPlaceholder": "הכנס תגיות מופרדות בפסיקים",
     "addTag": "הוסף תגית",
-    "tagsHelp": "הוסף תגיות כדי לעזור לאחרים למצוא את הפריט שלך"
+    "tagsHelp": "הוסף תגיות כדי לעזור לאחרים למצוא את הפריט שלך",
+    "viewDetails": "הצג פרטים",
+    "verified": "מאומת",
+    "fastResponse": "מגיב מהר",
+    "seeAll": "צפה בהכל",
+    "depositInfo": "פיקדון בר-החזר של",
+    "depositHeldDuring": "יוחזק בכרטיס האשראי שלך במהלך תקופת ההשכרה",
+    "reviews": "ביקורות",
+    "noDescription": "אין תיאור זמין"
   },
   "listing": {
     "editListing": "ערוך מודעה",

@@ -960,6 +960,213 @@ watch(fullscreenCarousel, (isOpen) => {
 
     <!-- Item Content -->
     <div v-else-if="item" class="item-layout">
+      <!-- Mobile Layout -->
+      <div class="mobile-layout">
+        <!-- Fixed Top Navigation -->
+        <div class="mobile-top-nav">
+          <button class="mobile-nav-btn" @click="$router.back()">
+            <i class="bi bi-arrow-left"></i>
+          </button>
+          <div class="mobile-nav-actions">
+            <button class="mobile-nav-btn">
+              <i class="bi bi-heart"></i>
+            </button>
+            <button class="mobile-nav-btn" @click="navigator.clipboard.writeText(location.href)">
+              <i class="bi bi-share"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hero Image Section -->
+        <section class="mobile-hero">
+          <div
+            class="mobile-hero-media"
+            @touchstart="handleTouchStart"
+            @touchmove="handleTouchMove"
+            @touchend="handleTouchEnd"
+          >
+            <div v-if="displayPhotos?.length > 0" class="mobile-hero-image">
+              <transition name="carousel-fade" mode="out-in">
+                <img
+                  :key="currentPhotoIndex"
+                  :src="getCarouselPhotoUrl(displayPhotos[currentPhotoIndex])"
+                  :alt="`${item.title} - Photo ${currentPhotoIndex + 1}`"
+                  @click="openFullscreenCarousel"
+                />
+              </transition>
+            </div>
+            <div v-else class="mobile-hero-image mobile-hero-placeholder">
+              <i class="bi bi-image"></i>
+            </div>
+
+            <div v-if="displayPhotos?.length > 1" class="mobile-hero-counter">
+              {{ currentPhotoIndex + 1 }} / {{ displayPhotos.length }}
+            </div>
+
+            <div v-if="displayPhotos?.length > 1" class="mobile-hero-dots">
+              <div
+                v-for="(photo, index) in displayPhotos.slice(0, 3)"
+                :key="index"
+                class="mobile-dot"
+                :class="{ active: index === currentPhotoIndex }"
+              ></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Content Section -->
+        <section class="mobile-content">
+          <!-- Header -->
+          <div class="mobile-header">
+            <div class="mobile-header-top">
+              <span class="mobile-category">{{ item.category }}</span>
+              <div v-if="item.rating" class="mobile-rating">
+                <i class="bi bi-star-fill"></i>
+                <span>{{ item.rating.toFixed(1) }}</span>
+                <span class="mobile-rating-count">({{ item.reviews_count || 0 }} {{ $t('item.reviews') }})</span>
+              </div>
+            </div>
+            <h1 class="mobile-title">{{ item.title }}</h1>
+            <p class="mobile-location">
+              <i class="bi bi-geo-alt"></i>
+              <span>{{ item.location || item.address }}</span>
+            </p>
+          </div>
+
+          <!-- Price & Book Section -->
+          <div class="mobile-price-section">
+            <div class="mobile-price-wrapper">
+              <div class="mobile-price">
+                <span class="mobile-price-value">{{ formatPrice(item.pricePerDay) }}</span>
+                <span class="mobile-price-unit">{{ $t('item.perDay') }}</span>
+              </div>
+              <button class="mobile-price-details">{{ $t('item.viewDetails') }}</button>
+            </div>
+            <button v-if="!isOwner" class="mobile-book-btn" @click="showBookingModal">
+              {{ $t('item.bookNow') }}
+            </button>
+          </div>
+
+          <!-- Description -->
+          <div class="mobile-section">
+            <h2 class="mobile-section-title">{{ $t('item.aboutThisItem') }}</h2>
+            <p class="mobile-description">{{ item.description || $t('item.noDescription') }}</p>
+          </div>
+
+          <!-- Key Features (if applicable) -->
+          <div v-if="item.condition || item.deposit || item.initialPrice" class="mobile-section">
+            <details class="mobile-details" open>
+              <summary class="mobile-details-summary">
+                <span>{{ $t('item.details') }}</span>
+                <i class="bi bi-chevron-down"></i>
+              </summary>
+              <div class="mobile-details-content">
+                <div v-if="item.condition" class="mobile-detail-item">
+                  <i class="bi bi-check-circle text-primary"></i>
+                  <span>{{ $t('item.condition') }}: {{ item.condition }}</span>
+                </div>
+                <div v-if="item.deposit" class="mobile-detail-item">
+                  <i class="bi bi-shield-check text-primary"></i>
+                  <span>{{ $t('item.deposit') }}: {{ formatPrice(item.deposit) }}</span>
+                </div>
+                <div v-if="item.initialPrice" class="mobile-detail-item">
+                  <i class="bi bi-cash text-primary"></i>
+                  <span>{{ $t('item.initial') }}: {{ formatPrice(item.initialPrice) }}</span>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <!-- Owner Card -->
+          <div v-if="item?.owner && !isOwner" class="mobile-section">
+            <div class="mobile-owner-card">
+              <div class="mobile-owner-info">
+                <div class="mobile-owner-avatar">
+                  <img
+                    v-if="item.owner.profilePicture"
+                    :src="item.owner.profilePicture"
+                    :alt="item.owner.username"
+                  />
+                  <i v-else class="bi bi-person-fill"></i>
+                </div>
+                <div class="mobile-owner-details">
+                  <h3 class="mobile-owner-name">{{ item.owner.username }}</h3>
+                  <div class="mobile-owner-meta">
+                    <span class="mobile-owner-badge">
+                      <i class="bi bi-patch-check-fill text-primary"></i>
+                      {{ $t('item.verified') }}
+                    </span>
+                    <span>•</span>
+                    <span>
+                      <i class="bi bi-clock"></i>
+                      {{ $t('item.fastResponse') }}
+                    </span>
+                  </div>
+                </div>
+                <button class="mobile-owner-message" @click="showOwnerModal">
+                  <i class="bi bi-chat-dots"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reviews -->
+          <div v-if="reviews && reviews.length > 0" class="mobile-section">
+            <div class="mobile-section-header">
+              <h2 class="mobile-section-title">{{ $t('item.reviews') }} ({{ reviews.length }})</h2>
+              <button class="mobile-see-all">{{ $t('item.seeAll') }}</button>
+            </div>
+            <div
+              v-for="review in reviews.slice(0, 2)"
+              :key="review.id"
+              class="mobile-review-card"
+            >
+              <div class="mobile-review-header">
+                <div class="mobile-review-user">
+                  <div class="mobile-review-avatar">
+                    <img
+                      v-if="review.reviewer?.profilePicture"
+                      :src="review.reviewer.profilePicture"
+                      :alt="review.reviewer.username"
+                    />
+                    <i v-else class="bi bi-person-fill"></i>
+                  </div>
+                  <div>
+                    <p class="mobile-review-name">{{ review.reviewer?.username || 'Anonymous' }}</p>
+                    <p class="mobile-review-date">{{ formatDate(review.createdAt) }}</p>
+                  </div>
+                </div>
+                <div class="mobile-review-rating">
+                  <i v-for="n in 5" :key="n" class="bi" :class="n <= review.ratingOverall ? 'bi-star-fill' : 'bi-star'"></i>
+                </div>
+              </div>
+              <p class="mobile-review-text">{{ review.body || review.comment }}</p>
+            </div>
+          </div>
+
+          <!-- Deposit Info -->
+          <div v-if="item.deposit" class="mobile-info-box">
+            <i class="bi bi-info-circle"></i>
+            <p>
+              {{ $t('item.depositInfo') }} <strong>{{ formatPrice(item.deposit) }}</strong> {{ $t('item.depositHeldDuring') }}
+            </p>
+          </div>
+        </section>
+
+        <!-- Fixed Bottom Bar -->
+        <div v-if="!isOwner" class="mobile-bottom-bar">
+          <div class="mobile-bottom-price">
+            <div class="mobile-bottom-price-value">{{ formatPrice(item.pricePerDay) }}</div>
+            <div class="mobile-bottom-price-unit">{{ $t('item.perDay') }}</div>
+          </div>
+          <button class="mobile-bottom-book-btn" @click="showBookingModal">
+            {{ $t('item.bookNow') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Desktop Layout -->
+      <div class="desktop-layout">
       <section class="item-hero">
         <div
           class="hero-media"
@@ -1014,6 +1221,16 @@ watch(fullscreenCarousel, (isOpen) => {
             <div class="hero-price">
               <span class="hero-price-value">{{ formatPrice(item.pricePerDay) }}</span>
               <span class="hero-price-unit">{{ $t('item.perDay') }}</span>
+            </div>
+            <div v-if="!isOwner" class="hero-actions">
+              <button class="btn btn-primary hero-btn hero-btn-book" @click="showBookingModal">
+                <i class="bi bi-calendar-check hero-btn-icon"></i>
+                <span class="hero-btn-text">{{ $t('item.bookNow') }}</span>
+              </button>
+              <button class="btn btn-outline-light hero-btn hero-btn-message" @click="showOwnerModal">
+                <i class="bi bi-chat-dots hero-btn-icon"></i>
+                <span class="hero-btn-text">{{ $t('item.message') }}</span>
+              </button>
             </div>
           </div>
 
@@ -1411,6 +1628,7 @@ watch(fullscreenCarousel, (isOpen) => {
           </div>
         </div>
       </div>
+      </div>
     </div>
 
     <!-- Booking Modal -->
@@ -1681,12 +1899,106 @@ watch(fullscreenCarousel, (isOpen) => {
 }
 
 .hero-actions {
-  position: absolute;
-  top: 16px;
-  right: 16px;
   display: flex;
-  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.hero-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.hero-btn-book {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.hero-btn-book:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.hero-btn-message {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #2563eb;
+  backdrop-filter: blur(8px);
+}
+
+.hero-btn-message:hover {
+  background: white;
+  border-color: white;
+  color: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+/* Mobile: Hide icons, show only text */
+@media (max-width: 768px) {
+  .hero-card {
+    left: 12px;
+    bottom: 12px;
+    right: 12px;
+    max-width: none;
+    padding: 14px 16px;
+  }
+  
+  .hero-title {
+    font-size: 22px;
+  }
+  
+  .hero-price-value {
+    font-size: 20px;
+  }
+  
+  .hero-btn-icon {
+    display: none;
+  }
+  
+  .hero-btn {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  
+  .hero-actions {
+    gap: 8px;
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-card {
+    left: 8px;
+    bottom: 8px;
+    right: 8px;
+    padding: 12px 14px;
+  }
+  
+  .hero-title {
+    font-size: 18px;
+  }
+  
+  .hero-price-value {
+    font-size: 18px;
+  }
+  
+  .hero-btn {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
 }
 
 .hero-thumbnails {
@@ -1907,6 +2219,31 @@ watch(fullscreenCarousel, (isOpen) => {
 :global([data-bs-theme="dark"]) .hero-thumb.active {
   border-color: #60a5fa;
   box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+}
+
+:global([data-bs-theme="dark"]) .hero-btn-book {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+:global([data-bs-theme="dark"]) .hero-btn-book:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+}
+
+:global([data-bs-theme="dark"]) .hero-btn-message {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #93c5fd;
+  backdrop-filter: blur(12px);
+}
+
+:global([data-bs-theme="dark"]) .hero-btn-message:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(148, 163, 184, 0.5);
+  color: #60a5fa;
 }
 
 :global([data-bs-theme="dark"]) .item-card,
@@ -2728,5 +3065,668 @@ watch(fullscreenCarousel, (isOpen) => {
     max-height: 70vh;
     margin: 1rem 0;
   }
+}
+
+/* Mobile Layout Styles */
+.mobile-layout {
+  display: none;
+}
+
+.desktop-layout {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .mobile-layout {
+    display: block;
+  }
+  
+  .desktop-layout {
+    display: none;
+  }
+}
+
+/* Mobile Top Navigation */
+.mobile-top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.mobile-nav-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  pointer-events: auto;
+  transition: transform 0.2s;
+}
+
+.mobile-nav-btn:active {
+  transform: scale(0.95);
+}
+
+.mobile-nav-btn i {
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.mobile-nav-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Mobile Hero Section */
+.mobile-hero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.mobile-hero-media {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.mobile-hero-image {
+  width: 100%;
+  height: 100%;
+}
+
+.mobile-hero-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mobile-hero-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+}
+
+.mobile-hero-placeholder i {
+  font-size: 4rem;
+}
+
+.mobile-hero-counter {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  color: white;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.mobile-hero-dots {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+
+.mobile-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  transition: background 0.3s;
+}
+
+.mobile-dot.active {
+  background: white;
+}
+
+/* Mobile Content */
+.mobile-content {
+  padding: 1.25rem;
+  padding-bottom: 120px;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.mobile-header {
+  margin-bottom: 1rem;
+}
+
+.mobile-header-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mobile-category {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mobile-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #f59e0b;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.mobile-rating i {
+  font-size: 14px;
+}
+
+.mobile-rating-count {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.mobile-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.mobile-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.mobile-location i {
+  font-size: 16px;
+}
+
+/* Mobile Price Section */
+.mobile-price-section {
+  padding: 1rem 0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.mobile-price-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.mobile-price-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.mobile-price-unit {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.mobile-price-details {
+  font-size: 10px;
+  color: #3b82f6;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border: none;
+  background: none;
+  padding: 0;
+  text-align: left;
+}
+
+.mobile-book-btn {
+  background: #3b82f6;
+  color: white;
+  padding: 0.875rem 2.5rem;
+  border-radius: 16px;
+  font-weight: 700;
+  border: none;
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+  transition: transform 0.2s;
+}
+
+.mobile-book-btn:active {
+  transform: scale(0.98);
+}
+
+/* Mobile Sections */
+.mobile-section {
+  margin-bottom: 1.5rem;
+}
+
+.mobile-section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem 0;
+  color: #0f172a;
+}
+
+.mobile-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.mobile-see-all {
+  font-size: 14px;
+  color: #3b82f6;
+  font-weight: 600;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+.mobile-description {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Mobile Details */
+.mobile-details {
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.mobile-details-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  cursor: pointer;
+  list-style: none;
+  background: #f8fafc;
+  font-weight: 600;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.mobile-details-summary::-webkit-details-marker {
+  display: none;
+}
+
+.mobile-details-summary i {
+  transition: transform 0.3s;
+}
+
+.mobile-details[open] .mobile-details-summary i {
+  transform: rotate(180deg);
+}
+
+.mobile-details-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.mobile-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.mobile-detail-item i {
+  font-size: 16px;
+}
+
+/* Mobile Owner Card */
+.mobile-owner-card {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 24px;
+  border: 1px solid #f1f5f9;
+}
+
+.mobile-owner-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-owner-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mobile-owner-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobile-owner-avatar i {
+  font-size: 24px;
+  color: #94a3b8;
+}
+
+.mobile-owner-details {
+  flex: 1;
+}
+
+.mobile-owner-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: #0f172a;
+}
+
+.mobile-owner-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.mobile-owner-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobile-owner-badge i {
+  font-size: 12px;
+}
+
+.mobile-owner-message {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.mobile-owner-message i {
+  font-size: 20px;
+}
+
+/* Mobile Reviews */
+.mobile-review-card {
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  margin-bottom: 12px;
+}
+
+.mobile-review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.mobile-review-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-review-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mobile-review-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobile-review-avatar i {
+  font-size: 16px;
+  color: #94a3b8;
+}
+
+.mobile-review-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+}
+
+.mobile-review-date {
+  font-size: 10px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.mobile-review-rating {
+  display: flex;
+  gap: 2px;
+  color: #f59e0b;
+}
+
+.mobile-review-rating i {
+  font-size: 12px;
+}
+
+.mobile-review-text {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Mobile Info Box */
+.mobile-info-box {
+  display: flex;
+  gap: 12px;
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 16px;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.mobile-info-box i {
+  color: #3b82f6;
+  font-size: 14px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.mobile-info-box p {
+  font-size: 11px;
+  color: #1e40af;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Mobile Bottom Bar */
+.mobile-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid #f1f5f9;
+  z-index: 50;
+  padding: 1rem 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-bottom-price {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-bottom-price-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.mobile-bottom-price-unit {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.mobile-bottom-book-btn {
+  background: #3b82f6;
+  color: white;
+  padding: 0.875rem 2.5rem;
+  border-radius: 16px;
+  font-weight: 700;
+  border: none;
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+  transition: transform 0.2s;
+}
+
+.mobile-bottom-book-btn:active {
+  transform: scale(0.98);
+}
+
+/* Dark mode for mobile */
+:global([data-bs-theme="dark"]) .mobile-nav-btn {
+  background: rgba(30, 41, 59, 0.9);
+}
+
+:global([data-bs-theme="dark"]) .mobile-nav-btn i {
+  color: white;
+}
+
+:global([data-bs-theme="dark"]) .mobile-hero {
+  background: #1e293b;
+}
+
+:global([data-bs-theme="dark"]) .mobile-title,
+:global([data-bs-theme="dark"]) .mobile-section-title,
+:global([data-bs-theme="dark"]) .mobile-price-value,
+:global([data-bs-theme="dark"]) .mobile-owner-name,
+:global([data-bs-theme="dark"]) .mobile-review-name,
+:global([data-bs-theme="dark"]) .mobile-bottom-price-value,
+:global([data-bs-theme="dark"]) .mobile-details-summary {
+  color: #f8fafc;
+}
+
+:global([data-bs-theme="dark"]) .mobile-location,
+:global([data-bs-theme="dark"]) .mobile-price-unit,
+:global([data-bs-theme="dark"]) .mobile-description,
+:global([data-bs-theme="dark"]) .mobile-owner-meta,
+:global([data-bs-theme="dark"]) .mobile-review-text,
+:global([data-bs-theme="dark"]) .mobile-review-date,
+:global([data-bs-theme="dark"]) .mobile-bottom-price-unit {
+  color: #cbd5e1;
+}
+
+:global([data-bs-theme="dark"]) .mobile-category {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+:global([data-bs-theme="dark"]) .mobile-price-section {
+  border-color: #334155;
+}
+
+:global([data-bs-theme="dark"]) .mobile-details {
+  border-color: #334155;
+}
+
+:global([data-bs-theme="dark"]) .mobile-details-summary {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+:global([data-bs-theme="dark"]) .mobile-details-content {
+  border-color: #334155;
+}
+
+:global([data-bs-theme="dark"]) .mobile-owner-card {
+  background: rgba(30, 41, 59, 0.5);
+  border-color: #334155;
+}
+
+:global([data-bs-theme="dark"]) .mobile-owner-avatar {
+  background: #1e293b;
+}
+
+:global([data-bs-theme="dark"]) .mobile-review-card {
+  border-color: #334155;
+}
+
+:global([data-bs-theme="dark"]) .mobile-review-avatar {
+  background: #1e293b;
+}
+
+:global([data-bs-theme="dark"]) .mobile-info-box {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+:global([data-bs-theme="dark"]) .mobile-info-box p {
+  color: #93c5fd;
+}
+
+:global([data-bs-theme="dark"]) .mobile-bottom-bar {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: #334155;
 }
 </style>

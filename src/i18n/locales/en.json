@@ -219,7 +219,15 @@
     "tags": "Tags",
     "tagsPlaceholder": "Enter tags separated by commas",
     "addTag": "Add tag",
-    "tagsHelp": "Add tags to help others find your item"
+    "tagsHelp": "Add tags to help others find your item",
+    "viewDetails": "View details",
+    "verified": "Verified",
+    "fastResponse": "Fast response",
+    "seeAll": "See all",
+    "depositInfo": "A refundable security deposit of",
+    "depositHeldDuring": "will be held on your card during the rental period",
+    "reviews": "reviews",
+    "noDescription": "No description available"
   },
   "listing": {
     "editListing": "Edit Listing",
