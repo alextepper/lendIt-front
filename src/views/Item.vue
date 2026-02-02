@@ -829,6 +829,19 @@ function formatPrice(amount) {
   }).format(amount / 100)
 }
 
+function formatDate(dateString) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  
+  // Format as "MMM D, YYYY" (e.g., "Jan 25, 2026")
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(date);
+}
+
 // Computed property for display photos
 const displayPhotos = computed(() => {
   return editMode.value ? editPhotos.value : (item.value?.photos || []);
