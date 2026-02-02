@@ -167,8 +167,9 @@ function hasLeftReview(booking) {
 
 function openApproveModal(request) {
   selectedRequest.value = request;
-  adjustedRentalPrice.value = '';
-  adjustedDepositAmount.value = '';
+  // Pre-fill with current values (convert from cents to currency units)
+  adjustedRentalPrice.value = request.rentalPrice ? (request.rentalPrice / 100).toString() : '';
+  adjustedDepositAmount.value = request.depositAmount ? (request.depositAmount / 100).toString() : '';
   if (approveModalInstance) {
     approveModalInstance.show();
   }
@@ -187,10 +188,11 @@ async function approveRequest() {
   approving.value = true;
   try {
     const payload = {};
-    if (adjustedRentalPrice.value) {
+    // Only include values if they are filled (not empty string)
+    if (adjustedRentalPrice.value && adjustedRentalPrice.value.toString().trim() !== '') {
       payload.rentalPrice = Math.round(parseFloat(adjustedRentalPrice.value) * 100);
     }
-    if (adjustedDepositAmount.value) {
+    if (adjustedDepositAmount.value && adjustedDepositAmount.value.toString().trim() !== '') {
       payload.depositAmount = Math.round(parseFloat(adjustedDepositAmount.value) * 100);
     }
     await approveBookingRequest(selectedRequest.value.id, payload);
