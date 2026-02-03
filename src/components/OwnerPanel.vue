@@ -4,6 +4,7 @@ import { useChatStore } from '../stores/chat'
 import { useRouter, useRoute } from 'vue-router'
 import { ref, watch } from 'vue'
 import { Modal } from 'bootstrap'
+import { useI18n } from 'vue-i18n'
 import { useAuthModal } from '../composables/useAuthModal'
 import { requireAuth, resumePendingAction } from '../auth/requireAuth'
 
@@ -16,12 +17,21 @@ const auth = useAuthStore()
 const chat = useChatStore()
 const router = useRouter()
 const route = useRoute()
+const { t, locale } = useI18n()
 const { openLoginModal, closeModals } = useAuthModal()
 const loading = ref(false)
 
 function getOwnerInitials(name) {
   if (!name) return 'U'
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+
+function formatMemberSince(dateString) {
+  if (!dateString) return t('ownerPanel.recently')
+  const date = new Date(dateString)
+  const options = { year: 'numeric', month: 'short' }
+  const formatLocale = locale.value || 'en-US'
+  return date.toLocaleDateString(formatLocale, options)
 }
 
 function closeParentModal() {
@@ -61,7 +71,7 @@ async function messageOwner() {
         router.push({ name: 'messages', query: { thread: thread.id } })
       } catch (e) {
         console.error('Failed to create thread:', e)
-        alert('Failed to start conversation. Please try again.')
+        alert(t('ownerPanel.failedToStartConversation'))
       } finally {
         loading.value = false
       }
@@ -96,7 +106,7 @@ watch(() => auth.isAuthed, async (isAuthed) => {
 
 <template>
   <div class="card p-3">
-    <h6 class="mb-3">Owner Information</h6>
+    <h6 class="mb-3">{{ $t('ownerPanel.title') }}</h6>
     
     <div class="d-flex align-items-start gap-3 mb-3">
       <!-- Owner Avatar -->
@@ -107,7 +117,7 @@ watch(() => auth.isAuthed, async (isAuthed) => {
           class="rounded-circle"
           width="60"
           height="60"
-          alt="Owner"
+          :alt="$t('ownerPanel.ownerAlt')"
           style="object-fit: cover;"
         />
         <div
@@ -121,21 +131,21 @@ watch(() => auth.isAuthed, async (isAuthed) => {
       
       <!-- Owner Details -->
       <div class="flex-grow-1">
-        <div class="fw-semibold mb-1">{{ owner?.username || owner?.name || 'Unknown' }}</div>
+        <div class="fw-semibold mb-1">{{ owner?.username || owner?.name || $t('ownerPanel.unknown') }}</div>
         
         <!-- Owner Rating -->
         <div class="d-flex align-items-center mb-2">
           <i class="bi bi-star-fill text-warning me-1"></i>
-          <span class="fw-medium">{{ owner?.rating || owner?.ratingAvg || 'New' }}</span>
+          <span class="fw-medium">{{ owner?.rating || owner?.ratingAvg || $t('ownerPanel.new') }}</span>
           <span v-if="owner?.reviewsCount || owner?.ratingCount" class="text-muted ms-1">
-            ({{ owner?.reviewsCount || owner?.ratingCount }} reviews)
+            ({{ owner?.reviewsCount || owner?.ratingCount }} {{ $t('ownerPanel.reviews') }})
           </span>
         </div>
         
         <!-- Member Since -->
         <div class="small text-muted">
           <i class="bi bi-calendar3 me-1"></i>
-          Member since {{ formatMemberSince(owner?.createdAt) }}
+          {{ $t('ownerPanel.memberSince') }} {{ formatMemberSince(owner?.createdAt) }}
         </div>
       </div>
     </div>
@@ -150,33 +160,24 @@ watch(() => auth.isAuthed, async (isAuthed) => {
       >
         <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
         <i v-else class="bi bi-chat-dots me-2"></i>
-        {{ loading ? 'Loading...' : 'Message Owner' }}
+        {{ loading ? $t('ownerPanel.loading') : $t('ownerPanel.messageOwner') }}
       </button>
       <button
         v-else-if="!auth.isAuthed"
         class="btn btn-primary"
         @click="messageOwner"
       >
-        <i class="bi bi-chat-dots me-2"></i>Login to Message
+        <i class="bi bi-chat-dots me-2"></i>{{ $t('ownerPanel.loginToMessage') }}
       </button>
-      <router-link
+      <!-- <router-link
         class="btn btn-outline-secondary"
         :to="{ name: 'search', query: { owner: owner?.id } }"
       >
         <i class="bi bi-box-seam me-2"></i>View All Listings
-      </router-link>
+      </router-link> -->
     </div>
   </div>
 </template>
-
-<script>
-function formatMemberSince(dateString) {
-  if (!dateString) return 'Recently'
-  const date = new Date(dateString)
-  const options = { year: 'numeric', month: 'short' }
-  return date.toLocaleDateString('en-US', options)
-}
-</script>
 
 <style scoped>
 .owner-avatar {

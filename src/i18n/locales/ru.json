@@ -2,7 +2,11 @@
   "app": {
     "title": "Sharo",
     "tagline": "Арендуй что угодно, где угодно",
-    "day": "день"
+    "day": "день",
+    "oops": "Упс!",
+    "unknownError": "Неизвестная ошибка",
+    "tryAgain": "Попробовать снова",
+    "initializing": "Инициализация..."
   },
   "nav": {
     "home": "Главная",
@@ -22,6 +26,14 @@
       "light": "Светлая",
       "dark": "Тёмная"
     }
+  },
+  "debug": {
+    "logs": "Журналы отладки",
+    "copy": "Копировать",
+    "clear": "Очистить",
+    "close": "Закрыть",
+    "empty": "Пока нет журналов.",
+    "showLogs": "Показать журналы отладки"
   },
   "auth": {
     "logout": "Выход",
@@ -129,6 +141,11 @@
     "searchRadius": "Радиус поиска",
     "km": "км"
   },
+  "searchMap": {
+    "drag": "Перетащите",
+    "dragToChangeCenter": "Перетащите, чтобы изменить центр поиска",
+    "viewDetails": "Подробнее"
+  },
   "item": {
     "title": "Детали товара",
     "home": "Главная",
@@ -136,9 +153,9 @@
     "loading": "Загрузка товара…",
     "failedToLoad": "Не удалось загрузить товар",
     "price": "Цена",
-    "perDay": "/день",
-    "initial": "Первоначальная:",
-    "deposit": "Залог:",
+    "perDay": "день",
+    "initial": "Первоначальная",
+    "deposit": "Залог",
     "description": "Описание",
     "aboutThisItem": "Об этом товаре",
     "location": "Местоположение",
@@ -197,10 +214,14 @@
     "noPhotosAvailable": "Нет доступных фотографий",
     "photo": "Фотография",
     "thumbnail": "Миниатюра",
+    "photoAlt": "{title} - Фото {index}",
+    "thumbnailAlt": "Миниатюра {index}",
     "viewPhoto": "Просмотр фотографии {index}",
     "previousPhoto": "Предыдущая фотография",
     "nextPhoto": "Следующая фотография",
     "closeFullscreen": "Закрыть полноэкранный режим",
+    "removePhoto": "Удалить фото",
+    "setMainPhoto": "Сделать главным фото",
     "currency": "Валюта",
     "expandLocation": "Развернуть местоположение",
     "collapseLocation": "Свернуть местоположение",
@@ -209,6 +230,8 @@
     "s": "дня",
     "openItem": "Открыть товар",
     "item": "Товар",
+    "bookThisItem": "Забронировать этот предмет",
+    "viewProfile": "Посмотреть профиль",
     "tags": "Теги",
     "tagsPlaceholder": "Введите теги через запятую",
     "addTag": "Добавить тег",
@@ -220,7 +243,21 @@
     "depositInfo": "Возвратный залог в размере",
     "depositHeldDuring": "будет удержан на вашей карте в течение периода аренды",
     "reviews": "отзывы",
-    "noDescription": "Нет описания"
+    "noDescription": "Нет описания",
+    "safetyNotice": "Всегда проверяйте удостоверение личности арендатора перед передачей вещи. Не рекомендуется сдавать в аренду лицам младше 18 лет."
+  },
+  "ownerPanel": {
+    "title": "Информация о владельце",
+    "ownerAlt": "Владелец",
+    "unknown": "Неизвестно",
+    "new": "Новый",
+    "reviews": "отзывов",
+    "memberSince": "На платформе с",
+    "loading": "Загрузка...",
+    "messageOwner": "Написать владельцу",
+    "loginToMessage": "Войдите, чтобы написать",
+    "recently": "Недавно",
+    "failedToStartConversation": "Не удалось начать разговор. Попробуйте снова."
   },
   "listing": {
     "editListing": "Редактировать объявление",
@@ -405,6 +442,8 @@
     "success": "Успех",
     "close": "Закрыть",
     "back": "Назад",
+    "continue": "Продолжить",
+    "cancel": "Отмена",
     "next": "Далее",
     "previous": "Предыдущий",
     "yes": "Да",
@@ -455,6 +494,26 @@
     "myRentals": "Мои аренды",
     "itemsRentingOut": "Товары, которые я сдаю в аренду"
   },
+  "orders": {
+    "filters": {
+      "all": "Все",
+      "paid": "Оплачено",
+      "active": "Активные",
+      "completed": "Завершенные"
+    },
+    "status": {
+      "PENDING": "В ожидании",
+      "PAID": "Оплачено",
+      "HANDED_OVER": "Активные",
+      "RETURNED": "Завершенные",
+      "CANCELLED": "Отменено"
+    },
+    "orderNumber": "Заказ №{id}",
+    "emptyTitle": "Заказов нет",
+    "emptyBodyAll": "Вы еще не сделали бронирований",
+    "emptyBodyFiltered": "Нет заказов: {status}",
+    "browseItems": "Перейти к поиску"
+  },
   "bookingRequests": {
     "title": "Запросы на бронирование",
     "navTitle": "Запросы на бронирование",
@@ -466,6 +525,9 @@
     "awaitingPayment": "Ожидает оплаты",
     "confirmed": "Подтверждено",
     "declined": "Отклонено",
+    "total": "Итого",
+    "borrower": "Арендатор",
+    "owner": "Владелец",
     "days": "дней",
     "notes": "Примечания",
     "rental": "Аренда",
@@ -479,6 +541,8 @@
     "itemLabel": "Товар",
     "noTitle": "Товар без названия",
     "leaveReview": "Оставить отзыв",
+    "messageBorrower": "Написать арендатору",
+    "messageOwner": "Написать владельцу",
     "reviewSubmitted": "Отзыв отправлен",
     "review": "Отзыв",
     "reviewPlaceholder": "Напишите отзыв...",
@@ -518,6 +582,130 @@
       "failedToLoad": "Не удалось загрузить запросы на бронирование.",
       "failedToApprove": "Не удалось одобрить запрос.",
       "failedToDecline": "Не удалось отклонить запрос."
+    }
+  },
+  "bookingFlow": {
+    "day": "день",
+    "days": "дней",
+    "night": "ночь",
+    "nights": "ночей",
+    "initialFee": "Первоначальный сбор",
+    "securityDeposit": "Гарантийный депозит",
+    "totalToPay": "Итого к оплате",
+    "priceBreakdown": "Разбивка цены",
+    "dailyBreakdown": "Дневная разбивка",
+    "rentalTotal": "Итого аренды",
+    "depositRefundable": "Возвращается после возврата предмета",
+    "totalAmountToPay": "Общая сумма к оплате",
+    "totalIncludesDeposit": "Включает сумму аренды + депозит",
+    "gettingQuote": "Расчет цены...",
+    "getPriceQuote": "Получить расчет",
+    "sending": "Отправка...",
+    "sendRequest": "Отправить запрос",
+    "step1": {
+      "title": "Выберите даты",
+      "subtitle": "Выберите период аренды и получите расчет",
+      "checkIn": "Дата начала",
+      "checkOut": "Дата окончания",
+      "pricePreview": "Предварительный расчет"
+    },
+    "step2": {
+      "title": "Проверьте расчет",
+      "subtitle": "Подтвердите детали аренды и перейдите к оплате"
+    },
+    "step3": {
+      "title": "Добавьте заметки (необязательно)",
+      "subtitle": "Сообщите владельцу о своих нуждах",
+      "additionalNotes": "Дополнительные заметки",
+      "notesPlaceholder": "Например: нужен предмет для фотосъемки, буду обращаться аккуратно...",
+      "requestSummary": "Итог запроса",
+      "dates": "Даты",
+      "duration": "Длительность",
+      "estimatedTotal": "Оценочная сумма",
+      "finalPriceNote": "Окончательная цена может быть изменена владельцем"
+    },
+    "errors": {
+      "checkInPast": "Дата начала не может быть в прошлом",
+      "checkOutPast": "Дата окончания не может быть в прошлом",
+      "datesUnavailable": "Выбранные даты недоступны",
+      "conflictRange": "Конфликт: {from} — {to}",
+      "failedToGetQuote": "Не удалось получить расчет цены",
+      "failedToSendRequest": "Не удалось отправить запрос на бронирование"
+    },
+    "messages": {
+      "requestSent": "Запрос на бронирование отправлен владельцу. Вы получите уведомление после ответа."
+    }
+  },
+  "bookingCard": {
+    "title": "Забронировать этот предмет",
+    "subtitle": "Выберите даты и получите расчет",
+    "selectDates": "Выберите даты",
+    "checkIn": "Начало",
+    "checkOut": "Окончание",
+    "day": "день",
+    "days": "дней",
+    "night": "ночь",
+    "nights": "ночей",
+    "minNights": "Минимум {count} ночей",
+    "maxNights": "Максимум {count} ночей",
+    "specialRequests": "Особые запросы",
+    "optional": "Необязательно",
+    "notesPlaceholder": "Особые запросы или заметки для владельца...",
+    "checkingAvailability": "Проверка доступности...",
+    "checkAvailability": "Проверить доступность и получить расчет",
+    "priceBreakdown": "Разбивка цены",
+    "pricesIn": "Цены в {currency}",
+    "serviceFee": "Сервисный сбор",
+    "discount": "Скидка",
+    "total": "Итого",
+    "vatNote": "Все цены включают НДС (если применимо)",
+    "bookNow": "Забронировать",
+    "datesUnavailableTitle": "Даты недоступны",
+    "datesUnavailableBody": "Эти даты недоступны. Попробуйте другие даты.",
+    "errors": {
+      "startDateFuture": "Дата начала должна быть в будущем",
+      "returnAfterStart": "Дата окончания должна быть позже даты начала",
+      "returnDateFuture": "Дата окончания должна быть в будущем",
+      "datesUnavailable": "Эти даты недоступны. Попробуйте другие даты.",
+      "failedToGetQuote": "Не удалось получить расчет",
+      "failedToCreateBooking": "Не удалось создать бронирование"
+    },
+    "messages": {
+      "bookingCreated": "Бронирование создано! Переходим к оплате..."
+    }
+  },
+  "settings": {
+    "title": "Настройки",
+    "profileInformation": "Профиль",
+    "username": "Имя пользователя",
+    "email": "Эл. почта",
+    "city": "Город",
+    "selectCity": "Выберите город",
+    "cityHelp": "Выберите город проживания",
+    "saveChanges": "Сохранить изменения",
+    "changePassword": "Сменить пароль",
+    "currentPassword": "Текущий пароль",
+    "newPassword": "Новый пароль",
+    "confirmNewPassword": "Подтвердите новый пароль",
+    "passwordHint": "Пароль должен быть не менее 6 символов",
+    "accountActions": "Действия аккаунта",
+    "logout": "Выйти",
+    "placeholders": {
+      "username": "Введите имя пользователя",
+      "email": "Введите эл. почту",
+      "currentPassword": "Введите текущий пароль",
+      "newPassword": "Введите новый пароль (минимум 6 символов)",
+      "confirmNewPassword": "Подтвердите новый пароль"
+    },
+    "messages": {
+      "fillAllFields": "Пожалуйста, заполните все поля",
+      "profileUpdated": "Профиль успешно обновлен!",
+      "updateProfileFailed": "Не удалось обновить профиль",
+      "fillAllPasswordFields": "Пожалуйста, заполните все поля пароля",
+      "passwordsDoNotMatch": "Новые пароли не совпадают",
+      "passwordTooShort": "Пароль должен быть не менее 6 символов",
+      "passwordChanged": "Пароль успешно изменен!",
+      "changePasswordFailed": "Не удалось изменить пароль"
     }
   },
   "dashboard": {
@@ -594,6 +782,21 @@
       "refunded": "Возвращено",
       "failed": "Не удалось"
     }
+  },
+  "errorReport": {
+    "title": "Упс! Что-то пошло не так",
+    "subtitle": "Приносим извинения за неудобства. Помогите нам улучшить приложение, сообщив об этой ошибке.",
+    "errorOccurred": "Детали ошибки:",
+    "descriptionLabel": "Что вы делали, когда это произошло?",
+    "optional": "необязательно",
+    "descriptionPlaceholder": "Опишите, что вы пытались сделать...",
+    "descriptionHint": "Эта информация помогает нам быстрее исправить проблему.",
+    "skip": "Пропустить",
+    "sendReport": "Отправить отчет",
+    "sending": "Отправка...",
+    "reportSent": "Спасибо за ваш отчет!",
+    "reportFailed": "Не удалось отправить отчет. Пожалуйста, попробуйте еще раз.",
+    "thankYou": "Спасибо! Ваш отчет отправлен."
   },
   "userProfile": {
     "loadingProfile": "Загрузка профиля...",

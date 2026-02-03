@@ -2,7 +2,11 @@
   "app": {
     "title": "Sharo",
     "tagline": "استأجر أي شيء، في أي مكان",
-    "day": "يوم"
+    "day": "يوم",
+    "oops": "عذرًا!",
+    "unknownError": "خطأ غير معروف",
+    "tryAgain": "حاول مرة أخرى",
+    "initializing": "جارٍ التهيئة..."
   },
   "nav": {
     "home": "الرئيسية",
@@ -22,6 +26,14 @@
       "light": "فاتح",
       "dark": "داكن"
     }
+  },
+  "debug": {
+    "logs": "سجلات التصحيح",
+    "copy": "نسخ",
+    "clear": "مسح",
+    "close": "إغلاق",
+    "empty": "لا توجد سجلات بعد.",
+    "showLogs": "عرض سجلات التصحيح"
   },
   "auth": {
     "logout": "تسجيل الخروج",
@@ -129,6 +141,11 @@
     "searchRadius": "نطاق البحث",
     "km": "كم"
   },
+  "searchMap": {
+    "drag": "اسحب",
+    "dragToChangeCenter": "اسحب لتغيير مركز البحث",
+    "viewDetails": "عرض التفاصيل"
+  },
   "item": {
     "title": "تفاصيل العنصر",
     "home": "الرئيسية",
@@ -136,9 +153,9 @@
     "loading": "جاري تحميل العنصر…",
     "failedToLoad": "فشل تحميل العنصر",
     "price": "السعر",
-    "perDay": "/يوم",
-    "initial": "مبدئي:",
-    "deposit": "الوديعة:",
+    "perDay": "يوم",
+    "initial": "مبدئي",
+    "deposit": "الوديعة",
     "description": "الوصف",
     "aboutThisItem": "حول هذا العنصر",
     "location": "الموقع",
@@ -197,10 +214,14 @@
     "noPhotosAvailable": "لا توجد صور متاحة",
     "photo": "صورة",
     "thumbnail": "صورة مصغرة",
+    "photoAlt": "{title} - صورة {index}",
+    "thumbnailAlt": "صورة مصغرة {index}",
     "viewPhoto": "عرض الصورة {index}",
     "previousPhoto": "الصورة السابقة",
     "nextPhoto": "الصورة التالية",
     "closeFullscreen": "إغلاق ملء الشاشة",
+    "removePhoto": "إزالة الصورة",
+    "setMainPhoto": "تعيين كصورة رئيسية",
     "currency": "العملة",
     "expandLocation": "توسيع الموقع",
     "collapseLocation": "طي الموقع",
@@ -209,6 +230,8 @@
     "s": "أيام",
     "openItem": "فتح العنصر",
     "item": "عنصر",
+    "bookThisItem": "احجز هذا العنصر",
+    "viewProfile": "عرض الملف الشخصي",
     "tags": "الوسوم",
     "tagsPlaceholder": "أدخل الوسوم مفصولة بفواصل",
     "addTag": "إضافة وسم",
@@ -220,7 +243,21 @@
     "depositInfo": "سيتم الاحتفاظ بوديعة تأمين قابلة للاسترداد بقيمة",
     "depositHeldDuring": "على بطاقتك خلال فترة الإيجار",
     "reviews": "المراجعات",
-    "noDescription": "لا يوجد وصف"
+    "noDescription": "لا يوجد وصف",
+    "safetyNotice": "تحقق دائمًا من هوية المستأجر قبل تسليم العنصر الخاص بك. لا يُنصح بالتأجير للأشخاص دون سن 18 عامًا."
+  },
+  "ownerPanel": {
+    "title": "معلومات المالك",
+    "ownerAlt": "المالك",
+    "unknown": "غير معروف",
+    "new": "جديد",
+    "reviews": "تقييمات",
+    "memberSince": "عضو منذ",
+    "loading": "جارٍ التحميل...",
+    "messageOwner": "راسل المالك",
+    "loginToMessage": "سجّل الدخول للمراسلة",
+    "recently": "مؤخرًا",
+    "failedToStartConversation": "فشل بدء المحادثة. يرجى المحاولة مرة أخرى."
   },
   "listing": {
     "editListing": "تحرير الإعلان",
@@ -405,6 +442,8 @@
     "success": "نجح",
     "close": "إغلاق",
     "back": "رجوع",
+    "continue": "متابعة",
+    "cancel": "إلغاء",
     "next": "التالي",
     "previous": "السابق",
     "yes": "نعم",
@@ -455,6 +494,26 @@
     "myRentals": "إيجاراتي",
     "itemsRentingOut": "العناصر التي أؤجرها"
   },
+  "orders": {
+    "filters": {
+      "all": "الكل",
+      "paid": "مدفوع",
+      "active": "نشط",
+      "completed": "مكتمل"
+    },
+    "status": {
+      "PENDING": "قيد الانتظار",
+      "PAID": "مدفوع",
+      "HANDED_OVER": "نشط",
+      "RETURNED": "مكتمل",
+      "CANCELLED": "ملغي"
+    },
+    "orderNumber": "طلب رقم {id}",
+    "emptyTitle": "لا توجد طلبات",
+    "emptyBodyAll": "لم تقم بأي حجوزات بعد",
+    "emptyBodyFiltered": "لا توجد طلبات {status}",
+    "browseItems": "تصفح العناصر"
+  },
   "bookingRequests": {
     "title": "طلبات الحجز",
     "navTitle": "طلبات الحجز",
@@ -466,6 +525,9 @@
     "awaitingPayment": "في انتظار الدفع",
     "confirmed": "مؤكد",
     "declined": "مرفوض",
+    "total": "الإجمالي",
+    "borrower": "المستعير",
+    "owner": "المالك",
     "days": "أيام",
     "notes": "ملاحظات",
     "rental": "إيجار",
@@ -479,6 +541,8 @@
     "itemLabel": "العنصر",
     "noTitle": "عنصر بدون عنوان",
     "leaveReview": "أترك تقييم",
+    "messageBorrower": "راسل المستعير",
+    "messageOwner": "راسل المالك",
     "reviewSubmitted": "تم تقييمك",
     "review": "تقييم",
     "reviewPlaceholder": "اكتب تقييمك...",
@@ -518,6 +582,130 @@
       "failedToLoad": "فشل تحميل طلبات الحجز.",
       "failedToApprove": "فشل الموافقة على الطلب.",
       "failedToDecline": "فشل رفض الطلب."
+    }
+  },
+  "bookingFlow": {
+    "day": "يوم",
+    "days": "أيام",
+    "night": "ليلة",
+    "nights": "ليالٍ",
+    "initialFee": "رسوم ابتدائية",
+    "securityDeposit": "وديعة تأمين",
+    "totalToPay": "الإجمالي للدفع",
+    "priceBreakdown": "تفصيل السعر",
+    "dailyBreakdown": "تفصيل يومي",
+    "rentalTotal": "إجمالي الإيجار",
+    "depositRefundable": "قابل للاسترداد بعد إعادة العنصر",
+    "totalAmountToPay": "إجمالي المبلغ للدفع",
+    "totalIncludesDeposit": "يشمل إجمالي الإيجار + وديعة التأمين",
+    "gettingQuote": "جارٍ حساب السعر...",
+    "getPriceQuote": "احصل على عرض السعر",
+    "sending": "جارٍ الإرسال...",
+    "sendRequest": "إرسال الطلب",
+    "step1": {
+      "title": "اختر التواريخ",
+      "subtitle": "اختر فترة الإيجار واحصل على عرض فوري",
+      "checkIn": "تاريخ الاستلام",
+      "checkOut": "تاريخ التسليم",
+      "pricePreview": "معاينة السعر"
+    },
+    "step2": {
+      "title": "راجع عرضك",
+      "subtitle": "أكد تفاصيل الإيجار وتابع إلى الدفع"
+    },
+    "step3": {
+      "title": "أضف ملاحظات (اختياري)",
+      "subtitle": "أخبر المالك باحتياجاتك",
+      "additionalNotes": "ملاحظات إضافية",
+      "notesPlaceholder": "مثال: أحتاج العنصر لمشروع تصوير وسأتعامل معه بعناية...",
+      "requestSummary": "ملخص الطلب",
+      "dates": "التواريخ",
+      "duration": "المدة",
+      "estimatedTotal": "الإجمالي التقديري",
+      "finalPriceNote": "قد يقوم المالك بتعديل السعر النهائي"
+    },
+    "errors": {
+      "checkInPast": "لا يمكن أن يكون تاريخ الاستلام في الماضي",
+      "checkOutPast": "لا يمكن أن يكون تاريخ التسليم في الماضي",
+      "datesUnavailable": "التواريخ المحددة غير متاحة",
+      "conflictRange": "تعارض: {from} إلى {to}",
+      "failedToGetQuote": "فشل الحصول على عرض السعر",
+      "failedToSendRequest": "فشل إرسال طلب الحجز"
+    },
+    "messages": {
+      "requestSent": "تم إرسال طلب الحجز إلى المالك. سيتم إخطارك عند الرد."
+    }
+  },
+  "bookingCard": {
+    "title": "احجز هذا العنصر",
+    "subtitle": "اختر تواريخك واحصل على عرض فوري",
+    "selectDates": "اختر التواريخ",
+    "checkIn": "استلام",
+    "checkOut": "تسليم",
+    "day": "يوم",
+    "days": "أيام",
+    "night": "ليلة",
+    "nights": "ليالٍ",
+    "minNights": "الحد الأدنى {count} ليلة",
+    "maxNights": "الحد الأقصى {count} ليلة",
+    "specialRequests": "طلبات خاصة",
+    "optional": "اختياري",
+    "notesPlaceholder": "أي طلبات أو ملاحظات خاصة للمالك...",
+    "checkingAvailability": "جارٍ التحقق من التوفر...",
+    "checkAvailability": "تحقق من التوفر واحصل على عرض",
+    "priceBreakdown": "تفصيل السعر",
+    "pricesIn": "الأسعار بـ {currency}",
+    "serviceFee": "رسوم الخدمة",
+    "discount": "خصم",
+    "total": "الإجمالي",
+    "vatNote": "جميع الأسعار تشمل ضريبة القيمة المضافة (إن وجدت)",
+    "bookNow": "احجز الآن",
+    "datesUnavailableTitle": "التواريخ غير متاحة",
+    "datesUnavailableBody": "هذه التواريخ غير متاحة. يرجى تجربة تواريخ مختلفة.",
+    "errors": {
+      "startDateFuture": "يجب أن يكون تاريخ البداية في المستقبل",
+      "returnAfterStart": "يجب أن يكون تاريخ العودة بعد تاريخ البداية",
+      "returnDateFuture": "يجب أن يكون تاريخ العودة في المستقبل",
+      "datesUnavailable": "هذه التواريخ غير متاحة. جرّب تواريخ مختلفة.",
+      "failedToGetQuote": "فشل الحصول على العرض",
+      "failedToCreateBooking": "فشل إنشاء الحجز"
+    },
+    "messages": {
+      "bookingCreated": "تم إنشاء الحجز! يتم تحويلك إلى الدفع..."
+    }
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "profileInformation": "معلومات الملف الشخصي",
+    "username": "اسم المستخدم",
+    "email": "البريد الإلكتروني",
+    "city": "المدينة",
+    "selectCity": "اختر مدينتك",
+    "cityHelp": "اختر المدينة التي تعيش فيها",
+    "saveChanges": "حفظ التغييرات",
+    "changePassword": "تغيير كلمة المرور",
+    "currentPassword": "كلمة المرور الحالية",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmNewPassword": "تأكيد كلمة المرور الجديدة",
+    "passwordHint": "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+    "accountActions": "إجراءات الحساب",
+    "logout": "تسجيل الخروج",
+    "placeholders": {
+      "username": "أدخل اسم المستخدم",
+      "email": "أدخل البريد الإلكتروني",
+      "currentPassword": "أدخل كلمة المرور الحالية",
+      "newPassword": "أدخل كلمة مرور جديدة (6 أحرف على الأقل)",
+      "confirmNewPassword": "أكد كلمة المرور الجديدة"
+    },
+    "messages": {
+      "fillAllFields": "يرجى ملء جميع الحقول",
+      "profileUpdated": "تم تحديث الملف الشخصي بنجاح!",
+      "updateProfileFailed": "فشل تحديث الملف الشخصي",
+      "fillAllPasswordFields": "يرجى ملء جميع حقول كلمة المرور",
+      "passwordsDoNotMatch": "كلمتا المرور الجديدتان غير متطابقتين",
+      "passwordTooShort": "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+      "passwordChanged": "تم تغيير كلمة المرور بنجاح!",
+      "changePasswordFailed": "فشل تغيير كلمة المرور"
     }
   },
   "dashboard": {
@@ -594,6 +782,21 @@
       "refunded": "مسترد",
       "failed": "فشل"
     }
+  },
+  "errorReport": {
+    "title": "عذراً! حدث خطأ ما",
+    "subtitle": "نعتذر عن الإزعاج. ساعدنا في التحسين من خلال الإبلاغ عن هذا الخطأ.",
+    "errorOccurred": "تفاصيل الخطأ:",
+    "descriptionLabel": "ماذا كنت تفعل عندما حدث هذا؟",
+    "optional": "اختياري",
+    "descriptionPlaceholder": "صف ما كنت تحاول القيام به...",
+    "descriptionHint": "هذه المعلومات تساعدنا في إصلاح المشكلة بشكل أسرع.",
+    "skip": "تخطي",
+    "sendReport": "إرسال التقرير",
+    "sending": "جارٍ الإرسال...",
+    "reportSent": "شكراً لك على التقرير!",
+    "reportFailed": "فشل إرسال التقرير. يرجى المحاولة مرة أخرى.",
+    "thankYou": "شكراً لك! تم إرسال تقريرك."
   },
   "userProfile": {
     "loadingProfile": "جاري تحميل الملف الشخصي...",

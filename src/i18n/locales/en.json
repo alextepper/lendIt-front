@@ -2,7 +2,11 @@
   "app": {
     "title": "Sharo",
     "tagline": "Rent anything, anywhere",
-    "day": "day"
+    "day": "day",
+    "oops": "Oops!",
+    "unknownError": "Unknown error",
+    "tryAgain": "Try again",
+    "initializing": "Initializing..."
   },
   "nav": {
     "home": "Home",
@@ -22,6 +26,14 @@
       "light": "Light",
       "dark": "Dark"
     }
+  },
+  "debug": {
+    "logs": "Debug Logs",
+    "copy": "Copy",
+    "clear": "Clear",
+    "close": "Close",
+    "empty": "No logs captured yet.",
+    "showLogs": "Show debug logs"
   },
   "auth": {
     "login": {
@@ -136,6 +148,11 @@
     "searchRadius": "Search Radius",
     "km": "km"
   },
+  "searchMap": {
+    "drag": "Drag",
+    "dragToChangeCenter": "Drag to change search center",
+    "viewDetails": "View Details"
+  },
   "item": {
     "title": "Item Details",
     "home": "Home",
@@ -143,9 +160,9 @@
     "loading": "Loading item…",
     "failedToLoad": "Failed to load item",
     "price": "Price",
-    "perDay": "/day",
-    "initial": "Initial:",
-    "deposit": "Deposit:",
+    "perDay": "day",
+    "initial": "Initial",
+    "deposit": "Deposit",
     "description": "Description",
     "aboutThisItem": "About this item",
     "location": "Location",
@@ -204,10 +221,14 @@
     "noPhotosAvailable": "No photos available",
     "photo": "Photo",
     "thumbnail": "Thumbnail",
+    "photoAlt": "{title} - Photo {index}",
+    "thumbnailAlt": "Thumbnail {index}",
     "viewPhoto": "View photo {index}",
     "previousPhoto": "Previous photo",
     "nextPhoto": "Next photo",
     "closeFullscreen": "Close fullscreen",
+    "removePhoto": "Remove photo",
+    "setMainPhoto": "Set as main photo",
     "currency": "Currency",
     "expandLocation": "Expand location",
     "collapseLocation": "Collapse location",
@@ -216,6 +237,8 @@
     "s": "s",
     "openItem": "Open item",
     "item": "Item",
+    "bookThisItem": "Book this item",
+    "viewProfile": "View Profile",
     "tags": "Tags",
     "tagsPlaceholder": "Enter tags separated by commas",
     "addTag": "Add tag",
@@ -227,7 +250,21 @@
     "depositInfo": "A refundable security deposit of",
     "depositHeldDuring": "will be held on your card during the rental period",
     "reviews": "reviews",
-    "noDescription": "No description available"
+    "noDescription": "No description available",
+    "safetyNotice": "Always verify the renter's ID before handing over your item. It is not recommended to rent to individuals under 18 years of age."
+  },
+  "ownerPanel": {
+    "title": "Owner Information",
+    "ownerAlt": "Owner",
+    "unknown": "Unknown",
+    "new": "New",
+    "reviews": "reviews",
+    "memberSince": "Member since",
+    "loading": "Loading...",
+    "messageOwner": "Message Owner",
+    "loginToMessage": "Login to Message",
+    "recently": "Recently",
+    "failedToStartConversation": "Failed to start conversation. Please try again."
   },
   "listing": {
     "editListing": "Edit Listing",
@@ -413,6 +450,8 @@
     "success": "Success",
     "close": "Close",
     "back": "Back",
+    "continue": "Continue",
+    "cancel": "Cancel",
     "next": "Next",
     "previous": "Previous",
     "yes": "Yes",
@@ -463,6 +502,26 @@
     "myRentals": "My Rentals",
     "itemsRentingOut": "Items I'm Renting Out"
   },
+  "orders": {
+    "filters": {
+      "all": "All",
+      "paid": "Paid",
+      "active": "Active",
+      "completed": "Completed"
+    },
+    "status": {
+      "PENDING": "Pending",
+      "PAID": "Paid",
+      "HANDED_OVER": "Active",
+      "RETURNED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "orderNumber": "Order #{id}",
+    "emptyTitle": "No orders found",
+    "emptyBodyAll": "You haven't made any bookings yet",
+    "emptyBodyFiltered": "No {status} orders",
+    "browseItems": "Browse Items"
+  },
   "bookingRequests": {
     "title": "Booking Requests",
     "navTitle": "Booking Requests",
@@ -474,6 +533,9 @@
     "awaitingPayment": "Awaiting Payment",
     "confirmed": "Confirmed",
     "declined": "Declined",
+    "total": "Total",
+    "borrower": "Borrower",
+    "owner": "Owner",
     "days": "days",
     "notes": "Notes",
     "rental": "Rental",
@@ -487,6 +549,8 @@
     "itemLabel": "Item",
     "noTitle": "Untitled item",
     "leaveReview": "Leave Review",
+    "messageBorrower": "Message Borrower",
+    "messageOwner": "Message Owner",
     "reviewSubmitted": "Review Submitted",
     "review": "Review",
     "reviewPlaceholder": "Write a review...",
@@ -526,6 +590,96 @@
       "failedToLoad": "Failed to load booking requests.",
       "failedToApprove": "Failed to approve request.",
       "failedToDecline": "Failed to decline request."
+    }
+  },
+  "bookingFlow": {
+    "day": "day",
+    "days": "days",
+    "night": "night",
+    "nights": "nights",
+    "initialFee": "Initial fee",
+    "securityDeposit": "Security deposit",
+    "totalToPay": "Total to Pay",
+    "priceBreakdown": "Price Breakdown",
+    "dailyBreakdown": "Daily Breakdown",
+    "rentalTotal": "Rental Total",
+    "depositRefundable": "Refundable after item return",
+    "totalAmountToPay": "Total Amount to Pay",
+    "totalIncludesDeposit": "Includes rental total + security deposit",
+    "gettingQuote": "Getting Quote...",
+    "getPriceQuote": "Get Price Quote",
+    "sending": "Sending...",
+    "sendRequest": "Send Request",
+    "step1": {
+      "title": "Select Your Dates",
+      "subtitle": "Choose your rental period and get an instant quote",
+      "checkIn": "Check-in Date",
+      "checkOut": "Check-out Date",
+      "pricePreview": "Price Preview"
+    },
+    "step2": {
+      "title": "Review Your Quote",
+      "subtitle": "Confirm your rental details and proceed to checkout"
+    },
+    "step3": {
+      "title": "Add Notes (Optional)",
+      "subtitle": "Let the owner know about your rental needs",
+      "additionalNotes": "Additional Notes",
+      "notesPlaceholder": "E.g., I need the item for a photography project, will handle with care...",
+      "requestSummary": "Request Summary",
+      "dates": "Dates",
+      "duration": "Duration",
+      "estimatedTotal": "Estimated Total",
+      "finalPriceNote": "Final price may be adjusted by the owner"
+    },
+    "errors": {
+      "checkInPast": "Check-in date cannot be in the past",
+      "checkOutPast": "Check-out date cannot be in the past",
+      "datesUnavailable": "Selected dates are not available",
+      "conflictRange": "Conflict: {from} to {to}",
+      "failedToGetQuote": "Failed to get price quote",
+      "failedToSendRequest": "Failed to send booking request"
+    },
+    "messages": {
+      "requestSent": "Booking request sent to owner. You'll be notified when they respond."
+    }
+  },
+  "bookingCard": {
+    "title": "Book this item",
+    "subtitle": "Select your dates and get an instant quote",
+    "selectDates": "Select Dates",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "day": "day",
+    "days": "days",
+    "night": "night",
+    "nights": "nights",
+    "minNights": "Min {count} night(s)",
+    "maxNights": "Max {count} night(s)",
+    "specialRequests": "Special Requests",
+    "optional": "Optional",
+    "notesPlaceholder": "Any special requests or notes for the owner...",
+    "checkingAvailability": "Checking Availability...",
+    "checkAvailability": "Check Availability & Get Quote",
+    "priceBreakdown": "Price Breakdown",
+    "pricesIn": "Prices in {currency}",
+    "serviceFee": "Service fee",
+    "discount": "Discount",
+    "total": "Total",
+    "vatNote": "All prices include VAT (if applicable)",
+    "bookNow": "Book Now",
+    "datesUnavailableTitle": "Dates Unavailable",
+    "datesUnavailableBody": "Those dates are unavailable. Please try different dates.",
+    "errors": {
+      "startDateFuture": "Start date must be in the future",
+      "returnAfterStart": "Return date must be after start date",
+      "returnDateFuture": "Return date must be in the future",
+      "datesUnavailable": "Those dates are unavailable. Try different dates.",
+      "failedToGetQuote": "Failed to get quote",
+      "failedToCreateBooking": "Failed to create booking"
+    },
+    "messages": {
+      "bookingCreated": "Booking created! Redirecting to checkout..."
     }
   },
   "dashboard": {
@@ -609,6 +763,55 @@
       "refunded": "Refunded",
       "failed": "Failed"
     }
+  },
+  "settings": {
+    "title": "Settings",
+    "profileInformation": "Profile Information",
+    "username": "Username",
+    "email": "Email",
+    "city": "City",
+    "selectCity": "Select your city",
+    "cityHelp": "Choose the city where you live",
+    "saveChanges": "Save Changes",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "passwordHint": "Password must be at least 6 characters long",
+    "accountActions": "Account Actions",
+    "logout": "Logout",
+    "placeholders": {
+      "username": "Enter username",
+      "email": "Enter email",
+      "currentPassword": "Enter current password",
+      "newPassword": "Enter new password (min. 6 characters)",
+      "confirmNewPassword": "Confirm new password"
+    },
+    "messages": {
+      "fillAllFields": "Please fill in all fields",
+      "profileUpdated": "Profile updated successfully!",
+      "updateProfileFailed": "Failed to update profile",
+      "fillAllPasswordFields": "Please fill in all password fields",
+      "passwordsDoNotMatch": "New passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordChanged": "Password changed successfully!",
+      "changePasswordFailed": "Failed to change password"
+    }
+  },
+  "errorReport": {
+    "title": "Oops! Something went wrong",
+    "subtitle": "We apologize for the inconvenience. Help us improve by reporting this error.",
+    "errorOccurred": "Error Details:",
+    "descriptionLabel": "What were you doing when this happened?",
+    "optional": "optional",
+    "descriptionPlaceholder": "Describe what you were trying to do...",
+    "descriptionHint": "This information helps us fix the issue faster.",
+    "skip": "Skip",
+    "sendReport": "Send Report",
+    "sending": "Sending...",
+    "reportSent": "Thank you for your report!",
+    "reportFailed": "Failed to send report. Please try again.",
+    "thankYou": "Thank you! Your report has been submitted."
   },
   "userProfile": {
     "loadingProfile": "Loading profile...",

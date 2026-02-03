@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getImageUrl } from '../utils/imageUtils';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
   userLocation: {
@@ -21,6 +22,7 @@ const props = defineProps({
 
 const emit = defineEmits(['location-changed']);
 
+const { t } = useI18n();
 const mapContainer = ref(null);
 let map = null;
 let userMarker = null;
@@ -248,7 +250,7 @@ function updateMarkers() {
           <div class="user-marker-dot"></div>
           <div class="user-marker-drag-hint">
             <i class="bi bi-arrows-move"></i>
-            <span>Drag</span>
+            <span>${t('searchMap.drag')}</span>
           </div>
         </div>
       `,
@@ -261,7 +263,7 @@ function updateMarkers() {
       { 
         icon: userIcon,
         draggable: true,
-        title: 'Drag to change search center'
+        title: t('searchMap.dragToChangeCenter')
       }
     ).addTo(map);
 
@@ -365,7 +367,7 @@ function updateMarkers() {
         html: `
           <div class="item-marker-content" style="background: white; border: 3px solid #4285F4; border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3); overflow: hidden; position: relative;">
             ${photoUrl ? `
-              <img src="${photoUrl}" alt="${item.title || 'Item'}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+              <img src="${photoUrl}" alt="${item.title || t('item.item')}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
             ` : `
               <i class="bi bi-geo-alt-fill" style="color: #4285F4; font-size: 24px;"></i>
             `}
@@ -381,7 +383,7 @@ function updateMarkers() {
 
       // Add popup with item info and image
       const safePhotoUrl = photoUrl ? photoUrl.replace(/"/g, '&quot;') : '';
-      const safeTitle = (item.title || 'Item').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      const safeTitle = (item.title || t('item.item')).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       const price = (item.pricePerDay || item.price_per_day || 0) / 100;
       const currency = item.currency || 'ILS';
       const distance = item.distance ? item.distance.toFixed(1) : null;
@@ -413,17 +415,17 @@ function updateMarkers() {
               <div class="map-popup-footer">
                 <div class="map-popup-price-wrapper">
                   <span class="map-popup-price-amount">${currencySymbol}${price.toFixed(0)}</span>
-                  <span class="map-popup-price-period">/day</span>
+                  <span class="map-popup-price-period">/${t('item.perDay')}</span>
                 </div>
                 ${distance ? `
                   <div class="map-popup-distance">
                     <i class="bi bi-geo-alt"></i>
-                    <span>${distance} km away</span>
+                    <span>${distance} ${t('item.kmAway')}</span>
                   </div>
                 ` : ''}
               </div>
               <button onclick="window.location.href='/item/${item.id}'" class="map-popup-button" type="button">
-                View Details
+                ${t('searchMap.viewDetails')}
                 <i class="bi bi-arrow-right map-popup-button-icon"></i>
               </button>
             </div>

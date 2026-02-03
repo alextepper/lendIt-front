@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { Modal } from 'bootstrap';
+import { useI18n } from 'vue-i18n';
 import { fetchOrders } from '../services/orderService';
 import { useAuthStore } from '../stores/auth';
 import OrderDetailsModal from './OrderDetailsModal.vue';
@@ -11,6 +12,7 @@ const props = defineProps({
 });
 
 const auth = useAuthStore();
+const { t, locale } = useI18n();
 const orders = ref([]);
 const loading = ref(true);
 let loadPromise = null;
@@ -29,6 +31,15 @@ const statusCounts = computed(() => {
   });
   return counts;
 });
+
+const filterLabels = computed(() => ({
+  all: t('orders.filters.all'),
+  PAID: t('orders.filters.paid'),
+  HANDED_OVER: t('orders.filters.active'),
+  RETURNED: t('orders.filters.completed'),
+}));
+
+const emptyFilterLabel = computed(() => filterLabels.value[activeFilter.value] || activeFilter.value.toLowerCase());
 
 onMounted(async () => {
   await loadOrders();
@@ -83,7 +94,8 @@ function handleOrderUpdated() {
 
 function formatDate(dateString) {
   if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('en-US', {
+  const formatLocale = locale.value || 'en-US';
+  return new Date(dateString).toLocaleDateString(formatLocale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -159,7 +171,7 @@ function getStatusIcon(status) {
           v-model="activeFilter"
         />
         <label class="btn btn-outline-info" for="filter-paid">
-          Paid ({{ statusCounts.PAID || 0 }})
+          {{ $t('orders.filters.paid') }} ({{ statusCounts.PAID || 0 }})
         </label>
 
         <input 
@@ -170,7 +182,7 @@ function getStatusIcon(status) {
           v-model="activeFilter"
         />
         <label class="btn btn-outline-primary" for="filter-active">
-          Active ({{ statusCounts.HANDED_OVER || 0 }})
+          {{ $t('orders.filters.active') }} ({{ statusCounts.HANDED_OVER || 0 }})
         </label>
 
         <input 
@@ -181,7 +193,7 @@ function getStatusIcon(status) {
           v-model="activeFilter"
         />
         <label class="btn btn-outline-success" for="filter-completed">
-          Completed ({{ statusCounts.RETURNED || 0 }})
+          {{ $t('orders.filters.completed') }} ({{ statusCounts.RETURNED || 0 }})
         </label>
       </div>
     </div>
@@ -189,7 +201,7 @@ function getStatusIcon(status) {
     <!-- Loading -->
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+        <span class="visually-hidden">{{ $t('common.loading') }}</span>
       </div>
     </div>
 
@@ -231,7 +243,7 @@ function getStatusIcon(status) {
                       {{ formatDate(order.start) }} → {{ formatDate(order.end) }}
                     </div>
                     <div class="text-muted small">
-                      {{ role === 'renter' ? 'Owner' : 'Renter' }}: 
+                      {{ role === 'renter' ? $t('dashboard.owner') : $t('dashboard.renter') }}: 
                       <router-link
                         :to="{ name: 'search', query: { owner: role === 'renter' ? order.item?.owner?.id : order.renter?.id } }"
                         @click.stop
@@ -249,14 +261,14 @@ function getStatusIcon(status) {
               <div class="col-md-3 text-center">
                 <span class="badge rounded-pill" :class="`bg-${getStatusColor(order.status)}`">
                   <i class="bi me-1" :class="`bi-${getStatusIcon(order.status)}`"></i>
-                  {{ order.status }}
+                  {{ $t(`orders.status.${order.status}`) }}
                 </span>
               </div>
 
               <!-- Total -->
               <div class="col-md-3 text-end">
                 <div class="h5 mb-0">{{ formatCurrency(order.priceTotal) }} {{ order.currency }}</div>
-                <div class="small text-muted">Order #{{ order.id.slice(-8) }}</div>
+                <div class="small text-muted">{{ $t('orders.orderNumber', { id: order.id.slice(-8) }) }}</div>
               </div>
             </div>
           </div>
@@ -267,13 +279,13 @@ function getStatusIcon(status) {
     <!-- Empty State -->
     <div v-else class="text-center py-5">
       <i class="bi bi-inbox display-4 text-muted mb-3 d-block"></i>
-      <h5 class="text-muted">No orders found</h5>
+      <h5 class="text-muted">{{ $t('orders.emptyTitle') }}</h5>
       <p class="text-muted">
-        {{ activeFilter === 'all' ? 'You haven\'t made any bookings yet' : `No ${activeFilter.toLowerCase()} orders` }}
+        {{ activeFilter === 'all' ? $t('orders.emptyBodyAll') : $t('orders.emptyBodyFiltered', { status: emptyFilterLabel }) }}
       </p>
       <router-link to="/search" class="btn btn-primary mt-2">
         <i class="bi bi-search me-2"></i>
-        Browse Items
+        {{ $t('orders.browseItems') }}
       </router-link>
     </div>
 

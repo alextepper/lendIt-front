@@ -298,7 +298,7 @@ async function handleReviewSubmit(reviewData) {
             <i class="bi bi-check-circle"></i>
           </div>
           <div class="stat-content">
-            <p class="stat-label">Total</p>
+            <p class="stat-label">{{ $t('bookingRequests.total') }}</p>
             <p class="stat-value">{{ requests.length }}</p>
           </div>
         </div>
@@ -391,7 +391,7 @@ async function handleReviewSubmit(reviewData) {
                     >
                       {{ (request.counterparty || request.renter).displayName || (request.counterparty || request.renter).username || (request.counterparty || request.renter).name }}
                     </router-link>
-                    <span class="counterparty-badge">Borrower</span>
+                    <span class="counterparty-badge">{{ $t('bookingRequests.borrower') }}</span>
                   </div>
                 </div>
                 <div class="request-pricing">
@@ -450,7 +450,7 @@ async function handleReviewSubmit(reviewData) {
                 class="btn-action btn-secondary"
                 @click="openContactModal(request)"
               >
-                Message Borrower
+                {{ $t('bookingRequests.messageBorrower') }}
               </button>
             </div>
           </div>
@@ -511,9 +511,9 @@ async function handleReviewSubmit(reviewData) {
                       :to="{ name: 'user-profile', params: { id: (request.counterparty || request.owner || request.item?.owner).id } }"
                       class="counterparty-name"
                     >
-                      {{ (request.counterparty || request.owner)?.displayName || (request.counterparty || request.owner)?.username || (request.counterparty || request.owner)?.name || 'Owner' }}
+                      {{ (request.counterparty || request.owner)?.displayName || (request.counterparty || request.owner)?.username || (request.counterparty || request.owner)?.name || $t('bookingRequests.owner') }}
                     </router-link>
-                    <span class="counterparty-badge">Owner</span>
+                    <span class="counterparty-badge">{{ $t('bookingRequests.owner') }}</span>
                   </div>
                 </div>
                 <div class="request-pricing">
@@ -560,7 +560,7 @@ async function handleReviewSubmit(reviewData) {
                 class="btn-action btn-secondary"
                 @click="openContactModal(request)"
               >
-                Message Owner
+                {{ $t('bookingRequests.messageOwner') }}
               </button>
             </div>
           </div>

@@ -7,8 +7,8 @@
           <i class="bi bi-calendar-check"></i>
         </div>
         <div>
-          <h3 class="booking-title">Book this item</h3>
-          <p class="booking-subtitle">Select your dates and get an instant quote</p>
+          <h3 class="booking-title">{{ $t('bookingCard.title') }}</h3>
+          <p class="booking-subtitle">{{ $t('bookingCard.subtitle') }}</p>
         </div>
       </div>
     </div>
@@ -17,12 +17,12 @@
     <div class="booking-section">
       <div class="section-header">
         <i class="bi bi-calendar3 me-2"></i>
-        <span>Select Dates</span>
+        <span>{{ $t('bookingCard.selectDates') }}</span>
       </div>
       
       <div class="date-inputs">
         <div class="date-input-group">
-          <label class="date-label">Check-in</label>
+          <label class="date-label">{{ $t('bookingCard.checkIn') }}</label>
           <input
             v-model="startDate"
             type="date"
@@ -36,7 +36,7 @@
         </div>
 
         <div class="date-input-group">
-          <label class="date-label">Check-out</label>
+          <label class="date-label">{{ $t('bookingCard.checkOut') }}</label>
           <input
             v-model="returnDate"
             type="date"
@@ -59,11 +59,11 @@
           </div>
           <div v-if="selectedNights < minStay" class="duration-warning">
             <i class="bi bi-exclamation-triangle me-1"></i>
-            Min {{ minStay }} night{{ minStay !== 1 ? 's' : '' }}
+            {{ $t('bookingCard.minNights', { count: minStay }) }}
           </div>
           <div v-if="selectedNights > maxStay" class="duration-error">
             <i class="bi bi-x-circle me-1"></i>
-            Max {{ maxStay }} night{{ maxStay !== 1 ? 's' : '' }}
+            {{ $t('bookingCard.maxNights', { count: maxStay }) }}
           </div>
         </div>
       </div>
@@ -73,14 +73,14 @@
     <div class="booking-section">
       <div class="section-header">
         <i class="bi bi-chat-text me-2"></i>
-        <span>Special Requests</span>
-        <span class="optional-badge">Optional</span>
+        <span>{{ $t('bookingCard.specialRequests') }}</span>
+        <span class="optional-badge">{{ $t('bookingCard.optional') }}</span>
       </div>
       <textarea
         v-model="notes"
         class="notes-input"
         rows="3"
-        placeholder="Any special requests or notes for the owner..."
+        :placeholder="$t('bookingCard.notesPlaceholder')"
       ></textarea>
     </div>
 
@@ -92,7 +92,7 @@
     >
       <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
       <i v-else class="bi bi-search me-2"></i>
-      {{ loading ? 'Checking Availability...' : 'Check Availability & Get Quote' }}
+      {{ loading ? $t('bookingCard.checkingAvailability') : $t('bookingCard.checkAvailability') }}
     </button>
 
     <!-- Error Message -->
@@ -106,31 +106,31 @@
       <div class="price-header">
         <h4 class="price-title">
           <i class="bi bi-calculator me-2"></i>
-          Price Breakdown
+          {{ $t('bookingCard.priceBreakdown') }}
         </h4>
-        <div class="price-currency">Prices in ₪</div>
+        <div class="price-currency">{{ $t('bookingCard.pricesIn', { currency: props.currency }) }}</div>
       </div>
       
       <div class="price-details">
         <div class="price-line">
-          <span class="price-label">{{ quote.nights }} night(s) × {{ formatPrice(quote.nightlyPrice) }}</span>
+          <span class="price-label">{{ quote.nights }} {{ quote.nights === 1 ? $t('bookingCard.night') : $t('bookingCard.nights') }} × {{ formatPrice(quote.nightlyPrice) }}</span>
           <span class="price-value">{{ formatPrice(quote.subtotal) }}</span>
         </div>
         
         <div v-if="quote.fees > 0" class="price-line">
-          <span class="price-label">Service fee</span>
+          <span class="price-label">{{ $t('bookingCard.serviceFee') }}</span>
           <span class="price-value">{{ formatPrice(quote.fees) }}</span>
         </div>
         
         <div v-if="quote.discount > 0" class="price-line discount">
-          <span class="price-label">Discount</span>
+          <span class="price-label">{{ $t('bookingCard.discount') }}</span>
           <span class="price-value">-{{ formatPrice(quote.discount) }}</span>
         </div>
         
         <div class="price-divider"></div>
         
         <div class="price-total">
-          <span class="total-label">Total</span>
+          <span class="total-label">{{ $t('bookingCard.total') }}</span>
           <span class="total-value">{{ formatPrice(quote.total) }}</span>
         </div>
       </div>
@@ -138,7 +138,7 @@
       <div class="price-footer">
         <div class="price-note">
           <i class="bi bi-info-circle me-1"></i>
-          All prices include VAT (if applicable)
+          {{ $t('bookingCard.vatNote') }}
         </div>
       </div>
 
@@ -150,7 +150,7 @@
       >
         <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status"></span>
         <i v-else class="bi bi-check-circle me-2"></i>
-        Book Now - {{ formatPrice(quote.total) }}
+        {{ $t('bookingCard.bookNow') }} - {{ formatPrice(quote.total) }}
       </button>
     </div>
 
@@ -158,8 +158,8 @@
     <div v-if="!loading && !quote && hasCheckedAvailability" class="unavailable-alert">
       <i class="bi bi-calendar-x me-2"></i>
       <div>
-        <strong>Dates Unavailable</strong>
-        <p class="mb-0">Those dates are unavailable. Please try different dates.</p>
+        <strong>{{ $t('bookingCard.datesUnavailableTitle') }}</strong>
+        <p class="mb-0">{{ $t('bookingCard.datesUnavailableBody') }}</p>
       </div>
     </div>
   </div>
@@ -167,6 +167,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useUiStore } from '../stores/ui'
 import { fetchUnavailableDates, getQuote, createPendingBooking } from '../services/bookingService'
 
@@ -179,6 +180,7 @@ const props = defineProps({
 const emit = defineEmits(['book'])
 
 const ui = useUiStore()
+const { t } = useI18n()
 
 // State
 const startDate = ref('')
@@ -211,7 +213,7 @@ const startDateError = computed(() => {
   today.setHours(0, 0, 0, 0)
   
   if (selectedDate < today) {
-    return 'Start date must be in the future'
+    return t('bookingCard.errors.startDateFuture')
   }
   
   return ''
@@ -221,7 +223,7 @@ const returnDateError = computed(() => {
   if (!returnDate.value) return ''
   
   if (startDate.value && returnDate.value <= startDate.value) {
-    return 'Return date must be after start date'
+    return t('bookingCard.errors.returnAfterStart')
   }
   
   const selectedDate = new Date(returnDate.value)
@@ -229,7 +231,7 @@ const returnDateError = computed(() => {
   today.setHours(0, 0, 0, 0)
   
   if (selectedDate < today) {
-    return 'Return date must be in the future'
+    return t('bookingCard.errors.returnDateFuture')
   }
   
   return ''
@@ -243,7 +245,7 @@ const selectedDuration = computed(() => {
   const diffMs = end - start
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
   
-  return `${diffDays} day${diffDays !== 1 ? 's' : ''}`
+  return `${diffDays} ${diffDays === 1 ? t('bookingCard.day') : t('bookingCard.days')}`
 })
 
 const selectedNights = computed(() => {
@@ -418,10 +420,10 @@ async function checkAvailability() {
         }
       }, 100)
     } else {
-      error.value = data.message || 'Those dates are unavailable. Try different dates.'
+    error.value = data.message || t('bookingCard.errors.datesUnavailable')
     }
   } catch (err) {
-    error.value = err.message || 'Failed to get quote'
+    error.value = err.message || t('bookingCard.errors.failedToGetQuote')
     hasCheckedAvailability.value = false
   } finally {
     loading.value = false
@@ -450,7 +452,7 @@ async function bookItem() {
       quote: originalQuote
     })
     
-    ui.showToast('Booking created! Redirecting to checkout...', 'success')
+    ui.showToast(t('bookingCard.messages.bookingCreated'), 'success')
     
     // Navigate to checkout with booking ID
     setTimeout(() => {
@@ -459,7 +461,7 @@ async function bookItem() {
   } catch (err) {
     // Revert optimistic update on error
     quote.value = originalQuote
-    error.value = err.message || 'Failed to create booking'
+    error.value = err.message || t('bookingCard.errors.failedToCreateBooking')
     ui.showToast(error.value, 'danger')
   } finally {
     loading.value = false

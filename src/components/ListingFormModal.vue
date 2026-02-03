@@ -411,7 +411,7 @@ async function submit() {
             <i class="bi bi-plus-circle me-2"></i>
             {{ listing ? $t('listing.editListing') : $t('listing.createNewListing') }}
           </h5>
-          <button class="btn-close" @click="close" aria-label="Close"></button>
+          <button class="btn-close" @click="close" :aria-label="$t('common.close')"></button>
         </div>
         <div class="modal-body">
           <!-- Title -->

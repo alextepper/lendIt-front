@@ -64,7 +64,7 @@
             class="btn btn-outline-secondary btn-sm navbar-control-btn"
             type="button"
             @click="showDebug = !showDebug"
-            title="Show debug logs"
+            :title="$t('debug.showLogs')"
           >
             <i class="bi bi-bug"></i>
           </button>
@@ -186,11 +186,11 @@
   <!-- Debug log panel -->
   <div v-if="debugEnabled && showDebug" class="debug-log-panel">
     <div class="debug-log-header d-flex align-items-center justify-content-between">
-      <span class="fw-semibold">Debug Logs</span>
+      <span class="fw-semibold">{{ $t('debug.logs') }}</span>
       <div class="d-flex gap-2">
-        <button class="btn btn-sm btn-outline-secondary" @click="copyLogs">Copy</button>
-        <button class="btn btn-sm btn-outline-secondary" @click="debug.clear()">Clear</button>
-        <button class="btn btn-sm btn-outline-secondary" @click="showDebug = false">Close</button>
+        <button class="btn btn-sm btn-outline-secondary" @click="copyLogs">{{ $t('debug.copy') }}</button>
+        <button class="btn btn-sm btn-outline-secondary" @click="debug.clear()">{{ $t('debug.clear') }}</button>
+        <button class="btn btn-sm btn-outline-secondary" @click="showDebug = false">{{ $t('debug.close') }}</button>
       </div>
     </div>
     <div class="debug-log-body">
@@ -207,7 +207,7 @@
         <pre class="debug-log-message mb-0">{{ log.message }}</pre>
       </div>
       <div v-if="!reversedLogs.length" class="text-muted small p-2">
-        No logs captured yet.
+        {{ $t('debug.empty') }}
       </div>
     </div>
   </div>

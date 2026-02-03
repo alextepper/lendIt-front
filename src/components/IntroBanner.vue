@@ -40,7 +40,7 @@ onMounted(() => {
   <div v-if="visible" class="intro-overlay">
     <div class="intro-backdrop" @click="dismiss"></div>
     <div class="intro-modal" role="dialog" aria-modal="true">
-      <button class="intro-close" @click="dismiss" aria-label="Close">
+      <button class="intro-close" @click="dismiss" :aria-label="$t('common.close')">
         <span class="material-symbols-outlined">close</span>
       </button>
 

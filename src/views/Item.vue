@@ -1003,7 +1003,7 @@ watch(fullscreenCarousel, (isOpen) => {
                 <img
                   :key="currentPhotoIndex"
                   :src="getCarouselPhotoUrl(displayPhotos[currentPhotoIndex])"
-                  :alt="`${item.title} - Photo ${currentPhotoIndex + 1}`"
+                  :alt="$t('item.photoAlt', { title: item.title || $t('item.item'), index: currentPhotoIndex + 1 })"
                   @click="openFullscreenCarousel"
                 />
               </transition>
@@ -1131,7 +1131,7 @@ watch(fullscreenCarousel, (isOpen) => {
                     <i v-else class="bi bi-person-fill"></i>
                   </div>
                   <div>
-                    <p class="mobile-review-name">{{ review.reviewer?.username || 'Anonymous' }}</p>
+                    <p class="mobile-review-name">{{ review.reviewer?.username || $t('userProfile.anonymous') }}</p>
                     <p class="mobile-review-date">{{ formatDate(review.createdAt) }}</p>
                   </div>
                 </div>
@@ -1144,10 +1144,18 @@ watch(fullscreenCarousel, (isOpen) => {
           </div>
 
           <!-- Deposit Info -->
-          <div v-if="item.deposit" class="mobile-info-box">
+          <!-- <div v-if="item.deposit" class="mobile-info-box">
             <i class="bi bi-info-circle"></i>
             <p>
               {{ $t('item.depositInfo') }} <strong>{{ formatPrice(item.deposit) }}</strong> {{ $t('item.depositHeldDuring') }}
+            </p>
+          </div> -->
+
+          <!-- Safety Notice -->
+          <div class="mobile-info-box">
+            <i class="bi bi-shield-check"></i>
+            <p>
+              {{ $t('item.safetyNotice') }}
             </p>
           </div>
         </section>
@@ -1286,7 +1294,7 @@ watch(fullscreenCarousel, (isOpen) => {
           @click="currentPhotoIndex = index"
           :aria-label="$t('item.viewPhoto', { index: index + 1 })"
         >
-          <img :src="getCarouselPhotoUrl(photo)" :alt="`Thumbnail ${index + 1}`" />
+          <img :src="getCarouselPhotoUrl(photo)" :alt="$t('item.thumbnailAlt', { index: index + 1 })" />
         </button>
       </div>
 
@@ -1468,14 +1476,14 @@ watch(fullscreenCarousel, (isOpen) => {
               >
                 <img
                   :src="photo.preview || (photo.url ? getItemPhotoUrl(photo.url) : null) || (photo.publicUrl ? getItemPhotoUrl(photo.publicUrl) : null)"
-                  :alt="`Photo ${index + 1}`"
+                  :alt="$t('item.photoAlt', { title: item.title || $t('item.item'), index: index + 1 })"
                   class="photo-thumbnail"
                 />
                 <button
                   type="button"
                   class="btn btn-sm btn-danger photo-remove-btn"
                   @click="removePhoto(index)"
-                  title="Remove photo"
+                  :title="$t('item.removePhoto')"
                   :disabled="saving"
                 >
                   <i class="bi bi-x-lg"></i>
@@ -1485,7 +1493,7 @@ watch(fullscreenCarousel, (isOpen) => {
                   type="button"
                   class="btn btn-sm btn-primary photo-set-main-btn"
                   @click="setMainPhoto(index)"
-                  title="Set as main photo"
+                  :title="$t('item.setMainPhoto')"
                   :disabled="saving"
                 >
                   <i class="bi bi-star"></i>
@@ -1527,7 +1535,7 @@ watch(fullscreenCarousel, (isOpen) => {
                 class="lender-link"
                 :to="{ name: 'user-profile', params: { id: item.owner.id } }"
               >
-                View Profile
+                {{ $t('item.viewProfile') }}
               </router-link>
             </div>
             <div class="lender-body">
@@ -1634,8 +1642,8 @@ watch(fullscreenCarousel, (isOpen) => {
       <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="bookingModalLabel">Book this item</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <h5 class="modal-title" id="bookingModalLabel">{{ $t('item.bookThisItem') }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" :aria-label="$t('common.close')"></button>
           </div>
           <div class="modal-body">
             <BookingFlow 
@@ -1653,8 +1661,8 @@ watch(fullscreenCarousel, (isOpen) => {
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="ownerModalLabel">Owner Information</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <h5 class="modal-title" id="ownerModalLabel">{{ $t('ownerPanel.title') }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" :aria-label="$t('common.close')"></button>
           </div>
           <div class="modal-body p-0">
             <OwnerPanel v-if="item?.owner" :owner="item.owner" :item-id="item.id" />
@@ -1686,7 +1694,7 @@ watch(fullscreenCarousel, (isOpen) => {
         <div class="fullscreen-image-container">
           <img
             :src="getCarouselPhotoUrl(displayPhotos[currentPhotoIndex])"
-            :alt="`${item.title} - Photo ${currentPhotoIndex + 1}`"
+            :alt="$t('item.photoAlt', { title: item.title || $t('item.item'), index: currentPhotoIndex + 1 })"
             class="fullscreen-image"
           />
         </div>

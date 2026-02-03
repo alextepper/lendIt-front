@@ -18,7 +18,7 @@
             type="button" 
             class="btn-close" 
             data-bs-dismiss="modal" 
-            aria-label="Close"
+            :aria-label="$t('common.close')"
           ></button>
         </div>
         <div class="modal-body">

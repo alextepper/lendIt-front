@@ -1,11 +1,13 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { useAuthStore } from '../stores/auth';
 import http from '../lib/http';
 
 const auth = useAuthStore();
 const router = useRouter();
+const { t } = useI18n();
 
 const loading = ref(false);
 const message = ref('');
@@ -44,7 +46,7 @@ onMounted(async () => {
 // Update profile (username/email)
 async function updateProfile() {
   if (!profileForm.username.trim() || !profileForm.email.trim()) {
-    showMessage('Please fill in all fields', 'error');
+    showMessage(t('settings.messages.fillAllFields'), 'error');
     return;
   }
 
@@ -61,9 +63,9 @@ async function updateProfile() {
     // Update auth store with new user data
     auth.user = { ...(data.user || data), city: profileForm.city };
     
-    showMessage('Profile updated successfully!', 'success');
+    showMessage(t('settings.messages.profileUpdated'), 'success');
   } catch (error) {
-    showMessage(error.response?.data?.message || error.message || 'Failed to update profile', 'error');
+    showMessage(error.response?.data?.message || error.message || t('settings.messages.updateProfileFailed'), 'error');
   } finally {
     loading.value = false;
   }
@@ -72,17 +74,17 @@ async function updateProfile() {
 // Change password
 async function changePassword() {
   if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-    showMessage('Please fill in all password fields', 'error');
+    showMessage(t('settings.messages.fillAllPasswordFields'), 'error');
     return;
   }
 
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    showMessage('New passwords do not match', 'error');
+    showMessage(t('settings.messages.passwordsDoNotMatch'), 'error');
     return;
   }
 
   if (passwordForm.newPassword.length < 6) {
-    showMessage('Password must be at least 6 characters', 'error');
+    showMessage(t('settings.messages.passwordTooShort'), 'error');
     return;
   }
 
@@ -94,14 +96,14 @@ async function changePassword() {
       password: passwordForm.newPassword,
     });
 
-    showMessage('Password changed successfully!', 'success');
+    showMessage(t('settings.messages.passwordChanged'), 'success');
     
     // Clear password form
     passwordForm.currentPassword = '';
     passwordForm.newPassword = '';
     passwordForm.confirmPassword = '';
   } catch (error) {
-    showMessage(error.response?.data?.message || error.message || 'Failed to change password', 'error');
+    showMessage(error.response?.data?.message || error.message || t('settings.messages.changePasswordFailed'), 'error');
   } finally {
     loading.value = false;
   }
@@ -131,7 +133,7 @@ function cancel() {
           <button @click="cancel" class="btn btn-link text-decoration-none p-0 me-3">
             <i class="bi bi-arrow-left fs-4"></i>
           </button>
-          <h2 class="mb-0">Settings</h2>
+          <h2 class="mb-0">{{ $t('settings.title') }}</h2>
         </div>
 
         <!-- Alert Message -->
@@ -145,47 +147,47 @@ function cancel() {
           <div class="card-body p-4">
             <h5 class="card-title mb-4">
               <i class="bi bi-person-circle me-2"></i>
-              Profile Information
+              {{ $t('settings.profileInformation') }}
             </h5>
             
             <form @submit.prevent="updateProfile">
               <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
+                <label for="username" class="form-label">{{ $t('settings.username') }}</label>
                 <input
                   type="text"
                   class="form-control"
                   id="username"
                   v-model="profileForm.username"
-                  placeholder="Enter username"
+                  :placeholder="$t('settings.placeholders.username')"
                   required
                 />
               </div>
 
               <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
+                <label for="email" class="form-label">{{ $t('settings.email') }}</label>
                 <input
                   type="email"
                   class="form-control"
                   id="email"
                   v-model="profileForm.email"
-                  placeholder="Enter email"
+                  :placeholder="$t('settings.placeholders.email')"
                   required
                 />
               </div>
 
               <div class="mb-4">
-                <label for="city" class="form-label">City</label>
+                <label for="city" class="form-label">{{ $t('settings.city') }}</label>
                 <select
                   class="form-select"
                   id="city"
                   v-model="profileForm.city"
                 >
-                  <option value="">Select your city</option>
+                  <option value="">{{ $t('settings.selectCity') }}</option>
                   <option v-for="city in cities" :key="city" :value="city">
                     {{ city }}
                   </option>
                 </select>
-                <div class="form-text">Choose the city where you live</div>
+                <div class="form-text">{{ $t('settings.cityHelp') }}</div>
               </div>
 
               <button 
@@ -195,7 +197,7 @@ function cancel() {
               >
                 <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
                 <i v-else class="bi bi-check-lg me-2"></i>
-                Save Changes
+                {{ $t('settings.saveChanges') }}
               </button>
             </form>
           </div>
@@ -206,43 +208,43 @@ function cancel() {
           <div class="card-body p-4">
             <h5 class="card-title mb-4">
               <i class="bi bi-lock-fill me-2"></i>
-              Change Password
+              {{ $t('settings.changePassword') }}
             </h5>
             
             <form @submit.prevent="changePassword">
               <div class="mb-3">
-                <label for="currentPassword" class="form-label">Current Password</label>
+                <label for="currentPassword" class="form-label">{{ $t('settings.currentPassword') }}</label>
                 <input
                   type="password"
                   class="form-control"
                   id="currentPassword"
                   v-model="passwordForm.currentPassword"
-                  placeholder="Enter current password"
+                  :placeholder="$t('settings.placeholders.currentPassword')"
                   autocomplete="current-password"
                 />
               </div>
 
               <div class="mb-3">
-                <label for="newPassword" class="form-label">New Password</label>
+                <label for="newPassword" class="form-label">{{ $t('settings.newPassword') }}</label>
                 <input
                   type="password"
                   class="form-control"
                   id="newPassword"
                   v-model="passwordForm.newPassword"
-                  placeholder="Enter new password (min. 6 characters)"
+                  :placeholder="$t('settings.placeholders.newPassword')"
                   autocomplete="new-password"
                 />
-                <div class="form-text">Password must be at least 6 characters long</div>
+                <div class="form-text">{{ $t('settings.passwordHint') }}</div>
               </div>
 
               <div class="mb-4">
-                <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                <label for="confirmPassword" class="form-label">{{ $t('settings.confirmNewPassword') }}</label>
                 <input
                   type="password"
                   class="form-control"
                   id="confirmPassword"
                   v-model="passwordForm.confirmPassword"
-                  placeholder="Confirm new password"
+                  :placeholder="$t('settings.placeholders.confirmNewPassword')"
                   autocomplete="new-password"
                 />
               </div>
@@ -254,7 +256,7 @@ function cancel() {
               >
                 <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
                 <i v-else class="bi bi-shield-lock me-2"></i>
-                Change Password
+                {{ $t('settings.changePassword') }}
               </button>
             </form>
           </div>
@@ -265,7 +267,7 @@ function cancel() {
           <div class="card-body p-4">
             <h5 class="card-title mb-4">
               <i class="bi bi-gear-fill me-2"></i>
-              Account Actions
+              {{ $t('settings.accountActions') }}
             </h5>
             
             <div class="d-flex flex-column gap-3">
@@ -274,7 +276,7 @@ function cancel() {
                 class="btn btn-outline-danger"
               >
                 <i class="bi bi-box-arrow-right me-2"></i>
-                Logout
+                {{ $t('settings.logout') }}
               </button>
             </div>
           </div>

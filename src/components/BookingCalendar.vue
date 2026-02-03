@@ -998,7 +998,7 @@ watch(() => currentMonth.value, (newMonth) => {
               type="button"
               class="btn-close"
               @click="showBlockedDatesList = false"
-              aria-label="Close"
+              :aria-label="$t('common.close')"
             ></button>
           </div>
           
@@ -1135,7 +1135,7 @@ watch(() => currentMonth.value, (newMonth) => {
             type="button" 
             class="btn-close" 
             @click="closeBlockingModal"
-            aria-label="Close"
+            :aria-label="$t('common.close')"
           ></button>
         </div>
         <div class="modal-body">

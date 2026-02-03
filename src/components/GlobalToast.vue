@@ -21,7 +21,7 @@ const cls = computed(
           type="button"
           class="btn-close btn-close-white me-2 m-auto"
           @click="ui.clearToast()"
-          aria-label="Close"
+          :aria-label="$t('common.close')"
         ></button>
       </div>
     </div>

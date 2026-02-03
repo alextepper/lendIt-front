@@ -2,7 +2,11 @@
   "app": {
     "title": "Sharo",
     "tagline": "השכר כל דבר, בכל מקום",
-    "day": "יום"
+    "day": "יום",
+    "oops": "אופס!",
+    "unknownError": "שגיאה לא ידועה",
+    "tryAgain": "נסה שוב",
+    "initializing": "מאתחל..."
   },
   "nav": {
     "home": "בית",
@@ -22,6 +26,14 @@
       "light": "בהיר",
       "dark": "כהה"
     }
+  },
+  "debug": {
+    "logs": "יומני ניפוי",
+    "copy": "העתקה",
+    "clear": "ניקוי",
+    "close": "סגור",
+    "empty": "אין יומנים עדיין.",
+    "showLogs": "הצג יומני ניפוי"
   },
   "auth": {
     "logout": "התנתקות",
@@ -129,6 +141,11 @@
     "searchRadius": "רדיוס חיפוש",
     "km": "ק\"מ"
   },
+  "searchMap": {
+    "drag": "גרור",
+    "dragToChangeCenter": "גרור לשינוי מרכז החיפוש",
+    "viewDetails": "צפה בפרטים"
+  },
   "item": {
     "title": "פרטי הפריט",
     "home": "בית",
@@ -136,9 +153,9 @@
     "loading": "טוען פריט…",
     "failedToLoad": "נכשל בטעינת הפריט",
     "price": "מחיר",
-    "perDay": "/יום",
-    "initial": "תחילי:",
-    "deposit": "פיקדון:",
+    "perDay": "יום",
+    "initial": "תחילי",
+    "deposit": "פיקדון",
     "description": "תיאור",
     "aboutThisItem": "אודות הפריט הזה",
     "location": "מיקום",
@@ -197,10 +214,14 @@
     "noPhotosAvailable": "אין תמונות זמינות",
     "photo": "תמונה",
     "thumbnail": "תמונה ממוזערת",
+    "photoAlt": "{title} - תמונה {index}",
+    "thumbnailAlt": "תמונה ממוזערת {index}",
     "viewPhoto": "הצג תמונה {index}",
     "previousPhoto": "תמונה קודמת",
     "nextPhoto": "תמונה הבאה",
     "closeFullscreen": "סגור מסך מלא",
+    "removePhoto": "הסר תמונה",
+    "setMainPhoto": "הגדר כתמונה ראשית",
     "currency": "מטבע",
     "expandLocation": "הרחב מיקום",
     "collapseLocation": "צמצם מיקום",
@@ -209,6 +230,8 @@
     "s": "ים",
     "openItem": "פתח פריט",
     "item": "פריט",
+    "bookThisItem": "הזמן פריט זה",
+    "viewProfile": "צפה בפרופיל",
     "tags": "תגיות",
     "tagsPlaceholder": "הכנס תגיות מופרדות בפסיקים",
     "addTag": "הוסף תגית",
@@ -220,7 +243,21 @@
     "depositInfo": "פיקדון בר-החזר של",
     "depositHeldDuring": "יוחזק בכרטיס האשראי שלך במהלך תקופת ההשכרה",
     "reviews": "ביקורות",
-    "noDescription": "אין תיאור זמין"
+    "noDescription": "אין תיאור זמין",
+    "safetyNotice": "תמיד בדקו את תעודת הזהות של השוכר לפני מסירת הפריט. לא מומלץ להשכיר לאנשים מתחת לגיל 18."
+  },
+  "ownerPanel": {
+    "title": "מידע על הבעלים",
+    "ownerAlt": "בעלים",
+    "unknown": "לא ידוע",
+    "new": "חדש",
+    "reviews": "ביקורות",
+    "memberSince": "חבר מאז",
+    "loading": "טוען...",
+    "messageOwner": "שלח הודעה לבעלים",
+    "loginToMessage": "התחבר כדי לשלוח הודעה",
+    "recently": "לאחרונה",
+    "failedToStartConversation": "נכשלה תחילת השיחה. נסה שוב."
   },
   "listing": {
     "editListing": "ערוך מודעה",
@@ -485,6 +522,8 @@
     "success": "הצלחה",
     "close": "סגור",
     "back": "חזור",
+    "continue": "המשך",
+    "cancel": "ביטול",
     "next": "הבא",
     "previous": "הקודם",
     "yes": "כן",
@@ -535,6 +574,26 @@
     "myRentals": "ההשכרות שלי",
     "itemsRentingOut": "פריטים שאני משכיר"
   },
+  "orders": {
+    "filters": {
+      "all": "הכל",
+      "paid": "שולם",
+      "active": "פעיל",
+      "completed": "הושלם"
+    },
+    "status": {
+      "PENDING": "ממתין",
+      "PAID": "שולם",
+      "HANDED_OVER": "פעיל",
+      "RETURNED": "הושלם",
+      "CANCELLED": "בוטל"
+    },
+    "orderNumber": "הזמנה #{id}",
+    "emptyTitle": "אין הזמנות",
+    "emptyBodyAll": "עדיין לא ביצעת הזמנות",
+    "emptyBodyFiltered": "אין הזמנות {status}",
+    "browseItems": "עיין בפריטים"
+  },
   "bookingRequests": {
     "title": "הזמנות שלי",
     "navTitle": "הזמנות שלי",
@@ -546,6 +605,9 @@
     "awaitingPayment": "ממתין לתשלום",
     "confirmed": "אושר",
     "declined": "נדחה",
+    "total": "סה\"כ",
+    "borrower": "שוכר",
+    "owner": "בעלים",
     "days": "ימים",
     "notes": "הערות",
     "rental": "השכרה",
@@ -559,6 +621,8 @@
     "itemLabel": "פריט",
     "noTitle": "פריט ללא כותרת",
     "leaveReview": "כתוב ביקורת",
+    "messageBorrower": "שלח הודעה לשוכר",
+    "messageOwner": "שלח הודעה לבעלים",
     "reviewSubmitted": "ביקורת נשלחה",
     "review": "ביקורת",
     "reviewPlaceholder": "כתוב ביקורת...",
@@ -599,6 +663,145 @@
       "failedToApprove": "נכשל באישור ההזמנה.",
       "failedToDecline": "נכשל בדחיית ההזמנה."
     }
+  },
+  "bookingFlow": {
+    "day": "יום",
+    "days": "ימים",
+    "night": "לילה",
+    "nights": "לילות",
+    "initialFee": "דמי פתיחה",
+    "securityDeposit": "פיקדון ביטחון",
+    "totalToPay": "סכום לתשלום",
+    "priceBreakdown": "פירוט מחיר",
+    "dailyBreakdown": "פירוט יומי",
+    "rentalTotal": "סה\"כ השכרה",
+    "depositRefundable": "ניתן להחזר לאחר החזרת הפריט",
+    "totalAmountToPay": "סכום כולל לתשלום",
+    "totalIncludesDeposit": "כולל סך ההשכרה + פיקדון ביטחון",
+    "gettingQuote": "מחשב הצעת מחיר...",
+    "getPriceQuote": "קבל הצעת מחיר",
+    "sending": "שולח...",
+    "sendRequest": "שלח בקשה",
+    "step1": {
+      "title": "בחר תאריכים",
+      "subtitle": "בחר תקופת השכרה וקבל הצעת מחיר מיידית",
+      "checkIn": "תאריך התחלה",
+      "checkOut": "תאריך סיום",
+      "pricePreview": "תצוגת מחיר מקדימה"
+    },
+    "step2": {
+      "title": "סקור את ההצעה",
+      "subtitle": "אשר את פרטי ההשכרה והמשך לתשלום"
+    },
+    "step3": {
+      "title": "הוסף הערות (אופציונלי)",
+      "subtitle": "ספר לבעלים על צרכי ההשכרה",
+      "additionalNotes": "הערות נוספות",
+      "notesPlaceholder": "לדוגמה: אני צריך את הפריט לצילום ואטפל בו בזהירות...",
+      "requestSummary": "סיכום בקשה",
+      "dates": "תאריכים",
+      "duration": "משך",
+      "estimatedTotal": "סה\"כ משוער",
+      "finalPriceNote": "המחיר הסופי עשוי להיות מותאם על ידי הבעלים"
+    },
+    "errors": {
+      "checkInPast": "תאריך ההתחלה לא יכול להיות בעבר",
+      "checkOutPast": "תאריך הסיום לא יכול להיות בעבר",
+      "datesUnavailable": "התאריכים שנבחרו אינם זמינים",
+      "conflictRange": "התנגשות: {from} עד {to}",
+      "failedToGetQuote": "נכשלה קבלת הצעת מחיר",
+      "failedToSendRequest": "נכשלה שליחת בקשת ההזמנה"
+    },
+    "messages": {
+      "requestSent": "בקשת ההזמנה נשלחה לבעלים. תקבל הודעה כשהם יגיבו."
+    }
+  },
+  "bookingCard": {
+    "title": "הזמן פריט זה",
+    "subtitle": "בחר תאריכים וקבל הצעת מחיר מיידית",
+    "selectDates": "בחר תאריכים",
+    "checkIn": "התחלה",
+    "checkOut": "סיום",
+    "day": "יום",
+    "days": "ימים",
+    "night": "לילה",
+    "nights": "לילות",
+    "minNights": "מינימום {count} לילה",
+    "maxNights": "מקסימום {count} לילה",
+    "specialRequests": "בקשות מיוחדות",
+    "optional": "אופציונלי",
+    "notesPlaceholder": "בקשות או הערות מיוחדות לבעלים...",
+    "checkingAvailability": "בודק זמינות...",
+    "checkAvailability": "בדוק זמינות וקבל הצעה",
+    "priceBreakdown": "פירוט מחיר",
+    "pricesIn": "המחירים ב־{currency}",
+    "serviceFee": "דמי שירות",
+    "discount": "הנחה",
+    "total": "סה\"כ",
+    "vatNote": "המחירים כוללים מע\"מ (אם רלוונטי)",
+    "bookNow": "הזמן עכשיו",
+    "datesUnavailableTitle": "התאריכים אינם זמינים",
+    "datesUnavailableBody": "התאריכים הללו אינם זמינים. נסה תאריכים אחרים.",
+    "errors": {
+      "startDateFuture": "תאריך ההתחלה חייב להיות בעתיד",
+      "returnAfterStart": "תאריך הסיום חייב להיות אחרי תאריך ההתחלה",
+      "returnDateFuture": "תאריך הסיום חייב להיות בעתיד",
+      "datesUnavailable": "התאריכים הללו אינם זמינים. נסה תאריכים אחרים.",
+      "failedToGetQuote": "נכשל קבלת הצעת מחיר",
+      "failedToCreateBooking": "נכשלה יצירת ההזמנה"
+    },
+    "messages": {
+      "bookingCreated": "ההזמנה נוצרה! מעביר אותך לתשלום..."
+    }
+  },
+  "settings": {
+    "title": "הגדרות",
+    "profileInformation": "פרטי פרופיל",
+    "username": "שם משתמש",
+    "email": "דוא\"ל",
+    "city": "עיר",
+    "selectCity": "בחר עיר",
+    "cityHelp": "בחר את העיר שבה אתה גר",
+    "saveChanges": "שמור שינויים",
+    "changePassword": "שנה סיסמה",
+    "currentPassword": "סיסמה נוכחית",
+    "newPassword": "סיסמה חדשה",
+    "confirmNewPassword": "אשר סיסמה חדשה",
+    "passwordHint": "הסיסמה חייבת להיות לפחות 6 תווים",
+    "accountActions": "פעולות חשבון",
+    "logout": "התנתק",
+    "placeholders": {
+      "username": "הכנס שם משתמש",
+      "email": "הכנס דוא\"ל",
+      "currentPassword": "הכנס סיסמה נוכחית",
+      "newPassword": "הכנס סיסמה חדשה (לפחות 6 תווים)",
+      "confirmNewPassword": "אשר סיסמה חדשה"
+    },
+    "messages": {
+      "fillAllFields": "אנא מלא את כל השדות",
+      "profileUpdated": "הפרופיל עודכן בהצלחה!",
+      "updateProfileFailed": "עדכון הפרופיל נכשל",
+      "fillAllPasswordFields": "אנא מלא את כל שדות הסיסמה",
+      "passwordsDoNotMatch": "הסיסמאות החדשות אינן תואמות",
+      "passwordTooShort": "הסיסמה חייבת להיות לפחות 6 תווים",
+      "passwordChanged": "הסיסמה שונתה בהצלחה!",
+      "changePasswordFailed": "שינוי סיסמה נכשל"
+    }
+  },
+  "errorReport": {
+    "title": "אופס! משהו השתבש",
+    "subtitle": "אנו מתנצלים על אי הנוחות. עזרו לנו להשתפר על ידי דיווח על שגיאה זו.",
+    "errorOccurred": "פרטי השגיאה:",
+    "descriptionLabel": "מה עשית כשזה קרה?",
+    "optional": "אופציונלי",
+    "descriptionPlaceholder": "תאר מה ניסית לעשות...",
+    "descriptionHint": "מידע זה עוזר לנו לתקן את הבעיה מהר יותר.",
+    "skip": "דלג",
+    "sendReport": "שלח דיווח",
+    "sending": "שולח...",
+    "reportSent": "תודה על הדיווח שלך!",
+    "reportFailed": "נכשל בשליחת הדיווח. אנא נסה שוב.",
+    "thankYou": "תודה! הדיווח שלך נשלח."
   },
   "userProfile": {
     "loadingProfile": "טוען פרופיל...",

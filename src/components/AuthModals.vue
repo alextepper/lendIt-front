@@ -17,7 +17,7 @@
               type="button"
               class="btn-close"
               @click="closeModals"
-              aria-label="Close"
+              :aria-label="$t('common.close')"
             ></button>
           </div>
           <div class="modal-body">
@@ -85,7 +85,7 @@
               type="button"
               class="btn-close"
               @click="closeModals"
-              aria-label="Close"
+              :aria-label="$t('common.close')"
             ></button>
           </div>
           <div class="modal-body">

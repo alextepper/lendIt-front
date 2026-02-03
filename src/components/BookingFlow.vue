@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '../stores/auth';
 import { useUiStore } from '../stores/ui';
 import { getQuote } from '../services/orderService';
@@ -18,6 +19,7 @@ const emit = defineEmits(['close', 'booking-created']);
 const auth = useAuthStore();
 const ui = useUiStore();
 const router = useRouter();
+const { t, locale } = useI18n();
 const { closeModals } = useAuthModal();
 
 // Form state
@@ -67,12 +69,12 @@ watch([dateFrom, dateTo], async ([from, to]) => {
   const todayStr = today.toISOString().split('T')[0];
 
   if (from && from < todayStr) {
-    availabilityError.value = 'Check-in date cannot be in the past';
+    availabilityError.value = t('bookingFlow.errors.checkInPast');
     return;
   }
 
   if (to && to < todayStr) {
-    availabilityError.value = 'Check-out date cannot be in the past';
+    availabilityError.value = t('bookingFlow.errors.checkOutPast');
     return;
   }
   
@@ -80,10 +82,10 @@ watch([dateFrom, dateTo], async ([from, to]) => {
     try {
       const result = await checkBookingAvailability(props.item.id, from, to);
       if (!result.available) {
-        availabilityError.value = 'Selected dates are not available';
+        availabilityError.value = t('bookingFlow.errors.datesUnavailable');
         if (result.unavailableRanges?.length > 0) {
           const range = result.unavailableRanges[0];
-          availabilityError.value += `. Conflict: ${range.from} to ${range.to}`;
+          availabilityError.value += ` ${t('bookingFlow.errors.conflictRange', { from: range.from, to: range.to })}`;
         }
       }
     } catch (error) {
@@ -104,7 +106,7 @@ async function getQuoteData() {
     step.value = 2;
   } catch (error) {
     console.error('Failed to get quote:', error);
-    ui.showToast(error.response?.data?.message || 'Failed to get price quote', 'danger');
+    ui.showToast(error.response?.data?.message || t('bookingFlow.errors.failedToGetQuote'), 'danger');
   } finally {
     loading.value = false;
   }
@@ -152,12 +154,12 @@ async function submitBookingRequest() {
           notes: notes.value.trim() || undefined,
         });
         
-        ui.showToast('Booking request sent to owner. You\'ll be notified when they respond.', 'success');
+        ui.showToast(t('bookingFlow.messages.requestSent'), 'success');
         emit('booking-created', request);
         emit('close');
       } catch (error) {
         console.error('Failed to submit booking request:', error);
-        ui.showToast(error.message || 'Failed to send booking request', 'danger');
+        ui.showToast(error.message || t('bookingFlow.errors.failedToSendRequest'), 'danger');
       } finally {
         submitting.value = false;
       }
@@ -199,7 +201,8 @@ function proceedToNotes() {
 }
 
 function formatDate(dateString) {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  const formatLocale = locale.value || 'en-US';
+  return new Date(dateString).toLocaleDateString(formatLocale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
@@ -210,12 +213,13 @@ function formatDateRange(from, to) {
   const fromDate = new Date(from);
   const toDate = new Date(to);
   
-  const fromFormatted = fromDate.toLocaleDateString('en-US', {
+  const formatLocale = locale.value || 'en-US';
+  const fromFormatted = fromDate.toLocaleDateString(formatLocale, {
     month: 'short',
     day: 'numeric'
   });
   
-  const toFormatted = toDate.toLocaleDateString('en-US', {
+  const toFormatted = toDate.toLocaleDateString(formatLocale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
@@ -235,8 +239,8 @@ function formatDateRange(from, to) {
           <i class="bi bi-calendar3"></i>
         </div>
         <div class="step-info">
-          <h3 class="step-title">Select Your Dates</h3>
-          <p class="step-subtitle">Choose your rental period and get an instant quote</p>
+          <h3 class="step-title">{{ $t('bookingFlow.step1.title') }}</h3>
+          <p class="step-subtitle">{{ $t('bookingFlow.step1.subtitle') }}</p>
         </div>
       </div>
 
@@ -244,7 +248,7 @@ function formatDateRange(from, to) {
       <div class="date-selection">
         <div class="date-inputs">
           <div class="date-input-group">
-            <label class="date-label">Check-in Date</label>
+            <label class="date-label">{{ $t('bookingFlow.step1.checkIn') }}</label>
             <div class="date-input-wrapper">
               <input 
                 v-model="dateFrom" 
@@ -255,7 +259,7 @@ function formatDateRange(from, to) {
             </div>
           </div>
           <div class="date-input-group">
-            <label class="date-label">Check-out Date</label>
+            <label class="date-label">{{ $t('bookingFlow.step1.checkOut') }}</label>
             <div class="date-input-wrapper">
               <input 
                 v-model="dateTo" 
@@ -273,7 +277,7 @@ function formatDateRange(from, to) {
           <div class="duration-content">
             <div class="duration-info">
               <i class="bi bi-clock me-2"></i>
-              <span class="duration-text">{{ days }} day{{ days !== 1 ? 's' : '' }}</span>
+              <span class="duration-text">{{ days }} {{ days === 1 ? $t('bookingFlow.day') : $t('bookingFlow.days') }}</span>
             </div>
             <div class="duration-dates">
               {{ formatDateRange(dateFrom, dateTo) }}
@@ -293,25 +297,25 @@ function formatDateRange(from, to) {
         <div class="preview-header">
           <h4 class="preview-title">
             <i class="bi bi-calculator me-2"></i>
-            Price Preview
+            {{ $t('bookingFlow.step1.pricePreview') }}
           </h4>
         </div>
         
         <div class="preview-details">
           <div class="preview-line">
-            <span class="preview-label">{{ days }} day(s) × {{ formatCurrency(props.item.pricePerDay) }}</span>
+            <span class="preview-label">{{ days }} {{ days === 1 ? $t('bookingFlow.day') : $t('bookingFlow.days') }} × {{ formatCurrency(props.item.pricePerDay) }}</span>
             <span class="preview-value">{{ formatCurrency(days * props.item.pricePerDay) }}</span>
           </div>
           
           <div v-if="props.item.initialPrice" class="preview-line">
-            <span class="preview-label">Initial fee</span>
+            <span class="preview-label">{{ $t('bookingFlow.initialFee') }}</span>
             <span class="preview-value">{{ formatCurrency(props.item.initialPrice) }}</span>
           </div>
           
           <div v-if="props.item.deposit" class="preview-line deposit">
             <span class="preview-label">
               <i class="bi bi-shield-check me-1"></i>
-              Security deposit
+              {{ $t('bookingFlow.securityDeposit') }}
             </span>
             <span class="preview-value">{{ formatCurrency(props.item.deposit) }}</span>
           </div>
@@ -319,7 +323,7 @@ function formatDateRange(from, to) {
           <div class="preview-divider"></div>
 
           <div class="preview-total">
-            <span class="preview-total-label">Total to Pay</span>
+            <span class="preview-total-label">{{ $t('bookingFlow.totalToPay') }}</span>
             <span class="preview-total-value">
               {{ formatCurrency((days * props.item.pricePerDay + (props.item.initialPrice || 0)) + (props.item.deposit || 0)) }}
             </span>
@@ -331,7 +335,7 @@ function formatDateRange(from, to) {
       <div class="step-actions">
         <button class="cancel-btn" @click="emit('close')">
           <i class="bi bi-x-lg me-2"></i>
-          Cancel
+          {{ $t('common.cancel') }}
         </button>
         <button 
           class="primary-btn" 
@@ -340,7 +344,7 @@ function formatDateRange(from, to) {
         >
           <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
           <i v-else class="bi bi-calculator me-2"></i>
-          {{ loading ? 'Getting Quote...' : 'Get Price Quote' }}
+          {{ loading ? $t('bookingFlow.gettingQuote') : $t('bookingFlow.getPriceQuote') }}
         </button>
       </div>
     </div>
@@ -353,8 +357,8 @@ function formatDateRange(from, to) {
           <i class="bi bi-receipt"></i>
         </div>
         <div class="step-info">
-          <h3 class="step-title">Review Your Quote</h3>
-          <p class="step-subtitle">Confirm your rental details and proceed to checkout</p>
+          <h3 class="step-title">{{ $t('bookingFlow.step2.title') }}</h3>
+          <p class="step-subtitle">{{ $t('bookingFlow.step2.subtitle') }}</p>
         </div>
       </div>
 
@@ -363,10 +367,10 @@ function formatDateRange(from, to) {
         <div class="quote-header">
           <h4 class="quote-title">
             <i class="bi bi-calculator me-2"></i>
-            Price Breakdown
+            {{ $t('bookingFlow.priceBreakdown') }}
           </h4>
           <div class="quote-period">
-            <span class="period-days">{{ days }} day{{ days !== 1 ? 's' : '' }}</span>
+            <span class="period-days">{{ days }} {{ days === 1 ? $t('bookingFlow.day') : $t('bookingFlow.days') }}</span>
             <span class="period-dates">{{ formatDateRange(dateFrom, dateTo) }}</span>
           </div>
         </div>
@@ -374,26 +378,26 @@ function formatDateRange(from, to) {
         <div class="quote-details">
           <!-- Daily Breakdown -->
           <div v-if="quote.breakdown" class="breakdown-section">
-            <div class="breakdown-header">Daily Breakdown</div>
+            <div class="breakdown-header">{{ $t('bookingFlow.dailyBreakdown') }}</div>
             <div v-for="day in quote.breakdown" :key="day.date" class="breakdown-line">
               <span class="breakdown-date">{{ formatDate(day.date) }}</span>
               <span class="breakdown-price">{{ formatCurrency(day.price) }}</span>
             </div>
           </div>
           <div v-else class="quote-line">
-            <span class="quote-label">{{ days }} nights × {{ formatCurrency(props.item.pricePerDay) }}</span>
+            <span class="quote-label">{{ days }} {{ days === 1 ? $t('bookingFlow.night') : $t('bookingFlow.nights') }} × {{ formatCurrency(props.item.pricePerDay) }}</span>
             <span class="quote-value">{{ formatCurrency(days * props.item.pricePerDay) }}</span>
           </div>
 
           <div v-if="quote.initialPrice" class="quote-line">
-            <span class="quote-label">Initial fee</span>
+            <span class="quote-label">{{ $t('bookingFlow.initialFee') }}</span>
             <span class="quote-value">{{ formatCurrency(quote.initialPrice) }}</span>
           </div>
 
           <div class="quote-divider"></div>
 
           <div class="quote-total">
-            <span class="total-label">Rental Total</span>
+            <span class="total-label">{{ $t('bookingFlow.rentalTotal') }}</span>
             <span class="total-value">{{ formatCurrency(quote.total) }}</span>
           </div>
 
@@ -401,8 +405,8 @@ function formatDateRange(from, to) {
             <div class="deposit-info">
               <i class="bi bi-shield-check me-2"></i>
               <div>
-                <div class="deposit-title">Security Deposit</div>
-                <div class="deposit-note">Refundable after item return</div>
+                <div class="deposit-title">{{ $t('bookingFlow.securityDeposit') }}</div>
+                <div class="deposit-note">{{ $t('bookingFlow.depositRefundable') }}</div>
               </div>
             </div>
             <span class="deposit-amount">{{ formatCurrency(props.item.deposit) }}</span>
@@ -412,13 +416,13 @@ function formatDateRange(from, to) {
           <div class="overall-total-section">
             <div class="overall-total-header">
               <i class="bi bi-credit-card me-2"></i>
-              <span>Total Amount to Pay</span>
+              <span>{{ $t('bookingFlow.totalAmountToPay') }}</span>
             </div>
             <div class="overall-total-amount">
               {{ formatCurrency(quote.total + (props.item.deposit || 0)) }}
             </div>
             <div class="overall-total-note">
-              Includes rental total + security deposit
+              {{ $t('bookingFlow.totalIncludesDeposit') }}
             </div>
           </div>
         </div>
@@ -428,11 +432,11 @@ function formatDateRange(from, to) {
       <div class="step-actions">
         <button class="back-btn" @click="goBack">
           <i class="bi bi-arrow-left me-2"></i>
-          Back
+          {{ $t('common.back') }}
         </button>
         <button class="checkout-btn" @click="proceedToNotes">
           <i class="bi bi-arrow-right me-2"></i>
-          Continue
+          {{ $t('common.continue') }}
         </button>
       </div>
     </div>
@@ -445,20 +449,20 @@ function formatDateRange(from, to) {
           <i class="bi bi-chat-text"></i>
         </div>
         <div class="step-info">
-          <h3 class="step-title">Add Notes (Optional)</h3>
-          <p class="step-subtitle">Let the owner know about your rental needs</p>
+          <h3 class="step-title">{{ $t('bookingFlow.step3.title') }}</h3>
+          <p class="step-subtitle">{{ $t('bookingFlow.step3.subtitle') }}</p>
         </div>
       </div>
 
       <!-- Notes Input -->
       <div class="date-selection">
         <div class="mb-3">
-          <label class="date-label">Additional Notes</label>
+          <label class="date-label">{{ $t('bookingFlow.step3.additionalNotes') }}</label>
           <textarea
             v-model="notes"
             class="form-control"
             rows="4"
-            placeholder="E.g., I need the item for a photography project, will handle with care..."
+            :placeholder="$t('bookingFlow.step3.notesPlaceholder')"
             style="border-radius: 12px; padding: 12px; border: 2px solid #e2e8f0; font-size: 14px;"
           ></textarea>
         </div>
@@ -468,26 +472,26 @@ function formatDateRange(from, to) {
           <div class="quote-header">
             <h4 class="quote-title">
               <i class="bi bi-calendar-check me-2"></i>
-              Request Summary
+              {{ $t('bookingFlow.step3.requestSummary') }}
             </h4>
           </div>
           <div class="quote-details">
             <div class="quote-line">
-              <span class="quote-label">Dates</span>
+              <span class="quote-label">{{ $t('bookingFlow.step3.dates') }}</span>
               <span class="quote-value">{{ formatDateRange(dateFrom, dateTo) }}</span>
             </div>
             <div class="quote-line">
-              <span class="quote-label">Duration</span>
-              <span class="quote-value">{{ days }} day{{ days !== 1 ? 's' : '' }}</span>
+              <span class="quote-label">{{ $t('bookingFlow.step3.duration') }}</span>
+              <span class="quote-value">{{ days }} {{ days === 1 ? $t('bookingFlow.day') : $t('bookingFlow.days') }}</span>
             </div>
             <div class="quote-divider"></div>
             <div class="quote-total">
-              <span class="total-label">Estimated Total</span>
+              <span class="total-label">{{ $t('bookingFlow.step3.estimatedTotal') }}</span>
               <span class="total-value">{{ formatCurrency(quote.total + (props.item.deposit || 0)) }}</span>
             </div>
             <div class="small text-muted mt-2">
               <i class="bi bi-info-circle me-1"></i>
-              Final price may be adjusted by the owner
+              {{ $t('bookingFlow.step3.finalPriceNote') }}
             </div>
           </div>
         </div>
@@ -497,7 +501,7 @@ function formatDateRange(from, to) {
       <div class="step-actions">
         <button class="back-btn" @click="goBack">
           <i class="bi bi-arrow-left me-2"></i>
-          Back
+          {{ $t('common.back') }}
         </button>
         <button 
           class="checkout-btn" 
@@ -506,7 +510,7 @@ function formatDateRange(from, to) {
         >
           <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
           <i v-else class="bi bi-send me-2"></i>
-          {{ submitting ? 'Sending...' : 'Send Request' }}
+          {{ submitting ? $t('bookingFlow.sending') : $t('bookingFlow.sendRequest') }}
         </button>
       </div>
     </div>
