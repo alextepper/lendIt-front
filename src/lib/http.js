@@ -136,6 +136,17 @@ http.interceptors.response.use(
       }
     }
 
+    // If a refresh is already in progress, wait for it before deciding to redirect.
+    if (error?.response?.status === 401 && retryCount === 0 && refreshing) {
+      try {
+        await refreshing;
+        original._retryCount = retryCount + 1;
+        return http(original);
+      } catch (refreshError) {
+        console.warn("Session refresh failed while waiting:", refreshError);
+      }
+    }
+
     // If unauthorised after retry attempts, kick to login with redirect
     // But only if we've already tried to refresh or shouldn't refresh
     if (error?.response?.status === 401) {
