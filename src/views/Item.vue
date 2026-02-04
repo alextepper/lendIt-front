@@ -18,6 +18,7 @@ import { getItemPhotoUrl } from '../utils/imageUtils';
 import http from '../lib/http';
 import { useAuthModal } from '../composables/useAuthModal';
 import { requireAuth, resumePendingAction } from '../auth/requireAuth';
+import { useSeo, generateIsraelTitle } from '../composables/useSeo';
 
 const route = useRoute();
 const router = useRouter();
@@ -25,6 +26,7 @@ const { t } = useI18n();
 const ui = useUiStore();
 const auth = useAuthStore();
 const { openLoginModal, closeModals } = useAuthModal();
+const { updateSeo } = useSeo();
 const item = ref(null);
 const loading = ref(true);
 const error = ref(null);
@@ -190,11 +192,71 @@ async function load() {
     }
     
     // Reviews are already in item.reviews, no need to fetch separately
+    
+    // Update SEO metadata for this item page
+    updateItemSeo();
   } catch (e) {
     error.value = e?.response?.data?.message || e.message || t('item.failedToLoad');
   } finally {
     loading.value = false;
   }
+}
+
+// Function to update SEO metadata for item pages
+function updateItemSeo() {
+  if (!item.value) return;
+  
+  const itemTitle = item.value.title || '';
+  const itemDescription = item.value.description || '';
+  const itemLocation = item.value.location || item.value.address || '';
+  const itemPrice = item.value.pricePerDay ? (item.value.pricePerDay / 100).toFixed(0) : '';
+  const itemCategory = item.value.category || '';
+  
+  // Get first photo URL
+  const itemImage = item.value.photos && item.value.photos.length > 0 
+    ? getItemPhotoUrl(item.value.photos[0])
+    : 'https://www.sharo-app.com/logo.png';
+  
+  // Generate SEO-friendly title
+  const seoTitle = generateIsraelTitle(itemTitle);
+  
+  // Generate description with location and price
+  const seoDescription = `${itemDescription.substring(0, 150)}... - להשכרה ב${itemLocation} ב-₪${itemPrice} ליום. השכירו עכשיו ב-Sharo.`;
+  
+  // Generate keywords
+  const keywords = [
+    `השכרת ${itemTitle}`,
+    `${itemTitle} להשכרה`,
+    itemCategory ? `השכרת ${itemCategory}` : null,
+    itemLocation ? `השכרה ב${itemLocation}` : null,
+    'השכרת ציוד',
+    'השכרת מוצרים'
+  ].filter(Boolean).join(', ');
+  
+  const currentUrl = window.location.href;
+  
+  updateSeo({
+    title: seoTitle,
+    description: seoDescription,
+    keywords: keywords,
+    ogTitle: `${itemTitle} - להשכרה ב-Sharo`,
+    ogDescription: seoDescription,
+    ogImage: itemImage,
+    ogUrl: currentUrl,
+    productSchema: {
+      title: itemTitle,
+      description: itemDescription,
+      image: itemImage,
+      images: item.value.photos ? item.value.photos.map(p => getItemPhotoUrl(p)) : [],
+      price: itemPrice,
+      category: itemCategory,
+      location: itemLocation,
+      available: item.value.status === 'active',
+      rating: item.value.rating,
+      reviewCount: item.value.reviews_count || item.value.reviewsCount,
+      url: currentUrl
+    }
+  });
 }
 
 onMounted(async () => {

@@ -220,7 +220,7 @@ onMounted(() => {
       <div class="container">
         <div class="row align-items-center">
           <div class="col-lg-6">
-            <h1 class="display-4 fw-bold mb-3">{{ $t('app.title') }}</h1>
+            <h1 class="display-4 fw-bold mb-3">השכרת מוצרים וציוד מהשכנים שלכם</h1>
             <p class="lead mb-4">{{ $t('app.tagline') }}</p>
             
             <!-- Search Form -->
@@ -299,8 +299,8 @@ onMounted(() => {
       <div class="container">
         <div class="row">
           <div class="col-12">
-            <h2 class="h3 mb-4 text-center">{{ $t('home.popularCategories') }}</h2>
-            <p class="text-center text-secondary mb-5">{{ $t('home.discoverItems') }}</p>
+            <h2 class="h3 mb-4 text-center">קטגוריות פופולריות להשכרה בישראל</h2>
+            <p class="text-center text-secondary mb-5">השכרת כלי עבודה, ציוד קמפינג, צילום ואלקטרוניקה</p>
           </div>
         </div>
 
@@ -396,6 +396,36 @@ onMounted(() => {
             >
               {{ $t('home.browseCategory', { category: category.displayName }) }}
             </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works-section py-5 mt-5">
+      <div class="container">
+        <h2 class="h3 mb-5 text-center">איך זה עובד? השכירו מוצרים ב-3 צעדים פשוטים</h2>
+        <div class="row g-4">
+          <div class="col-md-4 text-center">
+            <div class="step-icon mb-3">
+              <i class="bi bi-search display-3 text-primary"></i>
+            </div>
+            <h3 class="h5 mb-3">חפשו את המוצר שאתם צריכים</h3>
+            <p class="text-secondary">גלו אלפי מוצרים זמינים להשכרה באזור שלכם - מכלי עבודה ועד ציוד קמפינג</p>
+          </div>
+          <div class="col-md-4 text-center">
+            <div class="step-icon mb-3">
+              <i class="bi bi-calendar-check display-3 text-success"></i>
+            </div>
+            <h3 class="h5 mb-3">הזמינו ותאמו תאריכים</h3>
+            <p class="text-secondary">בחרו את התאריכים המתאימים לכם ושלחו בקשת הזמנה למשכיר</p>
+          </div>
+          <div class="col-md-4 text-center">
+            <div class="step-icon mb-3">
+              <i class="bi bi-hand-thumbs-up display-3 text-info"></i>
+            </div>
+            <h3 class="h5 mb-3">קבלו והחזירו</h3>
+            <p class="text-secondary">קבלו את הציוד, השתמשו בו והחזירו אותו בסיום תקופת ההשכרה</p>
           </div>
         </div>
       </div>
@@ -527,6 +557,26 @@ onMounted(() => {
 .suggestion-item i {
   color: #4285F4;
   margin-top: 0.125rem;
+}
+
+/* How It Works Section */
+.how-it-works-section {
+  background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+}
+
+.how-it-works-section .step-icon {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.how-it-works-section .step-icon i {
+  transition: transform 0.3s ease;
+}
+
+.how-it-works-section .col-md-4:hover .step-icon i {
+  transform: scale(1.1);
 }
 
 @media (max-width: 768px) {

@@ -1,7 +1,23 @@
 /* RTL Support for Hebrew and Arabic */
 
+/* Import Hebrew-optimized fonts from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&family=Assistant:wght@300;400;600;700&display=swap');
+
 /* Bootstrap RTL overrides */
 .rtl {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Hebrew font-family optimization */
+html[lang="he"],
+html[lang="he"] body,
+.rtl {
+    font-family: 'Heebo', 'Assistant', 'Segoe UI', Arial, sans-serif;
+}
+
+/* Ensure Hebrew text is properly rendered */
+html[dir="rtl"] {
     direction: rtl;
     text-align: right;
 }
