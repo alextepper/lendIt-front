@@ -3,7 +3,6 @@
   <AppLoadingScreen />
 
   <AppNavbar />
-  <IntroBanner />
 
   <main class="py-4">
     <div class="container-lg">
@@ -40,7 +39,6 @@ import { watch, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useChatStore } from './stores/chat'
 import AppNavbar from './components/AppNavbar.vue'
-import IntroBanner from './components/IntroBanner.vue'
 import AppLoadingScreen from './components/AppLoadingScreen.vue'
 import GlobalToast from './components/GlobalToast.vue'
 import GlobalLoader from './components/GlobalLoader.vue'
