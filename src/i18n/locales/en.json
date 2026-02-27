@@ -357,6 +357,8 @@
     }
   },
   "reviewForm": {
+    "writeReviewTitle": "Write a Review",
+    "editReviewTitle": "Edit Review",
     "reviewingRenter": "You are reviewing the renter for this booking.",
     "reviewingRentalExperience": "You are reviewing your rental experience.",
     "overallRating": "Overall Rating",

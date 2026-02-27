@@ -429,6 +429,8 @@
     }
   },
   "reviewForm": {
+    "writeReviewTitle": "כתוב ביקורת",
+    "editReviewTitle": "ערוך ביקורת",
     "reviewingRenter": "אתה מעריך את השוכר עבור ההשכרה הזו.",
     "reviewingRentalExperience": "אתה מעריך את חוויית ההשכרה שלך.",
     "overallRating": "דירוג כללי",

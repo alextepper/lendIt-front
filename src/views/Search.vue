@@ -826,7 +826,7 @@ function formatPrice(amount) {
     <!-- Map/Results Area -->
     <div class="col-12 col-lg-9">
       <!-- Map View -->
-      <div v-if="viewMode === 'map'" class="map-container">
+      <div v-show="viewMode === 'map'" class="map-container">
         <SearchMap
           :key="`map-${viewMode}`"
           :user-location="currentLocation"
@@ -837,7 +837,7 @@ function formatPrice(amount) {
       </div>
 
       <!-- List View -->
-      <div v-else>
+      <div v-show="viewMode === 'list'">
         <div class="d-flex align-items-center justify-content-between mb-2">
           <div class="small text-secondary">{{ resultsLabel }}</div>
           <div class="d-flex align-items-center gap-2">

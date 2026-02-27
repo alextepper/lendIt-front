@@ -349,6 +349,8 @@
     }
   },
   "reviewForm": {
+    "writeReviewTitle": "Написать отзыв",
+    "editReviewTitle": "Редактировать отзыв",
     "reviewingRenter": "Вы оцениваете арендатора для этого бронирования.",
     "reviewingRentalExperience": "Вы оцениваете свой опыт аренды.",
     "overallRating": "Общая оценка",

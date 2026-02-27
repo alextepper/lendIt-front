@@ -349,6 +349,8 @@
     }
   },
   "reviewForm": {
+    "writeReviewTitle": "اكتب تقييماً",
+    "editReviewTitle": "تعديل التقييم",
     "reviewingRenter": "أنت تقيم المستأجر لهذه الحجز.",
     "reviewingRentalExperience": "أنت تقيم تجربة الإيجار الخاصة بك.",
     "overallRating": "التقييم العام",

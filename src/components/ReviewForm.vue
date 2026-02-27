@@ -45,19 +45,6 @@
 
 
           <!-- Title (for rental experience only) -->
-          <div v-if="form.subjectType === 'RENTAL_EXPERIENCE'" class="mb-3">
-            <label for="review-title" class="form-label">{{ $t('reviewForm.reviewTitle') }} <span class="text-danger">*</span></label>
-            <input 
-              type="text" 
-              class="form-control" 
-              id="review-title"
-              v-model="form.title"
-              :placeholder="$t('reviewForm.titlePlaceholder')"
-              maxlength="100"
-              required
-            >
-            <div class="form-text">{{ form.title.length }}/100 {{ $t('reviewForm.characters') }}</div>
-          </div>
 
           <!-- Review Body -->
           <div class="mb-3">

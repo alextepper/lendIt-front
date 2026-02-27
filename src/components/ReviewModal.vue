@@ -12,7 +12,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="reviewModalLabel">
             <i class="bi bi-star-fill me-2"></i>
-            {{ isEditing ? 'Edit Review' : 'Write a Review' }}
+            {{ isEditing ? $t('reviewForm.editReviewTitle') : $t('reviewForm.writeReviewTitle') }}
           </h5>
           <button 
             type="button" 

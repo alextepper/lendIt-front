@@ -15,79 +15,59 @@
     </div>
 
     <div class="bookings-card">
-      <div class="bookings-tabs">
+      <div class="bookings-curtains">
         <button
           type="button"
-          class="bookings-tab"
-          :class="{ active: activeTab === 'renter' }"
-          @click="setRole('renter')"
+          class="bookings-curtain"
+          :class="{ open: sections.renter }"
+          @click="toggleSection('renter')"
         >
-          <i class="bi bi-box-arrow-in-right"></i>
-          <span>{{ $t('bookings.myRentals') }}</span>
+          <span class="bookings-curtain-title">
+            <i class="bi bi-box-arrow-in-right"></i>
+            {{ $t('bookings.myRentals') }}
+          </span>
+          <i class="bi" :class="sections.renter ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
         </button>
-        <button
-          type="button"
-          class="bookings-tab"
-          :class="{ active: activeTab === 'owner' }"
-          @click="setRole('owner')"
-        >
-          <i class="bi bi-box-arrow-up"></i>
-          <span>{{ $t('bookings.itemsRentingOut') }}</span>
-        </button>
-      </div>
+        <div v-show="sections.renter" class="bookings-body">
+          <OrdersList role="renter" :key="'renter'" />
+        </div>
 
-      <div class="bookings-body">
-        <OrdersList v-if="activeTab === 'renter'" role="renter" :key="'renter'" />
-        <OrdersList v-else role="owner" :key="'owner'" />
+        <button
+          type="button"
+          class="bookings-curtain"
+          :class="{ open: sections.owner }"
+          @click="toggleSection('owner')"
+        >
+          <span class="bookings-curtain-title">
+            <i class="bi bi-box-arrow-up"></i>
+            {{ $t('bookings.itemsRentingOut') }}
+          </span>
+          <i class="bi" :class="sections.owner ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+        </button>
+        <div v-show="sections.owner" class="bookings-body">
+          <OrdersList role="owner" :key="'owner'" />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
 import OrdersList from '../components/OrdersList.vue';
 
 const { t } = useI18n();
-const route = useRoute();
-const router = useRouter();
 
-const validRoles = ['renter', 'owner'];
-const normalizeRole = (value) => {
-  if (Array.isArray(value)) return value[0];
-  return value;
-};
-const activeTab = ref(
-  validRoles.includes(normalizeRole(route.query.role))
-    ? normalizeRole(route.query.role)
-    : 'renter'
-);
+const sections = reactive({
+  renter: true,
+  owner: false,
+});
 
-function setRole(role) {
-  if (!validRoles.includes(role) || activeTab.value === role) return;
-  activeTab.value = role;
+function toggleSection(role) {
+  if (!(role in sections)) return;
+  sections[role] = !sections[role];
 }
-
-watch(
-  () => activeTab.value,
-  (role) => {
-    router.replace({
-      query: { ...route.query, role },
-    });
-  }
-);
-
-watch(
-  () => route.query.role,
-  (role) => {
-    const normalized = normalizeRole(role);
-    if (validRoles.includes(normalized)) {
-      activeTab.value = normalized;
-    }
-  }
-);
 </script>
 
 <style scoped>
@@ -143,30 +123,33 @@ watch(
   overflow: hidden;
 }
 
-.bookings-tabs {
+.bookings-curtains {
   display: flex;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc;
+  flex-direction: column;
 }
 
-.bookings-tab {
+.bookings-curtain {
+  width: 100%;
+  border: none;
+  background: #f8fafc;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  color: #0f172a;
+  transition: background 0.2s ease;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.bookings-curtain-title {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border: none;
-  background: transparent;
-  padding: 0.6rem 1rem;
-  border-radius: 999px;
-  color: #64748b;
-  font-weight: 600;
-  transition: all 0.2s ease;
 }
 
-.bookings-tab.active {
-  background: #2563eb;
-  color: #ffffff;
+.bookings-curtain.open {
+  background: #eef2ff;
 }
 
 .bookings-body {
@@ -179,8 +162,8 @@ watch(
     align-items: flex-start;
   }
 
-  .bookings-tabs {
-    flex-direction: column;
+  .bookings-curtain {
+    padding: 1rem;
   }
 }
 
@@ -212,6 +195,15 @@ watch(
 :global([data-bs-theme="dark"]) .bookings-tab.active {
   background: #2563eb;
   color: #ffffff;
+}
+::global([data-bs-theme="dark"]) .bookings-curtain {
+  background: #111827;
+  border-bottom-color: #1f2937;
+  color: #f8fafc;
+}
+
+::global([data-bs-theme="dark"]) .bookings-curtain.open {
+  background: #1f2937;
 }
 </style>
 
