@@ -20,7 +20,7 @@
           type="button"
           class="bookings-tab"
           :class="{ active: activeTab === 'renter' }"
-          @click="activeTab = 'renter'"
+          @click="setRole('renter')"
         >
           <i class="bi bi-box-arrow-in-right"></i>
           <span>{{ $t('bookings.myRentals') }}</span>
@@ -29,7 +29,7 @@
           type="button"
           class="bookings-tab"
           :class="{ active: activeTab === 'owner' }"
-          @click="activeTab = 'owner'"
+          @click="setRole('owner')"
         >
           <i class="bi bi-box-arrow-up"></i>
           <span>{{ $t('bookings.itemsRentingOut') }}</span>
@@ -45,12 +45,49 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import OrdersList from '../components/OrdersList.vue';
 
 const { t } = useI18n();
-const activeTab = ref('renter');
+const route = useRoute();
+const router = useRouter();
+
+const validRoles = ['renter', 'owner'];
+const normalizeRole = (value) => {
+  if (Array.isArray(value)) return value[0];
+  return value;
+};
+const activeTab = ref(
+  validRoles.includes(normalizeRole(route.query.role))
+    ? normalizeRole(route.query.role)
+    : 'renter'
+);
+
+function setRole(role) {
+  if (!validRoles.includes(role) || activeTab.value === role) return;
+  activeTab.value = role;
+}
+
+watch(
+  () => activeTab.value,
+  (role) => {
+    router.replace({
+      query: { ...route.query, role },
+    });
+  }
+);
+
+watch(
+  () => route.query.role,
+  (role) => {
+    const normalized = normalizeRole(role);
+    if (validRoles.includes(normalized)) {
+      activeTab.value = normalized;
+    }
+  }
+);
 </script>
 
 <style scoped>

@@ -91,22 +91,7 @@
             </ul>
           </div>
 
-          <!-- Theme switcher -->
-          <div class="dropdown">
-            <button class="btn btn-outline-secondary btn-sm dropdown-toggle navbar-control-btn" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi" :class="{
-                'bi-brightness-high': theme.mode === 'light',
-                'bi-moon': theme.mode === 'dark',
-                'bi-circle-half': theme.mode === 'auto'
-              }"></i>
-              <span class="d-none d-sm-inline ms-1 me-1 text-capitalize">{{ $t(`nav.theme.${theme.mode}`) }}</span>
-            </button>
-            <ul class="dropdown-menu theme-dropdown">
-              <li><button class="dropdown-item" @click="theme.setMode('auto')"><i class="bi bi-circle-half me-2"></i>{{ $t('nav.theme.auto') }}</button></li>
-              <li><button class="dropdown-item" @click="theme.setMode('light')"><i class="bi bi-brightness-high me-2"></i>{{ $t('nav.theme.light') }}</button></li>
-              <li><button class="dropdown-item" @click="theme.setMode('dark')"><i class="bi bi-moon me-2"></i>{{ $t('nav.theme.dark') }}</button></li>
-            </ul>
-          </div>
+          <!-- Theme switcher (disabled: always light) -->
 
           <!-- <NotificationsBell class="d-none d-sm-inline-flex" /> -->
 
@@ -217,7 +202,6 @@
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useThemeStore } from '../stores/theme'
 import { useChatStore } from '../stores/chat'
 import { useLanguageStore } from '../stores/language'
 import { useDebugStore } from '../stores/debug'
@@ -230,7 +214,6 @@ import { useAuthModal } from '../composables/useAuthModal'
 const { t } = useI18n()
 const route = useRoute()
 const auth = useAuthStore()
-const theme = useThemeStore()
 const chat = useChatStore()
 const language = useLanguageStore()
 const debug = useDebugStore()

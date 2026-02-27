@@ -15,6 +15,10 @@ const auth = useAuthStore();
 const { t, locale } = useI18n();
 const orders = ref([]);
 const loading = ref(true);
+const page = ref(1);
+const pageSize = ref(20);
+const total = ref(0);
+const totalPages = ref(1);
 let loadPromise = null;
 const selectedOrder = ref(null);
 const activeFilter = ref('all'); // 'all', 'PENDING', 'PAID', 'HANDED_OVER', 'RETURNED', 'CANCELLED'
@@ -42,10 +46,10 @@ const filterLabels = computed(() => ({
 const emptyFilterLabel = computed(() => filterLabels.value[activeFilter.value] || activeFilter.value.toLowerCase());
 
 onMounted(async () => {
-  await loadOrders();
+  await loadOrders(1);
 });
 
-async function loadOrders() {
+async function loadOrders(targetPage = page.value) {
   if (loadPromise) {
     return loadPromise;
   }
@@ -55,10 +59,20 @@ async function loadOrders() {
     try {
       const response = await fetchOrders({
         role: props.role,
-        page: 1,
-        pageSize: 50,
+        page: targetPage,
+        pageSize: pageSize.value,
       });
-      orders.value = response.data || [];
+      const items = response.data || response.items || response.orders || response.bookings || [];
+      orders.value = items;
+
+      const pagination = response.pagination || {};
+      page.value = pagination.page || response.page || targetPage;
+      total.value = pagination.total || response.total || items.length;
+      totalPages.value =
+        pagination.total_pages ||
+        pagination.totalPages ||
+        response.total_pages ||
+        Math.max(1, Math.ceil(total.value / pageSize.value));
     } catch (error) {
       console.error('Failed to load orders:', error);
     } finally {
@@ -90,6 +104,11 @@ function closeModal() {
 
 function handleOrderUpdated() {
   loadOrders();
+}
+
+function goToPage(targetPage) {
+  if (targetPage < 1 || targetPage > totalPages.value) return;
+  loadOrders(targetPage);
 }
 
 function formatDate(dateString) {
@@ -274,6 +293,17 @@ function getStatusIcon(status) {
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="!loading && totalPages > 1" class="mt-4 d-flex justify-content-center align-items-center gap-2">
+      <button class="btn btn-outline-secondary btn-sm" :disabled="page <= 1" @click="goToPage(page - 1)">
+        {{ $t('common.previous') }}
+      </button>
+      <span class="small text-muted">Page {{ page }} / {{ totalPages }}</span>
+      <button class="btn btn-outline-secondary btn-sm" :disabled="page >= totalPages" @click="goToPage(page + 1)">
+        {{ $t('common.next') }}
+      </button>
     </div>
 
     <!-- Empty State -->

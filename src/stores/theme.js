@@ -1,7 +1,5 @@
 import { defineStore } from "pinia";
 
-const THEME_KEY = "theme"; // 'light' | 'dark' | 'auto'
-
 function applyTheme(mode) {
   let theme = mode;
   if (mode === "auto") {
@@ -15,27 +13,33 @@ function applyTheme(mode) {
 
 export const useThemeStore = defineStore("theme", {
   state: () => ({
-    mode: localStorage.getItem(THEME_KEY) || "auto",
+    mode: "light",
   }),
   actions: {
     init() {
-      applyTheme(this.mode);
+      this.mode = "light";
+      applyTheme("light");
       // react to system changes when in auto
       if (this._listener)
         window
           .matchMedia("(prefers-color-scheme: dark)")
           .removeEventListener("change", this._listener);
       this._listener = () => {
-        if (this.mode === "auto") applyTheme("auto");
+        // Theme locked to light
+        applyTheme("light");
       };
       window
         .matchMedia("(prefers-color-scheme: dark)")
         .addEventListener("change", this._listener);
     },
     setMode(mode) {
-      this.mode = mode;
-      localStorage.setItem(THEME_KEY, mode);
-      applyTheme(mode);
+      if (mode !== "light") {
+        this.mode = "light";
+        applyTheme("light");
+        return;
+      }
+      this.mode = "light";
+      applyTheme("light");
     },
   },
 });

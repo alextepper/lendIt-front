@@ -18,7 +18,7 @@
     "logout": "התנתקות",
     "profile": "פרופיל",
     "myBookings": "ההזמנות שלי",
-    "myListings": "הרשימות שלי",
+    "myListings": "מודעות שלי",
     "settings": "הגדרות",
     "user": "משתמש",
     "theme": {
@@ -308,7 +308,7 @@
   "dashboard": {
     "title": "לוח בקרה",
     "profile": "פרופיל",
-    "myListings": "הרשימות שלי",
+    "myListings": "מודעות שלי",
     "myRentals": "ההשכרות שלי",
     "editProfile": "ערוך פרופיל",
     "uploadAvatar": "העלה תמונת פרופיל",

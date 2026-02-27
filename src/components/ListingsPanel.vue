@@ -15,26 +15,13 @@ const showModal = ref(false);
 const editing = ref(null);
 
 async function load() {
-  const [activeRes, inactiveRes] = await Promise.all([
-    fetchListings({
-      mine: true,
-      page: 1,
-      pageSize: per,
-    }),
-    fetchListings({
-      mine: true,
-      inactive: true,
-      page: 1,
-      pageSize: per,
-    }),
-  ]);
+  const activeRes = await fetchListings({
+    mine: true,
+    page: 1,
+    pageSize: per,
+  });
 
-  const combined = [...(activeRes.items || []), ...(inactiveRes.items || [])];
-  const unique = new Map();
-  for (const item of combined) {
-    unique.set(item.id, item);
-  }
-  items.value = Array.from(unique.values());
+  items.value = activeRes.items || [];
   totalPages.value = 1;
   page.value = 1;
 }
@@ -106,7 +93,6 @@ async function remove(it) {
 
 <template>
   <div class="d-flex justify-content-between align-items-center mb-2">
-    <h2 class="h6 mb-0">My Listings</h2>
     <button class="btn btn-primary btn-sm" @click="openNew">
       <i class="bi bi-plus-lg me-1"></i>{{ $t('dashboard.createListing') }}
     </button>
