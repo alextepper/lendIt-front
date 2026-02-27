@@ -7,7 +7,6 @@ const { t } = useI18n();
 
 <template>
   <div class="container py-3">
-    <h1 class="h4 mb-3">{{ t('dashboard.myListings') }}</h1>
     <ListingsPanel />
   </div>
 </template>

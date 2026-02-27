@@ -30,12 +30,12 @@
       >
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item ms-3">
-            <router-link class="nav-link" to="/search">
+            <router-link class="nav-link" to="/search" active-class="active" exact-active-class="active">
               <i class="bi bi-search"></i> {{ $t('nav.search') }}
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item ms-3">
-            <router-link class="nav-link position-relative" to="/my/booking-requests">
+            <router-link class="nav-link position-relative" to="/my/booking-requests" active-class="active" exact-active-class="active">
               <i class="bi bi-calendar-check"></i> {{ $t('bookingRequests.navTitle') }}
               <span v-if="pendingBookingsCount > 0" class="position-absolute top-10 start-0 translate-middle badge rounded-pill bg-warning" style="font-size: 0.7rem; padding: 0.25em 0.5em;">
                 {{ pendingBookingsCount > 99 ? '99+' : pendingBookingsCount }}
@@ -43,12 +43,12 @@
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item ms-3">
-            <router-link class="nav-link" to="/my/listings">
+            <router-link class="nav-link" to="/my/listings" active-class="active" exact-active-class="active">
               <i class="bi bi-box-seam"></i> {{ $t('nav.myListings') }}
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item ms-3">
-            <router-link class="nav-link position-relative" to="/messages">
+            <router-link class="nav-link position-relative" to="/messages" active-class="active" exact-active-class="active">
               <i class="bi bi-chat-dots"></i> {{ $t('nav.messages') }}
               <span v-if="chat.unreadTotal > 0" class="position-absolute top-10 start-0 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem; padding: 0.25em 0.5em;">
                 {{ chat.unreadTotal > 99 ? '99+' : chat.unreadTotal }}
