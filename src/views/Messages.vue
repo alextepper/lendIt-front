@@ -133,10 +133,11 @@ function showConversations() {
 <style scoped>
 .messages-page {
   position: fixed;
-  top: 56px; /* Height of navbar */
+  top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
+  height: 100svh;
+  padding-top: 56px; /* Height of navbar */
   overflow: hidden;
   background: radial-gradient(circle at top left, #e9f2ff 0, #f8f9fa 45%, #fdfdfd 100%);
 }
@@ -152,8 +153,8 @@ function showConversations() {
 }
 
 .conversations-sidebar {
-  height: 100vh;
-  max-height: calc(100vh - 56px);
+  height: 100%;
+  max-height: 100%;
   overflow-y: auto;
   border-right: 1px solid #dee2e6;
   background: #fff;
@@ -166,8 +167,8 @@ function showConversations() {
 }
 
 .chat-column {
-  height: 100vh;
-  max-height: calc(100vh - 56px);
+  height: 100%;
+  max-height: 100%;
   overflow: hidden;
   background: #fff;
 }
@@ -192,22 +193,21 @@ function showConversations() {
 
 @media (max-width: 768px) {
   .messages-page {
-    /* On small screens, use the dynamic viewport height so the chat
-       fills the visible area and the input sticks above the keyboard. */
     position: fixed;
-    top: 56px;
+    top: 0;
     left: 0;
     right: 0;
-    bottom: auto;
-    height: calc(100vh - 56px);
-    min-height: calc(100vh - 56px);
+    bottom: 0;
+    height: 100svh;
+    min-height: 100svh;
+    padding-top: 56px;
     overflow: hidden;
   }
 
   @supports (height: 100dvh) {
     .messages-page {
-      height: calc(100dvh - 56px);
-      min-height: calc(100dvh - 56px);
+      height: 100dvh;
+      min-height: 100dvh;
     }
   }
 

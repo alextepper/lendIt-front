@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onMounted, ref, watch, computed } from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useChatStore } from '../stores/chat';
 import { getItemPhotoUrl } from '../utils/imageUtils';
@@ -8,6 +8,8 @@ const { t } = useI18n();
 const chat = useChatStore();
 const input = ref('');
 const messagesEnd = ref(null);
+const chatWindow = ref(null);
+let viewportListener = null;
 
 const emit = defineEmits(['back']);
 
@@ -50,10 +52,35 @@ function formatMessageTime(dateString) {
 }
 
 onMounted(scrollToBottom);
+
+onMounted(() => {
+  if (typeof window === 'undefined' || !window.visualViewport || !chatWindow.value) {
+    return;
+  }
+
+  const updateKeyboardOffset = () => {
+    const vv = window.visualViewport;
+    const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    chatWindow.value?.style.setProperty('--keyboard-offset', `${offset}px`);
+  };
+
+  viewportListener = updateKeyboardOffset;
+  updateKeyboardOffset();
+
+  window.visualViewport.addEventListener('resize', updateKeyboardOffset);
+  window.visualViewport.addEventListener('scroll', updateKeyboardOffset);
+});
+
+onUnmounted(() => {
+  if (!window?.visualViewport || !viewportListener) return;
+  window.visualViewport.removeEventListener('resize', viewportListener);
+  window.visualViewport.removeEventListener('scroll', viewportListener);
+  viewportListener = null;
+});
 </script>
 
 <template>
-  <div class="chat-window">
+  <div class="chat-window" ref="chatWindow">
     <!-- Chat Header (Sticky) -->
     <div class="chat-header">
       <!-- Mobile back button -->
@@ -153,8 +180,11 @@ onMounted(scrollToBottom);
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 100svh;
   position: relative;
   background-color: var(--bs-body-bg);
+  padding-bottom: var(--keyboard-offset, 0px);
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Chat Header - Sticky at top */
@@ -192,6 +222,8 @@ onMounted(scrollToBottom);
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0.75rem 0.75rem 0.5rem;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: linear-gradient(
     135deg,
     rgba(0, 0, 0, 0.02) 0%,
@@ -286,7 +318,7 @@ onMounted(scrollToBottom);
 .input-group .form-control {
   border: none;
   padding: 0.75rem 1rem;
-  font-size: 0.95rem;
+  font-size: 16px;
 }
 
 .input-group .form-control:focus {
@@ -331,7 +363,7 @@ onMounted(scrollToBottom);
 
   .input-group .form-control {
     padding: 0.6rem 0.75rem;
-    font-size: 0.9rem;
+    font-size: 16px;
   }
 
   .input-group .btn {

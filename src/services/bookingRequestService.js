@@ -79,9 +79,20 @@ export async function fetchAllBookings(params = {}) {
 
   try {
     const { data } = await http.get("/bookings", { params });
+    const rawList =
+      data?.bookings ||
+      data?.items ||
+      data?.data ||
+      data?.data?.items ||
+      [];
+    const bookings = Array.isArray(rawList)
+      ? rawList
+      : Array.isArray(rawList?.items)
+        ? rawList.items
+        : [];
     return {
-      bookings: data.bookings || data.items || data,
-      total: data.total || 0,
+      bookings,
+      total: data?.total || data?.pagination?.total || bookings.length,
     };
   } catch (error) {
     throw new Error(
