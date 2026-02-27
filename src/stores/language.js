@@ -1,5 +1,9 @@
 import { defineStore } from "pinia";
 import i18n, { isRTL, getLocaleDirection } from "../i18n";
+import { updateProfile } from "../services/userService";
+import { useAuthStore } from "./auth";
+
+const SUPPORTED_LOCALES = ["en", "he", "ar", "ru"];
 
 export const useLanguageStore = defineStore("language", {
   state: () => ({
@@ -23,9 +27,14 @@ export const useLanguageStore = defineStore("language", {
   },
 
   actions: {
-    setLocale(locale) {
-      if (!["en", "he", "ar", "ru"].includes(locale)) {
+    async setLocale(locale, options = {}) {
+      const { syncServer = true } = options;
+      if (!SUPPORTED_LOCALES.includes(locale)) {
         console.warn(`Unsupported locale: ${locale}`);
+        return;
+      }
+
+      if (this.currentLocale === locale) {
         return;
       }
 
@@ -50,6 +59,17 @@ export const useLanguageStore = defineStore("language", {
       }
 
       console.log(`Language changed to: ${locale}, RTL: ${this.isRTL}`);
+
+      if (syncServer) {
+        try {
+          const auth = useAuthStore();
+          if (auth.isAuthed) {
+            await updateProfile({ preferredLanguage: locale });
+          }
+        } catch (error) {
+          console.warn("Failed to update preferred language:", error);
+        }
+      }
     },
 
     init() {

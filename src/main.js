@@ -1,4 +1,4 @@
-import { createApp } from "vue";
+import { createApp, watch } from "vue";
 import { createPinia } from "pinia";
 import router from "./router";
 import i18n from "./i18n";
@@ -75,5 +75,16 @@ language.init();
 // Initialize auth store - the router guard will handle initialization
 // to avoid duplicate calls on page refresh
 const auth = useAuthStore();
+
+// Sync language with user preference when available
+watch(
+  () => auth.user?.preferredLanguage,
+  (preferredLanguage) => {
+    if (!preferredLanguage) return;
+    if (language.currentLocale === preferredLanguage) return;
+    language.setLocale(preferredLanguage, { syncServer: false });
+  },
+  { immediate: true }
+);
 
 app.mount("#app");
