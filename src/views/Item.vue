@@ -64,8 +64,37 @@ const editForm = reactive({
   description: '',
 });
 
-// Tags input
-const newTag = ref('');
+// Tags input (match ListingFormModal design)
+const MAX_TAGS = 10;
+const tagInputQuery = ref('');
+const tagDropdownOpen = ref(false);
+const isSelectingTag = ref(false);
+
+const ALL_TAGS = [
+  'drill', 'hammer', 'saw', 'lawn mower', 'screwdriver', 'wrench', 'ladder',
+  'camera', 'laptop', 'projector', 'speakers', 'drone', 'gaming console',
+  'tent', 'camping stove', 'cooler', 'bike', 'kayak', 'surfboard',
+  'board games', 'playstation', 'xbox', 'nintendo',
+  'furniture', 'table', 'chairs', 'party supplies',
+  'musical instruments', 'guitar', 'keyboard', 'microphone',
+  'baby gear', 'stroller', 'crib',
+  'fitness equipment', 'treadmill', 'weights',
+  'photography', 'lighting', 'tripod'
+];
+
+const TAG_TEMPLATES = [
+  { id: 'tools', tags: ['drill', 'hammer', 'screwdriver', 'lawn mower'] },
+  { id: 'electronics', tags: ['camera', 'laptop', 'projector', 'drone'] },
+  { id: 'outdoor', tags: ['tent', 'camping stove', 'bike', 'kayak'] },
+  { id: 'gaming', tags: ['playstation', 'xbox', 'board games'] },
+  { id: 'baby', tags: ['stroller', 'crib', 'baby gear'] },
+  { id: 'fitness', tags: ['treadmill', 'weights', 'fitness equipment'] },
+];
+
+const availableTagsForDropdown = computed(() => {
+  const selected = new Set((editForm.tags || []).map(t => String(t).toLowerCase()));
+  return ALL_TAGS.filter(t => !selected.has(t.toLowerCase()));
+});
 
 // Location search
 const locationSearchQuery = ref('');
@@ -611,23 +640,51 @@ async function saveChanges() {
   }
 }
 
-function addTag() {
-  const value = newTag.value.trim();
+function addTag(tag) {
+  const value = (typeof tag === 'string' ? tag : tagInputQuery.value).trim();
   if (!value) return;
+  if (editForm.tags.length >= MAX_TAGS) return;
 
-  // Avoid duplicates (case-insensitive)
   const exists = editForm.tags.some(
-    tag => String(tag).toLowerCase() === value.toLowerCase()
+    t => String(t).toLowerCase() === value.toLowerCase()
   );
   if (!exists) {
     editForm.tags.push(value);
   }
-  newTag.value = '';
+  tagInputQuery.value = '';
+  tagDropdownOpen.value = false;
 }
 
 function removeTag(index) {
   if (index < 0 || index >= editForm.tags.length) return;
   editForm.tags.splice(index, 1);
+}
+
+function applyTemplate(template) {
+  const toAdd = template.tags.filter(t => {
+    const lower = t.toLowerCase();
+    return !editForm.tags.some(sel => String(sel).toLowerCase() === lower);
+  });
+  const remaining = MAX_TAGS - editForm.tags.length;
+  toAdd.slice(0, remaining).forEach(t => editForm.tags.push(t));
+  tagDropdownOpen.value = false;
+  tagInputQuery.value = '';
+}
+
+function handleTagInputKeydown(e) {
+  if (e.key === 'Enter' && tagInputQuery.value.trim()) {
+    e.preventDefault();
+    addTag(tagInputQuery.value);
+  } else if (e.key === 'Backspace' && !tagInputQuery.value && editForm.tags.length) {
+    editForm.tags.pop();
+  }
+}
+
+function handleTagDropdownBlur() {
+  if (isSelectingTag.value) return;
+  setTimeout(() => {
+    if (!isSelectingTag.value) tagDropdownOpen.value = false;
+  }, 150);
 }
 
 const deleting = ref(false);

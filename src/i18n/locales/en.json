@@ -273,10 +273,9 @@
     "enterItemTitle": "Enter item title",
     "category": "Category",
     "tags": "Tags",
-    "tagsInstructions": "Type to search and click a suggestion to add. Add items like: drill, camera, tent, stroller.",
-    "tagsExamples": "e.g. drill, lawn mower, camera, laptop, tent, bike, playstation, stroller, treadmill",
-    "tagsPlaceholder": "Type to add tag...",
-    "addUpTo": "Add up to {max} tags",
+    "tagsPlaceholder": "Type or pick from dropdown...",
+    "tagsHint": "Pick from dropdown or type custom. Max 10 tags.",
+    "allTagsAdded": "All tags added",
     "tagTemplate": {
       "tools": "Tools",
       "electronics": "Electronics",

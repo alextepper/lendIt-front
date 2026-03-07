@@ -31,7 +31,7 @@ const form = reactive({
 const locs = reactive({ list: [] });
 const MAX_TAGS = 10;
 const tagInputQuery = ref('');
-const showingTagSuggestions = ref(false);
+const tagDropdownOpen = ref(false);
 const isSelectingTag = ref(false);
 
 // All available tags for autocomplete (normalized lowercase)
@@ -57,13 +57,9 @@ const TAG_TEMPLATES = [
   { id: 'fitness', tags: ['treadmill', 'weights', 'fitness equipment'] },
 ];
 
-const filteredTagSuggestions = computed(() => {
-  const q = (tagInputQuery.value || '').trim().toLowerCase();
+const availableTagsForDropdown = computed(() => {
   const selected = new Set(form.tags.map(t => t.toLowerCase()));
-  if (!q) return [];
-  return ALL_TAGS.filter(t => 
-    t.includes(q) && !selected.has(t)
-  ).slice(0, 8);
+  return ALL_TAGS.filter(t => !selected.has(t.toLowerCase()));
 });
 const photoInput = ref(null);
 const uploadingPhotos = ref(false);
@@ -76,7 +72,7 @@ function addTag(tag) {
   if (form.tags.some(t => t.toLowerCase() === lower)) return;
   form.tags.push(normalized);
   tagInputQuery.value = '';
-  showingTagSuggestions.value = false;
+  tagDropdownOpen.value = false;
 }
 
 function removeTag(index) {
@@ -90,30 +86,24 @@ function applyTemplate(template) {
   });
   const remaining = MAX_TAGS - form.tags.length;
   toAdd.slice(0, remaining).forEach(t => form.tags.push(t));
-  showingTagSuggestions.value = false;
+  tagDropdownOpen.value = false;
   tagInputQuery.value = '';
 }
 
 function handleTagInputKeydown(e) {
   if (e.key === 'Enter' && tagInputQuery.value.trim()) {
-    const match = filteredTagSuggestions.value[0];
-    if (match) {
-      e.preventDefault();
-      addTag(match);
-    } else {
-      e.preventDefault();
-      addTag(tagInputQuery.value);
-    }
+    e.preventDefault();
+    addTag(tagInputQuery.value);
   } else if (e.key === 'Backspace' && !tagInputQuery.value && form.tags.length) {
     form.tags.pop();
   }
 }
 
-function handleTagSuggestionBlur() {
+function handleTagDropdownBlur() {
   if (isSelectingTag.value) return;
   setTimeout(() => {
-    if (!isSelectingTag.value) showingTagSuggestions.value = false;
-  }, 200);
+    if (!isSelectingTag.value) tagDropdownOpen.value = false;
+  }, 150);
 }
 
 // Location search
@@ -464,8 +454,6 @@ async function submit() {
               <label class="form-label fw-semibold">
                 {{ $t('listing.tags') }} <span class="text-danger">*</span>
               </label>
-              <p class="text-muted small mb-1">{{ $t('listing.tagsInstructions') }}</p>
-              <p class="text-muted small mb-2">{{ $t('listing.tagsExamples') }}</p>
               <!-- Templates -->
               <div class="d-flex flex-wrap gap-1 mb-2">
                 <button
@@ -478,10 +466,10 @@ async function submit() {
                   {{ $t(`listing.tagTemplate.${tpl.id}`) }}
                 </button>
               </div>
-              <!-- Tag input: tags inside the field -->
+              <!-- Tag input: tags inside + dropdown -->
               <div
                 class="tag-input-wrapper position-relative"
-                :class="{ 'tag-input-focused': showingTagSuggestions }"
+                :class="{ 'tag-input-focused': tagDropdownOpen }"
               >
                 <div class="tag-input-inner">
                   <span
@@ -505,25 +493,41 @@ async function submit() {
                     type="text"
                     class="tag-input-field"
                     :placeholder="form.tags.length ? '' : $t('listing.tagsPlaceholder')"
-                    @input="showingTagSuggestions = true"
-                    @focus="showingTagSuggestions = true"
-                    @blur="handleTagSuggestionBlur"
+                    @focus="tagDropdownOpen = true"
                     @keydown="handleTagInputKeydown"
                   />
+                  <button
+                    v-if="form.tags.length < MAX_TAGS"
+                    type="button"
+                    class="tag-dropdown-btn"
+                    :aria-expanded="tagDropdownOpen"
+                    aria-haspopup="listbox"
+                    @click="tagDropdownOpen = !tagDropdownOpen"
+                    @blur="handleTagDropdownBlur"
+                  >
+                    <i class="bi" :class="tagDropdownOpen ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                  </button>
                 </div>
               </div>
-              <div v-if="showingTagSuggestions && filteredTagSuggestions.length > 0" class="tag-suggestions-dropdown">
+              <div
+                v-if="tagDropdownOpen && form.tags.length < MAX_TAGS"
+                class="tag-dropdown"
+                @blur="handleTagDropdownBlur"
+              >
                 <button
-                  v-for="sug in filteredTagSuggestions"
-                  :key="sug"
+                  v-for="tag in availableTagsForDropdown"
+                  :key="tag"
                   type="button"
                   class="tag-suggestion-item"
-                  @mousedown.prevent="isSelectingTag = true; addTag(sug); isSelectingTag = false"
+                  @mousedown.prevent="isSelectingTag = true; addTag(tag); isSelectingTag = false"
                 >
-                  {{ sug }}
+                  {{ tag }}
                 </button>
+                <div v-if="!availableTagsForDropdown.length" class="tag-dropdown-empty">
+                  {{ $t('listing.allTagsAdded') }}
+                </div>
               </div>
-              <small class="text-muted">{{ $t('listing.addUpTo', { max: MAX_TAGS }) }}</small>
+              <small class="text-muted d-block mt-1">{{ $t('listing.tagsHint') }}</small>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">
@@ -856,7 +860,28 @@ async function submit() {
   color: #6c757d;
 }
 
-.tag-suggestions-dropdown {
+.tag-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin-left: 0.25rem;
+  background: transparent;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
+}
+
+.tag-dropdown-btn:hover {
+  color: #0d6efd;
+  background: rgba(13, 110, 253, 0.08);
+}
+
+.tag-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
@@ -869,6 +894,12 @@ async function submit() {
   max-height: 200px;
   overflow-y: auto;
   z-index: 1050;
+}
+
+.tag-dropdown-empty {
+  padding: 0.75rem;
+  color: #6c757d;
+  font-size: 0.875rem;
 }
 
 .tag-suggestion-item {
