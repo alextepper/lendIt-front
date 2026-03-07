@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
 import { useAuthStore } from '../stores/auth';
 import { fetchItem, fetchItemCalendar, updateAvailability, checkBookingAvailability } from '../services/itemService';
-import { updateListing, deleteListing, toggleListingActive } from '../services/listingsService';
+import { updateListing, deleteListing, toggleListingActive, fetchPopularTags } from '../services/listingsService';
 import { fetchBookingCalendarData } from '../services/bookingCalendarService';
 import BookingCard from '../components/BookingCard.vue';
 import BookingFlow from '../components/BookingFlow.vue';
@@ -69,18 +69,7 @@ const MAX_TAGS = 10;
 const tagInputQuery = ref('');
 const tagDropdownOpen = ref(false);
 const isSelectingTag = ref(false);
-
-const ALL_TAGS = [
-  'drill', 'hammer', 'saw', 'lawn mower', 'screwdriver', 'wrench', 'ladder',
-  'camera', 'laptop', 'projector', 'speakers', 'drone', 'gaming console',
-  'tent', 'camping stove', 'cooler', 'bike', 'kayak', 'surfboard',
-  'board games', 'playstation', 'xbox', 'nintendo',
-  'furniture', 'table', 'chairs', 'party supplies',
-  'musical instruments', 'guitar', 'keyboard', 'microphone',
-  'baby gear', 'stroller', 'crib',
-  'fitness equipment', 'treadmill', 'weights',
-  'photography', 'lighting', 'tripod'
-];
+const popularTagsFromApi = ref([]);
 
 const TAG_TEMPLATES = [
   { id: 'tools', tags: ['drill', 'hammer', 'screwdriver', 'lawn mower'] },
@@ -93,7 +82,32 @@ const TAG_TEMPLATES = [
 
 const availableTagsForDropdown = computed(() => {
   const selected = new Set((editForm.tags || []).map(t => String(t).toLowerCase()));
-  return ALL_TAGS.filter(t => !selected.has(t.toLowerCase()));
+  return popularTagsFromApi.value.filter(t => !selected.has(String(t).toLowerCase()));
+});
+
+let tagSearchTimeout = null;
+async function loadPopularTags(q = '') {
+  try {
+    const tags = await fetchPopularTags(q, 20);
+    popularTagsFromApi.value = tags;
+  } catch (e) {
+    console.warn('Failed to fetch popular tags:', e);
+    popularTagsFromApi.value = [];
+  }
+}
+
+// Fetch popular tags when edit mode is toggled on
+watch(editMode, (isEdit) => {
+  if (isEdit) loadPopularTags('');
+});
+
+// Debounced tag search when user types (500ms)
+watch(tagInputQuery, (q) => {
+  if (tagSearchTimeout) clearTimeout(tagSearchTimeout);
+  tagSearchTimeout = setTimeout(() => {
+    if (editMode.value) loadPopularTags(q || '');
+    tagSearchTimeout = null;
+  }, 500);
 });
 
 // Location search
@@ -1436,7 +1450,7 @@ watch(fullscreenCarousel, (isOpen) => {
               <div class="col-md-6 position-relative">
                 <label class="form-label small fw-bold">{{ $t('item.tags') }}</label>
                 <!-- Templates -->
-                <div class="d-flex flex-wrap gap-1 mb-2">
+                <!-- <div class="d-flex flex-wrap gap-1 mb-2">
                   <button
                     v-for="tpl in TAG_TEMPLATES"
                     :key="tpl.id"
@@ -1447,7 +1461,7 @@ watch(fullscreenCarousel, (isOpen) => {
                   >
                     {{ $t(`listing.tagTemplate.${tpl.id}`) }}
                   </button>
-                </div>
+                </div> -->
                 <!-- Tag input: tags inside + dropdown -->
                 <div
                   class="tag-input-wrapper position-relative"

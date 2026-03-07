@@ -2,6 +2,7 @@
 import { reactive, ref, watch, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
+import { fetchPopularTags } from '../services/listingsService';
 import http from '../lib/http';
 
 const { t } = useI18n();
@@ -33,21 +34,10 @@ const MAX_TAGS = 10;
 const tagInputQuery = ref('');
 const tagDropdownOpen = ref(false);
 const isSelectingTag = ref(false);
+const popularTagsFromApi = ref([]);
+const loadingTags = ref(false);
 
-// All available tags for autocomplete (normalized lowercase)
-const ALL_TAGS = [
-  'drill', 'hammer', 'saw', 'lawn mower', 'screwdriver', 'wrench', 'ladder',
-  'camera', 'laptop', 'projector', 'speakers', 'drone', 'gaming console',
-  'tent', 'camping stove', 'cooler', 'bike', 'kayak', 'surfboard',
-  'board games', 'playstation', 'xbox', 'nintendo',
-  'furniture', 'table', 'chairs', 'party supplies',
-  'musical instruments', 'guitar', 'keyboard', 'microphone',
-  'baby gear', 'stroller', 'crib',
-  'fitness equipment', 'treadmill', 'weights',
-  'photography', 'lighting', 'tripod'
-];
-
-// Template sets: quick-add tag groups
+// Template sets: quick-add tag groups (tags may come from API or be custom)
 const TAG_TEMPLATES = [
   { id: 'tools', tags: ['drill', 'hammer', 'screwdriver', 'lawn mower'] },
   { id: 'electronics', tags: ['camera', 'laptop', 'projector', 'drone'] },
@@ -58,9 +48,23 @@ const TAG_TEMPLATES = [
 ];
 
 const availableTagsForDropdown = computed(() => {
-  const selected = new Set(form.tags.map(t => t.toLowerCase()));
-  return ALL_TAGS.filter(t => !selected.has(t.toLowerCase()));
+  const selected = new Set(form.tags.map(t => String(t).toLowerCase()));
+  return popularTagsFromApi.value.filter(t => !selected.has(String(t).toLowerCase()));
 });
+
+let tagSearchTimeout = null;
+async function loadPopularTags(q = '') {
+  loadingTags.value = true;
+  try {
+    const tags = await fetchPopularTags(q, 20);
+    popularTagsFromApi.value = tags;
+  } catch (e) {
+    console.warn('Failed to fetch popular tags:', e);
+    popularTagsFromApi.value = [];
+  } finally {
+    loadingTags.value = false;
+  }
+}
 const photoInput = ref(null);
 const uploadingPhotos = ref(false);
 const submitting = ref(false);
@@ -111,6 +115,26 @@ const locationSearchQuery = ref('');
 const locationSuggestions = ref([]);
 const showingSuggestions = ref(false);
 const isSelectingLocation = ref(false); // Track if user is clicking on a suggestion
+
+// Fetch popular tags when modal opens
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) loadPopularTags('');
+  }
+);
+
+// Debounced tag search when user types (500ms)
+watch(
+  () => tagInputQuery.value,
+  (q) => {
+    if (tagSearchTimeout) clearTimeout(tagSearchTimeout);
+    tagSearchTimeout = setTimeout(() => {
+      if (props.modelValue) loadPopularTags(q || '');
+      tagSearchTimeout = null;
+    }, 500);
+  }
+);
 
 watch(
   () => props.listing,
@@ -456,7 +480,7 @@ async function submit() {
                 {{ $t('listing.tags') }} <span class="text-danger">*</span>
               </label>
               <!-- Templates -->
-              <div class="d-flex flex-wrap gap-1 mb-2">
+              <!-- <div class="d-flex flex-wrap gap-1 mb-2">
                 <button
                   v-for="tpl in TAG_TEMPLATES"
                   :key="tpl.id"
@@ -466,7 +490,7 @@ async function submit() {
                 >
                   {{ $t(`listing.tagTemplate.${tpl.id}`) }}
                 </button>
-              </div>
+              </div> -->
               <!-- Tag input: tags inside + dropdown -->
               <div
                 class="tag-input-wrapper position-relative"

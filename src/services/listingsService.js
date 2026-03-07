@@ -159,6 +159,31 @@ export async function fetchCategories() {
   return data; // ["Tools","Consoles",...]
 }
 
+/**
+ * Fetch popular tags for listing creation/edit
+ * GET /items/tags/popular?q=&limit=20
+ * @param {string} [q] - Optional filter (case-insensitive substring match)
+ * @returns {Promise<string[]>} Array of tag strings
+ */
+export async function fetchPopularTags(q = "", limit = 20) {
+  if (USE_MOCK) {
+    const fallback = [
+      "drill", "hammer", "camera", "laptop", "tent", "bike",
+      "playstation", "xbox", "stroller", "treadmill"
+    ];
+    if (!q.trim()) return fallback;
+    const lower = q.toLowerCase();
+    return fallback.filter(t => t.toLowerCase().includes(lower));
+  }
+  const params = { limit };
+  if (q && q.trim()) params.q = q.trim();
+  const { data } = await http.get("/items/tags/popular", { params });
+  if (Array.isArray(data)) return data;
+  if (data?.data && Array.isArray(data.data)) return data.data;
+  if (data?.tags && Array.isArray(data.tags)) return data.tags;
+  return [];
+}
+
 export async function createListing(payload) {
   if (USE_MOCK) {
     return { id: Math.floor(Math.random() * 100000), ...payload };
