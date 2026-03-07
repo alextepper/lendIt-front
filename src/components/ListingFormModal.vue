@@ -161,6 +161,7 @@ function resetForm() {
   });
   locationSearchQuery.value = '';
   tagInputQuery.value = '';
+  tagDropdownOpen.value = false;
 }
 
 onMounted(() => {
