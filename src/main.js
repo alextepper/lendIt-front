@@ -87,4 +87,13 @@ watch(
   { immediate: true }
 );
 
-app.mount("#app");
+router.isReady().then(() => {
+  app.mount("#app");
+
+  // Signal prerenderer that the initial route is ready to snapshot.
+  if (typeof document !== "undefined") {
+    requestAnimationFrame(() => {
+      document.dispatchEvent(new Event("prerender-ready"));
+    });
+  }
+});

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:prerender": "cross-env PRERENDER=true vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:ui": "vitest",
@@ -34,9 +35,12 @@
     "@vitejs/plugin-vue": "^6.0.1",
     "@vitest/ui": "^3.2.4",
     "@vue/test-utils": "^2.4.6",
+    "cross-env": "^10.1.0",
     "cypress": "^15.3.0",
     "jsdom": "^27.0.0",
+    "puppeteer": "^24.37.5",
     "vite": "^7.1.7",
+    "vite-plugin-prerender": "^1.0.8",
     "vitest": "^3.2.4"
   }
 }

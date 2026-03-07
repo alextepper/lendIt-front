@@ -1,8 +1,38 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import path from "path";
+import { fileURLToPath } from "url";
+import vitePrerender from "vite-plugin-prerender";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const isPrerender = process.env.PRERENDER === "true";
+const prerenderPlugin = isPrerender
+  ? vitePrerender({
+      staticDir: path.resolve(__dirname, "dist"),
+      outputDir: path.resolve(__dirname, "dist"),
+      indexPath: path.resolve(__dirname, "dist", "index.html"),
+      routes: ["/", "/home", "/search", "/terms", "/privacy"],
+      renderer: new vitePrerender.PuppeteerRenderer({
+        maxConcurrentRoutes: 4,
+        renderAfterDocumentEvent: "prerender-ready",
+        headless: true,
+      }),
+      postProcess(renderedRoute) {
+        renderedRoute.route = renderedRoute.originalRoute;
+        return renderedRoute;
+      },
+      minify: {
+        collapseWhitespace: true,
+        collapseBooleanAttributes: true,
+        removeComments: true,
+      },
+    })
+  : null;
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), ...(isPrerender ? [prerenderPlugin] : [])],
   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 900,

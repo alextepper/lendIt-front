@@ -15,7 +15,7 @@ const emit = defineEmits(['update:modelValue', 'submit']);
 
 const form = reactive({
   title: '',
-  category: '',
+  tags: [],
   location: '',
   latitude: null,
   longitude: null,
@@ -28,65 +28,93 @@ const form = reactive({
   photos: [],
 });
 
-const cats = reactive({ list: [] });
 const locs = reactive({ list: [] });
+const MAX_TAGS = 10;
+const tagInputQuery = ref('');
+const showingTagSuggestions = ref(false);
+const isSelectingTag = ref(false);
+
+// All available tags for autocomplete (normalized lowercase)
+const ALL_TAGS = [
+  'drill', 'hammer', 'saw', 'lawn mower', 'screwdriver', 'wrench', 'ladder',
+  'camera', 'laptop', 'projector', 'speakers', 'drone', 'gaming console',
+  'tent', 'camping stove', 'cooler', 'bike', 'kayak', 'surfboard',
+  'board games', 'playstation', 'xbox', 'nintendo',
+  'furniture', 'table', 'chairs', 'party supplies',
+  'musical instruments', 'guitar', 'keyboard', 'microphone',
+  'baby gear', 'stroller', 'crib',
+  'fitness equipment', 'treadmill', 'weights',
+  'photography', 'lighting', 'tripod'
+];
+
+// Template sets: quick-add tag groups
+const TAG_TEMPLATES = [
+  { id: 'tools', tags: ['drill', 'hammer', 'screwdriver', 'lawn mower'] },
+  { id: 'electronics', tags: ['camera', 'laptop', 'projector', 'drone'] },
+  { id: 'outdoor', tags: ['tent', 'camping stove', 'bike', 'kayak'] },
+  { id: 'gaming', tags: ['playstation', 'xbox', 'board games'] },
+  { id: 'baby', tags: ['stroller', 'crib', 'baby gear'] },
+  { id: 'fitness', tags: ['treadmill', 'weights', 'fitness equipment'] },
+];
+
+const filteredTagSuggestions = computed(() => {
+  const q = (tagInputQuery.value || '').trim().toLowerCase();
+  const selected = new Set(form.tags.map(t => t.toLowerCase()));
+  if (!q) return [];
+  return ALL_TAGS.filter(t => 
+    t.includes(q) && !selected.has(t)
+  ).slice(0, 8);
+});
 const photoInput = ref(null);
 const uploadingPhotos = ref(false);
 const submitting = ref(false);
 
-// Extended category list with fallback categories (using translation keys)
-const defaultCategories = [
-  'Tools',
-  'Electronics',
-  'Games',
-  'Outdoors',
-  'Bicycles',
-  'Cameras',
-  'Toys',
-  'Sea Sport',
-  'Board Games',
-  'Sports Equipment',
-  'Furniture',
-  'Appliances',
-  'Musical Instruments',
-  'Party Supplies',
-  'Camping Gear',
-  'Water Sports',
-  'Winter Sports',
-  'Fitness Equipment',
-  'Baby Gear',
-  'Pet Supplies',
-  'Art Supplies',
-  'Books',
-  'Movies & Media',
-  'Garden Tools',
-  'Construction Tools',
-  'Photography Equipment',
-  'Drones',
-  'VR Equipment',
-  'Gaming Consoles',
-  'Audio Equipment'
-];
-
-// Helper function to get category translation key
-function getCategoryKey(category) {
-  if (!category) return '';
-  // Convert category name to translation key format
-  // Remove spaces, special characters, and convert to lowercase
-  return category
-    .toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/&/g, '')
-    .replace(/[^a-z0-9]/g, '');
+function addTag(tag) {
+  const normalized = (tag || '').trim();
+  if (!normalized || form.tags.length >= MAX_TAGS) return;
+  const lower = normalized.toLowerCase();
+  if (form.tags.some(t => t.toLowerCase() === lower)) return;
+  form.tags.push(normalized);
+  tagInputQuery.value = '';
+  showingTagSuggestions.value = false;
 }
 
-// Computed property for localized categories
-const localizedCategories = computed(() => {
-  return cats.list.map(cat => ({
-    value: cat,
-    label: t(`categories.${getCategoryKey(cat)}`, cat) // Fallback to original if translation missing
-  }));
-});
+function removeTag(index) {
+  form.tags.splice(index, 1);
+}
+
+function applyTemplate(template) {
+  const toAdd = template.tags.filter(t => {
+    const lower = t.toLowerCase();
+    return !form.tags.some(sel => sel.toLowerCase() === lower);
+  });
+  const remaining = MAX_TAGS - form.tags.length;
+  toAdd.slice(0, remaining).forEach(t => form.tags.push(t));
+  showingTagSuggestions.value = false;
+  tagInputQuery.value = '';
+}
+
+function handleTagInputKeydown(e) {
+  if (e.key === 'Enter' && tagInputQuery.value.trim()) {
+    const match = filteredTagSuggestions.value[0];
+    if (match) {
+      e.preventDefault();
+      addTag(match);
+    } else {
+      e.preventDefault();
+      addTag(tagInputQuery.value);
+    }
+  } else if (e.key === 'Backspace' && !tagInputQuery.value && form.tags.length) {
+    form.tags.pop();
+  }
+}
+
+function handleTagSuggestionBlur() {
+  if (isSelectingTag.value) return;
+  setTimeout(() => {
+    if (!isSelectingTag.value) showingTagSuggestions.value = false;
+  }, 200);
+}
 
 // Location search
 const locationSearchQuery = ref('');
@@ -98,9 +126,10 @@ watch(
   () => props.listing,
   (v) => {
     if (v) {
+      const existingTags = v.tags || (v.category ? [v.category] : []);
       Object.assign(form, {
         title: v.title || '',
-        category: v.category || '',
+        tags: Array.isArray(existingTags) ? [...existingTags] : [],
         location: v.location || v.address || '',
         latitude: v.latitude || null,
         longitude: v.longitude || null,
@@ -128,7 +157,7 @@ watch(
 function resetForm() {
   Object.assign(form, {
     title: '',
-    category: '',
+    tags: [],
     location: '',
     latitude: null,
     longitude: null,
@@ -141,12 +170,11 @@ function resetForm() {
     photos: [],
   });
   locationSearchQuery.value = '';
+  tagInputQuery.value = '';
 }
 
-onMounted(async () => {
-  // Use default categories only
-  cats.list = [...defaultCategories].sort();
-  locs.list = []; // Locations removed - using geocoding instead
+onMounted(() => {
+  locs.list = [];
 });
 
 // Location search functions
@@ -336,8 +364,12 @@ async function addPhotosToItem(itemId, photoUrls) {
 
 async function submit() {
   // Validation
-  if (!form.title || !form.category) {
-    ui.showToast(t('listing.titleAndCategoryRequired'), 'danger');
+  if (!form.title) {
+    ui.showToast(t('listing.titleRequired'), 'danger');
+    return;
+  }
+  if (!form.tags || form.tags.length === 0) {
+    ui.showToast(t('listing.tagsRequired'), 'danger');
     return;
   }
   
@@ -369,7 +401,7 @@ async function submit() {
     // Note: Don't include photos in initial creation - they'll be added separately
     const submitData = {
       title: form.title,
-      category: form.category,
+      tags: form.tags,
       location: form.location || form.address,
       address: form.address || form.location,
       latitude: form.latitude,
@@ -426,16 +458,70 @@ async function submit() {
             />
           </div>
 
-          <!-- Category and Location Row -->
+          <!-- Tags and Location Row -->
           <div class="row g-3 mb-3">
-            <div class="col-md-6">
+            <div class="col-md-6 position-relative">
               <label class="form-label fw-semibold">
-                {{ $t('listing.category') }} <span class="text-danger">*</span>
+                {{ $t('listing.tags') }} <span class="text-danger">*</span>
               </label>
-              <select v-model="form.category" class="form-select form-select-lg">
-                <option value="">{{ $t('forms.chooseCategory') }}</option>
-                <option v-for="cat in localizedCategories" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
-              </select>
+              <p class="text-muted small mb-1">{{ $t('listing.tagsInstructions') }}</p>
+              <p class="text-muted small mb-2">{{ $t('listing.tagsExamples') }}</p>
+              <!-- Templates -->
+              <div class="d-flex flex-wrap gap-1 mb-2">
+                <button
+                  v-for="tpl in TAG_TEMPLATES"
+                  :key="tpl.id"
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  @click="applyTemplate(tpl)"
+                >
+                  {{ $t(`listing.tagTemplate.${tpl.id}`) }}
+                </button>
+              </div>
+              <!-- Tag input + pills -->
+              <div
+                class="position-relative border rounded p-2 d-flex flex-wrap align-items-center gap-2"
+                :class="{ 'border-primary': showingTagSuggestions }"
+              >
+                <span
+                  v-for="(tag, idx) in form.tags"
+                  :key="idx"
+                  class="badge bg-primary d-inline-flex align-items-center gap-1"
+                >
+                  {{ tag }}
+                  <button
+                    type="button"
+                    class="btn-close btn-close-white"
+                    style="font-size: 0.6rem; padding: 0;"
+                    :aria-label="$t('common.remove')"
+                    @click="removeTag(idx)"
+                  ></button>
+                </span>
+                <input
+                  v-if="form.tags.length < MAX_TAGS"
+                  v-model="tagInputQuery"
+                  type="text"
+                  class="form-control form-control-sm border-0 flex-grow-1"
+                  style="min-width: 120px; max-width: 180px;"
+                  :placeholder="$t('listing.tagsPlaceholder')"
+                  @input="showingTagSuggestions = true"
+                  @focus="showingTagSuggestions = true"
+                  @blur="handleTagSuggestionBlur"
+                  @keydown="handleTagInputKeydown"
+                />
+              </div>
+              <div v-if="showingTagSuggestions && filteredTagSuggestions.length > 0" class="border rounded mt-1 shadow-sm bg-white position-absolute" style="z-index: 10; max-height: 200px; overflow-y: auto;">
+                <button
+                  v-for="sug in filteredTagSuggestions"
+                  :key="sug"
+                  type="button"
+                  class="d-block w-100 text-start btn btn-sm btn-light border-0 rounded-0"
+                  @mousedown.prevent="isSelectingTag = true; addTag(sug); isSelectingTag = false"
+                >
+                  {{ sug }}
+                </button>
+              </div>
+              <small class="text-muted">{{ $t('listing.addUpTo', { max: MAX_TAGS }) }}</small>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">

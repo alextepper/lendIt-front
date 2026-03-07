@@ -164,9 +164,11 @@ export async function createListing(payload) {
     return { id: Math.floor(Math.random() * 100000), ...payload };
   }
 
-  // Transform category to uppercase for backend compatibility
   const transformedPayload = { ...payload };
-  if (transformedPayload.category) {
+  // Send tags array; fallback: transform category for legacy backend
+  if (transformedPayload.tags && Array.isArray(transformedPayload.tags)) {
+    // Tags sent as-is
+  } else if (transformedPayload.category) {
     transformedPayload.category = transformedPayload.category.toUpperCase();
   }
 
@@ -192,9 +194,10 @@ export async function createListing(payload) {
 export async function updateListing(id, payload) {
   if (USE_MOCK) return { id, ...payload };
 
-  // Transform category to uppercase for backend compatibility
   const transformedPayload = { ...payload };
-  if (transformedPayload.category) {
+  if (transformedPayload.tags && Array.isArray(transformedPayload.tags)) {
+    // Tags sent as-is
+  } else if (transformedPayload.category) {
     transformedPayload.category = transformedPayload.category.toUpperCase();
   }
 
