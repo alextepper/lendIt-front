@@ -478,44 +478,46 @@ async function submit() {
                   {{ $t(`listing.tagTemplate.${tpl.id}`) }}
                 </button>
               </div>
-              <!-- Tag input + pills -->
+              <!-- Tag input: tags inside the field -->
               <div
-                class="position-relative border rounded p-2 d-flex flex-wrap align-items-center gap-2"
-                :class="{ 'border-primary': showingTagSuggestions }"
+                class="tag-input-wrapper position-relative"
+                :class="{ 'tag-input-focused': showingTagSuggestions }"
               >
-                <span
-                  v-for="(tag, idx) in form.tags"
-                  :key="idx"
-                  class="badge bg-primary d-inline-flex align-items-center gap-1"
-                >
-                  {{ tag }}
-                  <button
-                    type="button"
-                    class="btn-close btn-close-white"
-                    style="font-size: 0.6rem; padding: 0;"
-                    :aria-label="$t('common.remove')"
-                    @click="removeTag(idx)"
-                  ></button>
-                </span>
-                <input
-                  v-if="form.tags.length < MAX_TAGS"
-                  v-model="tagInputQuery"
-                  type="text"
-                  class="form-control form-control-sm border-0 flex-grow-1"
-                  style="min-width: 120px; max-width: 180px;"
-                  :placeholder="$t('listing.tagsPlaceholder')"
-                  @input="showingTagSuggestions = true"
-                  @focus="showingTagSuggestions = true"
-                  @blur="handleTagSuggestionBlur"
-                  @keydown="handleTagInputKeydown"
-                />
+                <div class="tag-input-inner">
+                  <span
+                    v-for="(tag, idx) in form.tags"
+                    :key="idx"
+                    class="tag-pill"
+                  >
+                    {{ tag }}
+                    <button
+                      type="button"
+                      class="tag-pill-remove"
+                      :aria-label="$t('common.remove')"
+                      @click="removeTag(idx)"
+                    >
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </span>
+                  <input
+                    v-if="form.tags.length < MAX_TAGS"
+                    v-model="tagInputQuery"
+                    type="text"
+                    class="tag-input-field"
+                    :placeholder="form.tags.length ? '' : $t('listing.tagsPlaceholder')"
+                    @input="showingTagSuggestions = true"
+                    @focus="showingTagSuggestions = true"
+                    @blur="handleTagSuggestionBlur"
+                    @keydown="handleTagInputKeydown"
+                  />
+                </div>
               </div>
-              <div v-if="showingTagSuggestions && filteredTagSuggestions.length > 0" class="border rounded mt-1 shadow-sm bg-white position-absolute" style="z-index: 10; max-height: 200px; overflow-y: auto;">
+              <div v-if="showingTagSuggestions && filteredTagSuggestions.length > 0" class="tag-suggestions-dropdown">
                 <button
                   v-for="sug in filteredTagSuggestions"
                   :key="sug"
                   type="button"
-                  class="d-block w-100 text-start btn btn-sm btn-light border-0 rounded-0"
+                  class="tag-suggestion-item"
                   @mousedown.prevent="isSelectingTag = true; addTag(sug); isSelectingTag = false"
                 >
                   {{ sug }}
@@ -769,6 +771,121 @@ async function submit() {
 .form-select:focus {
   border-color: #0d6efd;
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* Tag Input - tags inside the field */
+.tag-input-wrapper {
+  display: block;
+  min-height: calc(1.5em + 1rem + 2px);
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #212529;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.tag-input-wrapper:hover {
+  border-color: #adb5bd;
+}
+
+.tag-input-wrapper.tag-input-focused {
+  border-color: #0d6efd;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.tag-input-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 1.5em;
+}
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2em 0.5em;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #fff;
+  background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+  border-radius: 0.35rem;
+  white-space: nowrap;
+}
+
+.tag-pill-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1em;
+  height: 1.1em;
+  padding: 0;
+  margin-left: 0.15rem;
+  background: rgba(255, 255, 255, 0.25);
+  border: none;
+  border-radius: 50%;
+  color: inherit;
+  font-size: 0.9em;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tag-pill-remove:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.tag-input-field {
+  flex: 1;
+  min-width: 100px;
+  padding: 0.125rem 0;
+  border: none;
+  outline: none;
+  font-size: inherit;
+  font-family: inherit;
+  background: transparent;
+}
+
+.tag-input-field::placeholder {
+  color: #6c757d;
+}
+
+.tag-suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 2px;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1050;
+}
+
+.tag-suggestion-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border: none;
+  background: transparent;
+  font-size: 0.9375rem;
+  color: #212529;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tag-suggestion-item:hover {
+  background: #f8f9fa;
 }
 
 /* Location Suggestions */
