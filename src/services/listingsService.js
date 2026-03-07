@@ -178,9 +178,14 @@ export async function fetchPopularTags(q = "", limit = 20) {
   const params = { limit };
   if (q && q.trim()) params.q = q.trim();
   const { data } = await http.get("/items/tags/popular", { params });
-  if (Array.isArray(data)) return data;
-  if (data?.data && Array.isArray(data.data)) return data.data;
-  if (data?.tags && Array.isArray(data.tags)) return data.tags;
+
+  // API returns { tags: [{ tag: "meta", count: 1 }, ...] } – extract tag names only
+  const extractNames = (arr) =>
+    (arr || []).map((t) => (typeof t === "string" ? t : t?.tag)).filter(Boolean);
+
+  if (data?.tags && Array.isArray(data.tags)) return extractNames(data.tags);
+  if (Array.isArray(data)) return extractNames(data);
+  if (data?.data && Array.isArray(data.data)) return extractNames(data.data);
   return [];
 }
 
