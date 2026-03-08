@@ -1105,7 +1105,7 @@ watch(fullscreenCarousel, (isOpen) => {
     </div>
 
     <!-- Item Content -->
-    <div v-else-if="item" class="item-layout">
+    <div v-else-if="item" class="item-layout" :class="{ 'mobile-edit-mode': editMode && isOwner }">
       <!-- Mobile Layout -->
       <div class="mobile-layout">
         <!-- Fixed Top Navigation -->
@@ -1157,11 +1157,54 @@ watch(fullscreenCarousel, (isOpen) => {
                 :class="{ active: index === currentPhotoIndex }"
               ></div>
             </div>
+
+            <!-- Owner edit actions overlay on mobile -->
+            <div v-if="isOwner" class="mobile-hero-owner-actions">
+              <button
+                class="mobile-owner-action-btn"
+                :class="editMode ? 'mobile-owner-action-save' : 'mobile-owner-action-edit'"
+                @click="toggleEditMode"
+                :disabled="saving"
+              >
+                <span v-if="saving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <i v-else class="bi" :class="editMode ? 'bi-check-lg' : 'bi-pencil'"></i>
+                <span class="ms-1">{{ saving ? $t('item.saving') : (editMode ? $t('item.save') : $t('item.edit')) }}</span>
+              </button>
+              <button
+                v-if="editMode"
+                class="mobile-owner-action-btn mobile-owner-action-cancel"
+                @click="cancelEdit"
+                :disabled="saving"
+              >
+                <i class="bi bi-x-lg"></i>
+                <span class="ms-1">{{ $t('item.cancel') }}</span>
+              </button>
+              <button
+                v-if="editMode"
+                class="mobile-owner-action-btn mobile-owner-action-toggle"
+                @click="toggleActive"
+                :disabled="saving || togglingActive"
+              >
+                <span v-if="togglingActive" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <i v-else class="bi" :class="(item?.isActive !== false && item?.active !== false) ? 'bi-eye-slash' : 'bi-eye'"></i>
+                <span class="ms-1">{{ (item?.isActive !== false && item?.active !== false) ? $t('item.deactivate') : $t('item.activate') }}</span>
+              </button>
+              <button
+                v-if="editMode"
+                class="mobile-owner-action-btn mobile-owner-action-delete"
+                @click="deleteItem"
+                :disabled="saving || deleting"
+              >
+                <span v-if="deleting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <i v-else class="bi bi-trash"></i>
+                <span class="ms-1">{{ $t('item.delete') }}</span>
+              </button>
+            </div>
           </div>
         </section>
 
-        <!-- Content Section -->
-        <section class="mobile-content">
+        <!-- Content Section (hidden when owner is editing - edit form in item-grid) -->
+        <section v-if="!editMode || !isOwner" class="mobile-content">
           <!-- Header -->
           <div class="mobile-header">
             <div class="mobile-header-top">
@@ -1371,9 +1414,7 @@ watch(fullscreenCarousel, (isOpen) => {
                 <span class="hero-btn-text">{{ $t('item.message') }}</span>
               </button>
             </div>
-          </div>
-
-          <div v-if="isOwner" class="hero-actions">
+            <div v-else-if="isOwner" class="hero-actions hero-actions-overlay">
             <button
               class="btn btn-sm"
               :class="editMode ? 'btn-success' : 'btn-primary'"
@@ -1414,6 +1455,7 @@ watch(fullscreenCarousel, (isOpen) => {
               <i v-else class="bi bi-trash"></i>
               <span class="d-none d-lg-inline ms-1">{{ $t('item.delete') }}</span>
             </button>
+            </div>
           </div>
         </div>
       </section>
@@ -1430,7 +1472,9 @@ watch(fullscreenCarousel, (isOpen) => {
           <img :src="getCarouselPhotoUrl(photo)" :alt="$t('item.thumbnailAlt', { index: index + 1 })" />
         </button>
       </div>
+      </div>
 
+      <!-- Shared content grid (desktop + mobile when editing) -->
       <div class="item-grid">
         <div class="item-main">
           <div v-if="editMode && isOwner" class="item-card edit-card">
@@ -1806,7 +1850,6 @@ watch(fullscreenCarousel, (isOpen) => {
           </div>
         </div>
       </div>
-      </div>
     </div>
 
     <!-- Booking Modal -->
@@ -2080,6 +2123,10 @@ watch(fullscreenCarousel, (isOpen) => {
   display: flex;
   gap: 10px;
   margin-top: 16px;
+}
+
+.hero-actions-overlay {
+  flex-wrap: wrap;
 }
 
 .hero-btn {
@@ -3409,6 +3456,27 @@ watch(fullscreenCarousel, (isOpen) => {
   .desktop-layout {
     display: none;
   }
+
+  /* Show item-grid on mobile only when owner is editing */
+  .item-grid {
+    display: none;
+    padding: 1rem;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .item-layout.mobile-edit-mode .item-grid {
+    display: grid;
+    padding-bottom: 2rem;
+  }
+
+  .item-layout.mobile-edit-mode .item-sidebar {
+    display: none;
+  }
+
+  .item-layout.mobile-edit-mode .item-card {
+    padding: 1rem;
+  }
 }
 
 /* Mobile Top Navigation */
@@ -3524,6 +3592,63 @@ watch(fullscreenCarousel, (isOpen) => {
 
 .mobile-dot.active {
   background: white;
+}
+
+/* Owner edit actions overlay on mobile hero */
+.mobile-hero-owner-actions {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mobile-owner-action-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s;
+}
+
+.mobile-owner-action-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.mobile-owner-action-btn:disabled {
+  opacity: 0.7;
+}
+
+.mobile-owner-action-edit {
+  background: rgba(37, 99, 235, 0.95);
+  color: white;
+}
+
+.mobile-owner-action-save {
+  background: rgba(34, 197, 94, 0.95);
+  color: white;
+}
+
+.mobile-owner-action-cancel {
+  background: rgba(255, 255, 255, 0.95);
+  color: #64748b;
+}
+
+.mobile-owner-action-toggle {
+  background: rgba(245, 158, 11, 0.95);
+  color: white;
+}
+
+.mobile-owner-action-delete {
+  background: rgba(239, 68, 68, 0.95);
+  color: white;
 }
 
 /* Mobile Content */
