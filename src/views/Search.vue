@@ -13,9 +13,10 @@ import { getItemPhotoUrl } from '../utils/imageUtils';
 const { t } = useI18n();
 const ui = useUiStore();
 
-// URL-synced search state
+// URL-synced search state (?type=forRent | forSale | giveaway)
 const { state, setPatch, setPage, reset } = useQuerySync({
   q: '',
+  type: '',
   category: '',
   location: '',
   price_min: '',
@@ -30,6 +31,13 @@ const { state, setPatch, setPage, reset } = useQuerySync({
   lng: '',
   radiusKm: '',
 });
+
+const LISTING_TYPES = [
+  { value: '', labelKey: 'search.typeAll' },
+  { value: 'forRent', labelKey: 'search.typeRent' },
+  { value: 'forSale', labelKey: 'search.typeSale' },
+  { value: 'giveaway', labelKey: 'search.typeGiveaway' },
+];
 
 const data = ref({ items: [], page: 1, per_page: 12, total: 0, total_pages: 1 });
 const loading = ref(false);
@@ -529,6 +537,13 @@ function formatPrice(amount) {
   }).format(amount / 100);
 }
 
+function formatItemPrice(item) {
+  const t = item?.type || ((item?.sellPrice ?? item?.sell_price) > 0 ? 'forSale' : (item?.pricePerDay ?? item?.price_per_day) > 0 ? 'forRent' : 'giveaway');
+  if (t === 'giveaway') return 'Free';
+  if (t === 'forSale') return formatPrice(item.sellPrice || item.sell_price || 0);
+  return `${formatPrice(item.pricePerDay || item.price_per_day || 0)}/day`;
+}
+
 // If you want infinite scroll instead of the pager, keep an accumulator:
 // - store all items in an array and append when sentinel becomes visible and page < total_pages.
 </script>
@@ -610,6 +625,19 @@ function formatPrice(amount) {
         <div class="mb-3">
           <label class="form-label">{{ $t('search.keyword') }}</label>
           <input v-model="state.q" class="form-control" :placeholder="$t('search.placeholder')" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">{{ $t('search.type') }}</label>
+          <select v-model="state.type" class="form-select">
+            <option
+              v-for="opt in LISTING_TYPES"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ $t(opt.labelKey) }}
+            </option>
+          </select>
         </div>
 
         <!-- <div class="mb-3">
@@ -886,7 +914,7 @@ function formatPrice(amount) {
                     </div>
                   </div>
                   <div class="mobile-list-item-footer">
-                    <span class="mobile-list-item-price">{{ formatPrice(item.pricePerDay || item.price_per_day) }}/day</span>
+                    <span class="mobile-list-item-price">{{ formatItemPrice(item) }}</span>
                     <span class="mobile-list-item-rating">
                       <i class="bi bi-star-fill"></i>
                       {{ item.rating ?? '—' }}

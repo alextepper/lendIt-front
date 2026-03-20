@@ -34,13 +34,20 @@ function toggleLocation() {
 }
 
 function formatPrice(amount) {
-  // Backend sends prices in cents, so divide by 100 for display
+  if (amount == null) return ''
   return new Intl.NumberFormat('he-IL', {
     style: 'currency',
     currency: 'ILS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   }).format(amount / 100)
+}
+
+function getDisplayPrice() {
+  const t = props.item?.type || (props.item?.sellPrice > 0 ? 'forSale' : props.item?.pricePerDay > 0 ? 'forRent' : 'giveaway')
+  if (t === 'giveaway') return t('item.free')
+  if (t === 'forSale') return formatPrice(props.item.sellPrice || props.item.sell_price || 0)
+  return `${formatPrice(props.item.pricePerDay || props.item.price_per_day)}/${t('item.day')}`
 }
 </script>
 
@@ -82,7 +89,7 @@ function formatPrice(amount) {
         {{ item.distance.toFixed(1) }} {{ t('item.kmAway') }}
       </div>
       <div class="d-flex align-items-center justify-content-between mt-2">
-        <span class="fw-semibold">{{ formatPrice(item.pricePerDay || item.price_per_day) }}/{{ t('item.day') }}</span>
+        <span class="fw-semibold">{{ getDisplayPrice() }}</span>
         <span class="small">
           <i class="bi bi-star-fill me-1"></i>{{ item.rating ?? '—' }}
           <span class="text-secondary">({{ item.reviews_count ?? 0 }})</span>

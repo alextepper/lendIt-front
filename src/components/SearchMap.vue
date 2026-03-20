@@ -384,13 +384,17 @@ function updateMarkers() {
       // Add popup with item info and image
       const safePhotoUrl = photoUrl ? photoUrl.replace(/"/g, '&quot;') : '';
       const safeTitle = (item.title || t('item.item')).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-      const price = (item.pricePerDay || item.price_per_day || 0) / 100;
+      const currencySymbols = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
       const currency = item.currency || 'ILS';
+      const itemType = item.type || (item.sellPrice > 0 ? 'forSale' : item.pricePerDay > 0 ? 'forRent' : 'giveaway');
+      const priceDisplay = itemType === 'giveaway' 
+        ? t('item.free') 
+        : itemType === 'forSale'
+          ? `${(currencySymbols[currency] || '₪')}${((item.sellPrice || item.sell_price || 0) / 100).toFixed(0)}`
+          : `${(currencySymbols[currency] || '₪')}${((item.pricePerDay || item.price_per_day || 0) / 100).toFixed(0)}/${t('item.perDay')}`;
       const distance = item.distance ? item.distance.toFixed(1) : null;
       const rating = item.rating ? item.rating.toFixed(1) : null;
       const reviewsCount = item.reviews_count || 0;
-      
-      const currencySymbols = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
       const currencySymbol = currencySymbols[currency] || currency;
       const distanceInMiles = distance ? (distance * 0.621371).toFixed(1) : null;
       
@@ -414,8 +418,7 @@ function updateMarkers() {
               <h3 class="map-popup-title">${safeTitle}</h3>
               <div class="map-popup-footer">
                 <div class="map-popup-price-wrapper">
-                  <span class="map-popup-price-amount">${currencySymbol}${price.toFixed(0)}</span>
-                  <span class="map-popup-price-period">/${t('item.perDay')}</span>
+                  <span class="map-popup-price-amount">${priceDisplay}</span>
                 </div>
                 ${distance ? `
                   <div class="map-popup-distance">

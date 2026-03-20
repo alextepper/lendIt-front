@@ -138,6 +138,39 @@ const isOwner = computed(() => {
   return auth.user && item.value && auth.user.id === item.value.owner?.id;
 });
 
+// Listing type: forRent | forSale | giveaway
+const itemType = computed(() => {
+  const it = item.value;
+  if (!it) return 'forRent';
+  if (it.type) return it.type;
+  if (it.sellPrice != null && it.sellPrice > 0) return 'forSale';
+  if (it.pricePerDay != null && it.pricePerDay > 0) return 'forRent';
+  return 'giveaway';
+});
+
+const isForRent = computed(() => itemType.value === 'forRent');
+const isForSale = computed(() => itemType.value === 'forSale');
+const isGiveaway = computed(() => itemType.value === 'giveaway');
+
+function getDisplayPrice() {
+  const it = item.value;
+  if (!it) return '';
+  if (itemType.value === 'giveaway') return t('item.free');
+  if (itemType.value === 'forSale') return formatPrice(it.sellPrice || it.sell_price || 0);
+  return formatPrice(it.pricePerDay || it.price_per_day);
+}
+
+function getPrimaryCtaLabel() {
+  if (isForRent.value) return t('item.bookNow');
+  if (isForSale.value) return t('item.contactToBuy');
+  return t('item.contactToGet');
+}
+
+function handlePrimaryCta() {
+  if (isForRent.value) showBookingModal();
+  else showOwnerModal();
+}
+
 async function load() {
   loading.value = true;
   error.value = null;
@@ -1229,7 +1262,7 @@ watch(fullscreenCarousel, (isOpen) => {
           </div>
 
           <!-- Key Features (if applicable) -->
-          <div v-if="item.condition || item.deposit || item.initialPrice" class="mobile-section">
+          <div v-if="item.condition || (isForRent && (item.deposit || item.initialPrice)) || (isForSale && item.sellPrice)" class="mobile-section">
             <details class="mobile-details" open>
               <summary class="mobile-details-summary">
                 <span>{{ $t('item.details') }}</span>
@@ -1240,13 +1273,17 @@ watch(fullscreenCarousel, (isOpen) => {
                   <i class="bi bi-check-circle text-primary"></i>
                   <span>{{ $t('item.condition') }}: {{ item.condition }}</span>
                 </div>
-                <div v-if="item.deposit" class="mobile-detail-item">
+                <div v-if="isForRent && item.deposit" class="mobile-detail-item">
                   <i class="bi bi-shield-check text-primary"></i>
                   <span>{{ $t('item.deposit') }}: {{ formatPrice(item.deposit) }}</span>
                 </div>
-                <div v-if="item.initialPrice" class="mobile-detail-item">
+                <div v-if="isForRent && item.initialPrice" class="mobile-detail-item">
                   <i class="bi bi-cash text-primary"></i>
                   <span>{{ $t('item.initial') }}: {{ formatPrice(item.initialPrice) }}</span>
+                </div>
+                <div v-if="isForSale && item.sellPrice" class="mobile-detail-item">
+                  <i class="bi bi-tag text-primary"></i>
+                  <span>{{ $t('listing.sellPrice') }}: {{ formatPrice(item.sellPrice || item.sell_price) }}</span>
                 </div>
               </div>
             </details>
@@ -1339,10 +1376,10 @@ watch(fullscreenCarousel, (isOpen) => {
         <!-- Fixed Bottom Bar -->
         <div v-if="!isOwner" class="mobile-bottom-bar">
           <div class="mobile-bottom-price">
-            <div class="mobile-bottom-price-value">{{ formatPrice(item.pricePerDay) }}/{{ $t('item.perDay') }}</div>
+            <div class="mobile-bottom-price-value">{{ getDisplayPrice() }}{{ isForRent ? '/' + $t('item.perDay') : '' }}</div>
           </div>
-          <button class="mobile-bottom-book-btn" @click="showBookingModal">
-            {{ $t('item.bookNow') }}
+          <button class="mobile-bottom-book-btn" @click="handlePrimaryCta">
+            {{ getPrimaryCtaLabel() }}
           </button>
         </div>
       </div>
@@ -1401,13 +1438,13 @@ watch(fullscreenCarousel, (isOpen) => {
               <span>{{ item.location || item.address }}</span>
             </p>
             <div class="hero-price">
-              <span class="hero-price-value">{{ formatPrice(item.pricePerDay) }}</span>
-              <span class="hero-price-unit">{{ $t('item.perDay') }}</span>
+              <span class="hero-price-value">{{ getDisplayPrice() }}</span>
+              <span v-if="isForRent" class="hero-price-unit">{{ $t('item.perDay') }}</span>
             </div>
             <div v-if="!isOwner" class="hero-actions">
-              <button class="btn btn-primary hero-btn hero-btn-book" @click="showBookingModal">
-                <i class="bi bi-calendar-check hero-btn-icon"></i>
-                <span class="hero-btn-text">{{ $t('item.bookNow') }}</span>
+              <button class="btn btn-primary hero-btn hero-btn-book" @click="handlePrimaryCta">
+                <i class="bi hero-btn-icon" :class="isForRent ? 'bi-calendar-check' : 'bi-chat-dots'"></i>
+                <span class="hero-btn-text">{{ getPrimaryCtaLabel() }}</span>
               </button>
               <button class="btn btn-outline-light hero-btn hero-btn-message" @click="showOwnerModal">
                 <i class="bi bi-chat-dots hero-btn-icon"></i>
@@ -1797,7 +1834,7 @@ watch(fullscreenCarousel, (isOpen) => {
             />
           </div>
 
-          <div v-if="isOwner" class="item-card">
+          <div v-if="isOwner && isForRent" class="item-card">
             <BookingCalendar
               :item-id="item.id"
               :item="item"
@@ -1812,13 +1849,13 @@ watch(fullscreenCarousel, (isOpen) => {
         <div class="item-sidebar">
           <div class="sidebar-card">
             <div class="sidebar-header">
-              <h3 class="sidebar-title">{{ $t('item.availability') }}</h3>
+              <h3 class="sidebar-title">{{ isForRent ? $t('item.availability') : $t('item.details') }}</h3>
             </div>
             <div class="sidebar-price">
-              <span class="sidebar-price-value">{{ formatPrice(item.pricePerDay) }}</span>
-              <span class="sidebar-price-unit">{{ $t('item.perDay') }}</span>
+              <span class="sidebar-price-value">{{ getDisplayPrice() }}</span>
+              <span v-if="isForRent" class="sidebar-price-unit">{{ $t('item.perDay') }}</span>
             </div>
-            <div class="sidebar-details">
+            <div v-if="isForRent" class="sidebar-details">
               <div v-if="item.initialPrice" class="sidebar-line">
                 <span class="text-muted">{{ $t('item.initial') }}</span>
                 <span class="fw-semibold">{{ formatPrice(item.initialPrice) }}</span>
@@ -1830,9 +1867,9 @@ watch(fullscreenCarousel, (isOpen) => {
             </div>
             <div class="sidebar-actions">
               <template v-if="!isOwner">
-                <button class="btn btn-primary w-100" @click="showBookingModal">
-                  <i class="bi bi-calendar-check me-2"></i>
-                  {{ $t('item.bookNow') }}
+                <button class="btn btn-primary w-100" @click="handlePrimaryCta">
+                  <i class="bi me-2" :class="isForRent ? 'bi-calendar-check' : 'bi-chat-dots'"></i>
+                  {{ getPrimaryCtaLabel() }}
                 </button>
                 <button class="btn btn-outline-primary w-100" @click="showOwnerModal">
                   <i class="bi bi-chat-dots me-2"></i>
