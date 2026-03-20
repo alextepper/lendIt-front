@@ -48,14 +48,18 @@ import AuthModals from './components/AuthModals.vue'
 import ErrorReportModal from './components/ErrorReportModal.vue'
 import { resumePendingAction } from './auth/requireAuth'
 import { useAuthModal } from './composables/useAuthModal'
+import { createListing } from './services/listingsService'
+import http from './lib/http'
+import { useUiStore } from './stores/ui'
 
 const auth = useAuthStore()
 const chat = useChatStore()
 const router = useRouter()
 const errorReportModal = ref(null)
 const { closeModals } = useAuthModal()
+const ui = useUiStore()
 
-// Resume pending "create listing" after login - navigate to my-listings with create=1
+// Resume pending "create listing" after login
 let createListingResumed = false
 watch(() => auth.isAuthed, async (isAuthed) => {
   if (isAuthed && !createListingResumed) {
@@ -65,6 +69,26 @@ watch(() => auth.isAuthed, async (isAuthed) => {
         createListingResumed = true
         closeModals()
         router.push({ name: 'my-listings', query: { create: '1' } })
+      },
+      CREATE_LISTING_WITH_DATA: async (act) => {
+        createListingResumed = true
+        closeModals()
+        const { itemData, photoUrls } = act.payload || {}
+        if (!itemData) return
+        try {
+          const createdItem = await createListing(itemData)
+          const itemId = createdItem.id
+          if (photoUrls?.length > 0 && itemId) {
+            for (let i = 0; i < photoUrls.length; i++) {
+              await http.post(`/items/${itemId}/photos`, { url: photoUrls[i], position: i })
+            }
+          }
+          ui.showToast('Listing created successfully', 'success')
+          router.push({ name: 'my-listings' })
+        } catch (e) {
+          ui.showToast(e?.response?.data?.message || e.message, 'danger')
+          router.push({ name: 'create-listing' })
+        }
       }
     })
   }

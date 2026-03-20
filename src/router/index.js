@@ -12,6 +12,7 @@ const ResetPassword = () => import("../views/auth/ResetPassword.vue");
 const Search = () => import("../views/Search.vue");
 const Item = () => import("../views/Item.vue");
 const MyListings = () => import("../views/MyListings.vue");
+const CreateListing = () => import("../views/CreateListing.vue");
 const BookingRequests = () => import("../views/BookingRequests.vue");
 const MyBookings = () => import("../views/MyBookings.vue");
 const Messages = () => import("../views/Messages.vue");
@@ -82,6 +83,11 @@ const router = createRouter({
       name: "dashboard",
       component: UserProfile,
       meta: { requiresAuth: true },
+    },
+    {
+      path: "/create",
+      name: "create-listing",
+      component: CreateListing,
     },
     {
       path: "/my/listings",

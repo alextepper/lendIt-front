@@ -322,7 +322,8 @@
     "validPriceRequired": "Please enter a valid price per day",
     "invalidFileType": "Invalid file type. Please upload JPEG, PNG, WebP, or GIF",
     "fileTooLarge": "File size too large. Maximum size is 5MB",
-    "photoUploadFailed": "Failed to upload photos"
+    "photoUploadFailed": "Failed to upload photos",
+    "signInToPublish": "Sign in to publish your listing"
   },
   "home": {
     "popularCategories": "Popular Categories",

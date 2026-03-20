@@ -195,6 +195,12 @@ export async function createListing(payload) {
   }
 
   const transformedPayload = { ...payload };
+  // Map listingType to API type: rent -> forRent, sale -> forSale, giveaway -> giveaway
+  if (transformedPayload.listingType) {
+    const typeMap = { rent: "forRent", sale: "forSale", giveaway: "giveaway" };
+    transformedPayload.type = typeMap[transformedPayload.listingType] || transformedPayload.listingType;
+    delete transformedPayload.listingType;
+  }
   // Send tags array; fallback: transform category for legacy backend
   if (transformedPayload.tags && Array.isArray(transformedPayload.tags)) {
     // Tags sent as-is
@@ -230,6 +236,12 @@ export async function updateListing(id, payload) {
   if (USE_MOCK) return { id, ...payload };
 
   const transformedPayload = { ...payload };
+  // Map listingType to API type: rent -> forRent, sale -> forSale, giveaway -> giveaway
+  if (transformedPayload.listingType) {
+    const typeMap = { rent: "forRent", sale: "forSale", giveaway: "giveaway" };
+    transformedPayload.type = typeMap[transformedPayload.listingType] || transformedPayload.listingType;
+    delete transformedPayload.listingType;
+  }
   if (transformedPayload.tags && Array.isArray(transformedPayload.tags)) {
     // Tags sent as-is
   } else if (transformedPayload.category) {

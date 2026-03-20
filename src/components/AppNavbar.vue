@@ -220,8 +220,6 @@ import { fetchAllBookings } from '../services/bookingRequestService'
 import websocketService from '../services/websocketService'
 import { useRouter } from 'vue-router'
 import { useAuthModal } from '../composables/useAuthModal'
-import { requireAuth } from '../auth/requireAuth'
-
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
@@ -232,11 +230,8 @@ const debug = useDebugStore()
 const { openLoginModal, openRegisterModal } = useAuthModal()
 
 function handleListMyItem() {
-  requireAuth(
-    { type: 'CREATE_LISTING' },
-    () => router.push({ name: 'my-listings', query: { create: '1' } }),
-    { showModal: true }
-  )
+  // Allow unlogged users to fill the form; they'll authenticate on submit
+  router.push({ name: 'create-listing' })
 }
 const baseURL = import.meta.env.VITE_API_BASE_URL
 

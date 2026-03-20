@@ -316,7 +316,8 @@
     "validPriceRequired": "Пожалуйста, введите корректную цену за день",
     "invalidFileType": "Недопустимый тип файла. Пожалуйста, загрузите JPEG, PNG, WebP или GIF",
     "fileTooLarge": "Файл слишком большой. Максимальный размер 5MB",
-    "photoUploadFailed": "Не удалось загрузить фотографии"
+    "photoUploadFailed": "Не удалось загрузить фотографии",
+    "signInToPublish": "Войдите, чтобы опубликовать объявление"
   },
   "home": {
     "popularCategories": "Популярные категории",

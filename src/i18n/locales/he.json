@@ -316,7 +316,8 @@
     "validPriceRequired": "אנא הכנס מחיר תקין ליום",
     "invalidFileType": "סוג קובץ לא תקין. אנא העלה JPEG, PNG, WebP או GIF",
     "fileTooLarge": "גודל הקובץ גדול מדי. גודל מקסימלי הוא 5MB",
-    "photoUploadFailed": "נכשל בהעלאת תמונות"
+    "photoUploadFailed": "נכשל בהעלאת תמונות",
+    "signInToPublish": "היכנס לפרסום המודעה שלך"
   },
   "home": {
     "popularCategories": "קטגוריות פופולריות",

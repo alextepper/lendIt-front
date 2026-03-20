@@ -145,7 +145,10 @@ watch(
   (v) => {
     if (v) {
       const existingTags = v.tags || (v.category ? [v.category] : []);
-      const type = v.listingType ||
+      // API returns type: forRent | forSale | giveaway; map to form values
+      const typeFromApi = v.type || v.listingType;
+      const typeMap = { forRent: 'rent', forSale: 'sale', giveaway: 'giveaway' };
+      const type = typeMap[typeFromApi] ||
         (v.sellPrice != null && v.sellPrice > 0 ? 'sale' :
          (v.pricePerDay != null && v.pricePerDay > 0 ? 'rent' : 'giveaway'));
       Object.assign(form, {
