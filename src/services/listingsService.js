@@ -216,6 +216,11 @@ export async function createListing(payload) {
   if (transformedPayload.deposit) {
     transformedPayload.deposit = Math.round(transformedPayload.deposit * 100);
   }
+  if (transformedPayload.sellPrice) {
+    transformedPayload.sellPrice = Math.round(
+      transformedPayload.sellPrice * 100
+    );
+  }
 
   const { data } = await http.post("/items", transformedPayload);
   return data;
@@ -244,6 +249,11 @@ export async function updateListing(id, payload) {
   }
   if (transformedPayload.deposit) {
     transformedPayload.deposit = Math.round(transformedPayload.deposit * 100);
+  }
+  if (transformedPayload.sellPrice) {
+    transformedPayload.sellPrice = Math.round(
+      transformedPayload.sellPrice * 100
+    );
   }
 
   const { data } = await http.patch(`/items/${id}`, transformedPayload);

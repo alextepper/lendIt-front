@@ -11,6 +11,7 @@
   "nav": {
     "home": "الرئيسية",
     "search": "البحث",
+    "listMyItem": "أضف عنصري",
     "messages": "الرسائل",
     "dashboard": "لوحة التحكم",
     "login": "تسجيل الدخول",
@@ -262,6 +263,15 @@
   "listing": {
     "editListing": "تحرير الإعلان",
     "createNewListing": "إنشاء إعلان جديد",
+    "listingType": "نوع الإعلان",
+    "type": {
+      "rent": "إيجار",
+      "sale": "بيع",
+      "giveaway": "مجاني"
+    },
+    "sellPrice": "سعر البيع",
+    "giveawayNote": "سيُعرض هذا العنصر مجاناً. لا حاجة للدفع.",
+    "validSellPriceRequired": "يرجى إدخال سعر بيع صحيح",
     "title": "العنوان",
     "enterItemTitle": "أدخل عنوان العنصر",
     "category": "الفئة",

@@ -58,6 +58,15 @@
         </ul>
 
         <div class="d-flex align-items-center gap-1 gap-sm-2 navbar-actions">
+          <!-- List my item - always visible -->
+          <button
+            class="btn btn-primary btn-sm"
+            @click="handleListMyItem"
+          >
+            <i class="bi bi-plus-lg me-1"></i>
+            <span class="d-none d-sm-inline">{{ $t('nav.listMyItem') }}</span>
+          </button>
+
           <!-- Debug log viewer toggle (dev / ?debugLogs=1 only) -->
           <button
             v-if="debugEnabled"
@@ -209,15 +218,26 @@ import { watch, ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import NotificationsBell from './NotificationsBell.vue'
 import { fetchAllBookings } from '../services/bookingRequestService'
 import websocketService from '../services/websocketService'
+import { useRouter } from 'vue-router'
 import { useAuthModal } from '../composables/useAuthModal'
+import { requireAuth } from '../auth/requireAuth'
 
 const { t } = useI18n()
+const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const chat = useChatStore()
 const language = useLanguageStore()
 const debug = useDebugStore()
 const { openLoginModal, openRegisterModal } = useAuthModal()
+
+function handleListMyItem() {
+  requireAuth(
+    { type: 'CREATE_LISTING' },
+    () => router.push({ name: 'my-listings', query: { create: '1' } }),
+    { showModal: true }
+  )
+}
 const baseURL = import.meta.env.VITE_API_BASE_URL
 
 const showDebug = ref(false)

@@ -14,7 +14,10 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:modelValue', 'submit']);
 
+const LISTING_TYPES = ['rent', 'sale', 'giveaway'];
+
 const form = reactive({
+  listingType: 'rent',
   title: '',
   tags: [],
   location: '',
@@ -24,6 +27,7 @@ const form = reactive({
   pricePerDay: 0,
   initialPrice: 0,
   deposit: 0,
+  sellPrice: 0,
   currency: 'ILS',
   description: '',
   photos: [],
@@ -141,16 +145,21 @@ watch(
   (v) => {
     if (v) {
       const existingTags = v.tags || (v.category ? [v.category] : []);
+      const type = v.listingType ||
+        (v.sellPrice != null && v.sellPrice > 0 ? 'sale' :
+         (v.pricePerDay != null && v.pricePerDay > 0 ? 'rent' : 'giveaway'));
       Object.assign(form, {
+        listingType: type,
         title: v.title || '',
         tags: Array.isArray(existingTags) ? [...existingTags] : [],
         location: v.location || v.address || '',
         latitude: v.latitude || null,
         longitude: v.longitude || null,
         address: v.address || v.location || '',
-        pricePerDay: v.pricePerDay ? (v.pricePerDay / 100) : 0, // Convert from cents
+        pricePerDay: v.pricePerDay ? (v.pricePerDay / 100) : 0,
         initialPrice: v.initialPrice ? (v.initialPrice / 100) : 0,
         deposit: v.deposit ? (v.deposit / 100) : 0,
+        sellPrice: v.sellPrice ? (v.sellPrice / 100) : 0,
         currency: v.currency || 'ILS',
         description: v.description || '',
         photos: (v.photos || []).map(photo => ({
@@ -170,6 +179,7 @@ watch(
 
 function resetForm() {
   Object.assign(form, {
+    listingType: 'rent',
     title: '',
     tags: [],
     location: '',
@@ -179,6 +189,7 @@ function resetForm() {
     pricePerDay: 0,
     initialPrice: 0,
     deposit: 0,
+    sellPrice: 0,
     currency: 'ILS',
     description: '',
     photos: [],
@@ -393,8 +404,12 @@ async function submit() {
     return;
   }
 
-  if (!form.pricePerDay || form.pricePerDay <= 0) {
+  if (form.listingType === 'rent' && (!form.pricePerDay || form.pricePerDay <= 0)) {
     ui.showToast(t('listing.validPriceRequired'), 'danger');
+    return;
+  }
+  if (form.listingType === 'sale' && (!form.sellPrice || form.sellPrice <= 0)) {
+    ui.showToast(t('listing.validSellPriceRequired'), 'danger');
     return;
   }
 
@@ -411,23 +426,25 @@ async function submit() {
       return;
     }
 
-    // Prepare form data - prices are already in the correct format (not in cents)
-    // The listingsService will convert them to cents
-    // Note: Don't include photos in initial creation - they'll be added separately
+    // Prepare form data - prices in display format; service converts to cents
     const submitData = {
+      listingType: form.listingType,
       title: form.title,
       tags: form.tags,
       location: form.location || form.address,
       address: form.address || form.location,
       latitude: form.latitude,
       longitude: form.longitude,
-      pricePerDay: form.pricePerDay, // Keep as is - service will convert
-      initialPrice: form.initialPrice || 0,
-      deposit: form.deposit || 0,
       currency: form.currency,
       description: form.description,
-      // photos: photoUrls, // Photos will be added after item creation
     };
+    if (form.listingType === 'rent') {
+      submitData.pricePerDay = form.pricePerDay;
+      submitData.initialPrice = form.initialPrice || 0;
+      submitData.deposit = form.deposit || 0;
+    } else if (form.listingType === 'sale') {
+      submitData.sellPrice = form.sellPrice;
+    }
 
     // Emit submit event with photos to handle in parent component
     // The parent should handle the API call and close the modal on success
@@ -461,6 +478,26 @@ async function submit() {
           <button class="btn-close" @click="close" :aria-label="$t('common.close')"></button>
         </div>
         <div class="modal-body">
+          <!-- Listing Type Choice -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              {{ $t('listing.listingType') }} <span class="text-danger">*</span>
+            </label>
+            <div class="listing-type-choices">
+              <button
+                v-for="t in LISTING_TYPES"
+                :key="t"
+                type="button"
+                class="listing-type-btn"
+                :class="{ active: form.listingType === t }"
+                @click="form.listingType = t"
+              >
+                <i class="bi" :class="t === 'rent' ? 'bi-calendar-check' : t === 'sale' ? 'bi-cash' : 'bi-gift'"></i>
+                <span>{{ $t(`listing.type.${t}`) }}</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Title -->
           <div class="mb-3">
             <label class="form-label fw-semibold">
@@ -592,8 +629,8 @@ async function submit() {
             </div>
           </div>
 
-          <!-- Price Fields -->
-          <div class="card bg-light p-3 mb-3">
+          <!-- Price Fields (conditional) -->
+          <div v-if="form.listingType === 'rent'" class="card bg-light p-3 mb-3">
             <h6 class="fw-semibold mb-3">
               <i class="bi bi-currency-exchange me-2"></i>
               {{ $t('listing.pricing') }}
@@ -661,6 +698,45 @@ async function submit() {
                 <option value="GBP">GBP (£)</option>
               </select>
             </div>
+          </div>
+
+          <div v-else-if="form.listingType === 'sale'" class="card bg-light p-3 mb-3">
+            <h6 class="fw-semibold mb-3">
+              <i class="bi bi-cash me-2"></i>
+              {{ $t('listing.sellPrice') }}
+            </h6>
+            <div class="row g-3 align-items-end">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  {{ $t('listing.sellPrice') }} <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                  <input 
+                    v-model.number="form.sellPrice" 
+                    type="number" 
+                    min="0" 
+                    step="0.01" 
+                    class="form-control" 
+                    placeholder="0.00"
+                  />
+                  <span class="input-group-text">{{ form.currency }}</span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">{{ $t('listing.currency') }}</label>
+                <select v-model="form.currency" class="form-select">
+                  <option value="ILS">ILS (₪)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="form.listingType === 'giveaway'" class="alert alert-info mb-3">
+            <i class="bi bi-gift me-2"></i>
+            {{ $t('listing.giveawayNote') }}
           </div>
 
           <!-- Photos Upload -->
@@ -789,6 +865,44 @@ async function submit() {
 
 .modal-footer {
   padding: 1rem 1.5rem;
+}
+
+/* Listing type choice buttons */
+.listing-type-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.listing-type-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid #dee2e6;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #6c757d;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listing-type-btn:hover {
+  border-color: #0d6efd;
+  color: #0d6efd;
+  background: rgba(13, 110, 253, 0.05);
+}
+
+.listing-type-btn.active {
+  border-color: #0d6efd;
+  background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+  color: white;
+}
+
+.listing-type-btn i {
+  font-size: 1.1em;
 }
 
 .form-label {

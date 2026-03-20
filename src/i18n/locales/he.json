@@ -11,6 +11,7 @@
   "nav": {
     "home": "בית",
     "search": "חיפוש",
+    "listMyItem": "פרסם פריט",
     "messages": "הודעות",
     "dashboard": "לוח בקרה",
     "login": "התחברות",
@@ -262,6 +263,15 @@
   "listing": {
     "editListing": "ערוך מודעה",
     "createNewListing": "צור מודעה חדשה",
+    "listingType": "סוג מודעה",
+    "type": {
+      "rent": "השכרה",
+      "sale": "מכירה",
+      "giveaway": "חינם"
+    },
+    "sellPrice": "מחיר מכירה",
+    "giveawayNote": "הפריט יוצג בחינם. ללא תשלום נדרש.",
+    "validSellPriceRequired": "אנא הזן מחיר מכירה תקין",
     "title": "כותרת",
     "enterItemTitle": "הכנס כותרת פריט",
     "category": "קטגוריה",

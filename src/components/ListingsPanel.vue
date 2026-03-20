@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { fetchListings, createListing, updateListing, deleteListing } from '../services/listingsService';
 import ListingFormModal from './ListingFormModal.vue';
 import ItemCard from './ItemCard.vue';
@@ -7,6 +8,8 @@ import { useUiStore } from '../stores/ui';
 import http from '../lib/http';
 
 const ui = useUiStore();
+const route = useRoute();
+const router = useRouter();
 const items = ref([]);
 const page = ref(1);
 const totalPages = ref(1);
@@ -25,6 +28,19 @@ async function load() {
   totalPages.value = 1;
   page.value = 1;
 }
+
+// Open create modal when navigated with ?create=1 (e.g. from navbar "List my item")
+watch(
+  () => route.query.create,
+  (create) => {
+    if (create === '1') {
+      openNew();
+      router.replace({ path: route.path, query: {} });
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(load);
 
 function openNew() {

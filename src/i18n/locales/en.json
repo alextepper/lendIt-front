@@ -11,6 +11,7 @@
   "nav": {
     "home": "Home",
     "search": "Search",
+    "listMyItem": "List my item",
     "messages": "Messages",
     "dashboard": "Dashboard",
     "login": "Login",
@@ -269,6 +270,15 @@
   "listing": {
     "editListing": "Edit Listing",
     "createNewListing": "Create New Listing",
+    "listingType": "Listing Type",
+    "type": {
+      "rent": "Rent",
+      "sale": "Sale",
+      "giveaway": "Giveaway"
+    },
+    "sellPrice": "Sell Price",
+    "giveawayNote": "This item will be listed for free. No payment required.",
+    "validSellPriceRequired": "Please enter a valid sell price",
     "title": "Title",
     "enterItemTitle": "Enter item title",
     "category": "Category",

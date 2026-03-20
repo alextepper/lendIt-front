@@ -36,6 +36,7 @@
 
 <script setup>
 import { watch, onMounted, onBeforeUnmount, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useChatStore } from './stores/chat'
 import AppNavbar from './components/AppNavbar.vue'
@@ -45,10 +46,30 @@ import GlobalLoader from './components/GlobalLoader.vue'
 import ErrorBoundary from './components/ErrorBoundary.vue'
 import AuthModals from './components/AuthModals.vue'
 import ErrorReportModal from './components/ErrorReportModal.vue'
+import { resumePendingAction } from './auth/requireAuth'
+import { useAuthModal } from './composables/useAuthModal'
 
 const auth = useAuthStore()
 const chat = useChatStore()
+const router = useRouter()
 const errorReportModal = ref(null)
+const { closeModals } = useAuthModal()
+
+// Resume pending "create listing" after login - navigate to my-listings with create=1
+let createListingResumed = false
+watch(() => auth.isAuthed, async (isAuthed) => {
+  if (isAuthed && !createListingResumed) {
+    await new Promise(r => setTimeout(r, 100))
+    const action = await resumePendingAction({
+      CREATE_LISTING: async () => {
+        createListingResumed = true
+        closeModals()
+        router.push({ name: 'my-listings', query: { create: '1' } })
+      }
+    })
+  }
+  if (!isAuthed) createListingResumed = false
+}, { immediate: false })
 
 // Initialize chat when auth is initialized and user is authenticated
 watch(() => [auth.initialized, auth.isAuthed], ([initialized, isAuthed]) => {

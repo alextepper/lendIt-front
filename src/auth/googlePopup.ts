@@ -9,7 +9,7 @@
  * 5. Handles errors and popup blockers gracefully
  */
 
-import { setPendingAction, consumePendingAction } from './pendingActions';
+import { setPendingAction } from './pendingActions';
 
 // Configuration
 const POPUP_WIDTH = 500;
@@ -245,12 +245,8 @@ export async function loginWithGooglePopup(pendingAction?: {
               }
             }
 
-            // Resume pending action if any
-            const action = consumePendingAction();
-            if (action) {
-              // Action will be resumed by the component that called requireAuth
-              // We just need to signal success
-            }
+            // Do NOT consume pending action here - components watching auth.isAuthed
+            // will call resumePendingAction to run and consume it
 
             resolve();
           })
@@ -314,9 +310,8 @@ export async function loginWithGooglePopup(pendingAction?: {
                 }
               }
 
-              // Resume pending action
-              const action = consumePendingAction();
-              
+              // Do NOT consume - components will resume via resumePendingAction
+
               resolve();
             } else {
               // Popup closed but user not authenticated - likely cancelled
