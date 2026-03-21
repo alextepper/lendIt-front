@@ -48,8 +48,11 @@ const loadingReviews = ref(false);
 const reviewsError = ref(null);
 
 
+const LISTING_TYPES = ['rent', 'sale', 'giveaway'];
+
 // Edit form
 const editForm = reactive({
+  listingType: 'rent',
   title: '',
   // Tags for the item (e.g., "console", "part", etc.)
   tags: [],
@@ -60,6 +63,7 @@ const editForm = reactive({
   pricePerDay: 0,
   initialPrice: 0,
   deposit: 0,
+  sellPrice: 0,
   currency: 'ILS',
   description: '',
 });
@@ -115,6 +119,7 @@ const locationSearchQuery = ref('');
 const locationSuggestions = ref([]);
 const showingSuggestions = ref(false);
 const isSelectingLocation = ref(false);
+const locationLoading = ref(false);
 
 // Photo management
 const photoInput = ref(null);
@@ -179,15 +184,21 @@ async function load() {
     item.value = await fetchItem(id);
     
     // Initialize edit form with current values
+    const rawType = String(item.value.type || '').toLowerCase();
+    const typeMapFromApi = { forrent: 'rent', forsale: 'sale', giveaway: 'giveaway' };
+    const fromApi = typeMapFromApi[rawType];
+    const inferred = ((item.value.sellPrice ?? item.value.sell_price) > 0) ? 'sale' : ((item.value.pricePerDay ?? item.value.price_per_day) > 0) ? 'rent' : 'giveaway';
+    editForm.listingType = fromApi || inferred;
     editForm.title = item.value.title || '';
     editForm.tags = Array.isArray(item.value.tags) ? [...item.value.tags] : [];
     editForm.location = item.value.address || item.value.location || '';
     editForm.latitude = item.value.latitude || null;
     editForm.longitude = item.value.longitude || null;
     editForm.address = item.value.address || item.value.location || '';
-    editForm.pricePerDay = item.value.pricePerDay/100 || 0;
-    editForm.initialPrice = item.value.initialPrice/100 || 0;
-    editForm.deposit = item.value.deposit/100 || 0;
+    editForm.pricePerDay = item.value.pricePerDay ? (item.value.pricePerDay / 100) : 0;
+    editForm.initialPrice = item.value.initialPrice ? (item.value.initialPrice / 100) : 0;
+    editForm.deposit = item.value.deposit ? (item.value.deposit / 100) : 0;
+    editForm.sellPrice = item.value.sellPrice || item.value.sell_price ? ((item.value.sellPrice || item.value.sell_price) / 100) : 0;
     editForm.currency = item.value.currency || 'ILS';
     editForm.description = item.value.description || '';
     
@@ -439,15 +450,21 @@ function toggleEditMode() {
 
 function cancelEdit() {
   // Restore original values
+  const rawType = String(originalItem.value.type || '').toLowerCase();
+  const typeMapFromApi = { forrent: 'rent', forsale: 'sale', giveaway: 'giveaway' };
+  const fromApi = typeMapFromApi[rawType];
+  const inferred = ((originalItem.value.sellPrice ?? originalItem.value.sell_price) > 0) ? 'sale' : ((originalItem.value.pricePerDay ?? originalItem.value.price_per_day) > 0) ? 'rent' : 'giveaway';
+  editForm.listingType = fromApi || inferred;
   editForm.title = originalItem.value.title || '';
   editForm.tags = Array.isArray(originalItem.value.tags) ? [...originalItem.value.tags] : [];
   editForm.location = originalItem.value.address || originalItem.value.location || '';
   editForm.latitude = originalItem.value.latitude || null;
   editForm.longitude = originalItem.value.longitude || null;
   editForm.address = originalItem.value.address || originalItem.value.location || '';
-  editForm.pricePerDay = originalItem.value.pricePerDay/100 || 0;
-  editForm.initialPrice = originalItem.value.initialPrice/100 || 0;
-  editForm.deposit = originalItem.value.deposit/100 || 0;
+  editForm.pricePerDay = originalItem.value.pricePerDay ? (originalItem.value.pricePerDay / 100) : 0;
+  editForm.initialPrice = originalItem.value.initialPrice ? (originalItem.value.initialPrice / 100) : 0;
+  editForm.deposit = originalItem.value.deposit ? (originalItem.value.deposit / 100) : 0;
+  editForm.sellPrice = originalItem.value.sellPrice || originalItem.value.sell_price ? ((originalItem.value.sellPrice || originalItem.value.sell_price) / 100) : 0;
   editForm.currency = originalItem.value.currency || 'ILS';
   editForm.description = originalItem.value.description || '';
   
@@ -638,15 +655,19 @@ async function saveChanges() {
     ui.showToast(t('item.locationRequired'), 'warning');
     return;
   }
-  if (!editForm.pricePerDay || editForm.pricePerDay < 0) {
+  if (editForm.listingType === 'rent' && (!editForm.pricePerDay || editForm.pricePerDay < 0)) {
     ui.showToast(t('item.validPriceRequired'), 'warning');
+    return;
+  }
+  if (editForm.listingType === 'sale' && (!editForm.sellPrice || editForm.sellPrice < 0)) {
+    ui.showToast(t('listing.validSellPriceRequired'), 'warning');
     return;
   }
   
   saving.value = true;
   try {
-    // Update listing data
     const payload = {
+      listingType: editForm.listingType,
       title: editForm.title,
       tags: Array.isArray(editForm.tags)
         ? editForm.tags
@@ -657,12 +678,18 @@ async function saveChanges() {
       address: editForm.address || editForm.location,
       latitude: editForm.latitude,
       longitude: editForm.longitude,
-      pricePerDay: editForm.pricePerDay,
-      initialPrice: editForm.initialPrice,
-      deposit: editForm.deposit,
-      currency: editForm.currency,
       description: editForm.description,
     };
+    if (editForm.listingType === 'rent') {
+      payload.currency = editForm.currency;
+      payload.pricePerDay = editForm.pricePerDay;
+      payload.initialPrice = editForm.initialPrice || 0;
+      payload.deposit = editForm.deposit || 0;
+    } else if (editForm.listingType === 'sale') {
+      payload.currency = editForm.currency;
+      payload.sellPrice = editForm.sellPrice;
+    }
+    // giveaway: no price fields
     
     await updateListing(item.value.id, payload);
     
@@ -983,6 +1010,41 @@ function handleLocationBlur() {
     }
     blurTimeout = null;
   }, 200);
+}
+
+async function getCurrentLocation() {
+  if (saving.value || locationLoading.value) return;
+  if (!navigator.geolocation) {
+    ui.showToast('Geolocation is not supported by your browser', 'danger');
+    return;
+  }
+  locationLoading.value = true;
+  try {
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        resolve,
+        (err) => {
+          let msg = 'Failed to get location. ';
+          if (err.code === 1) msg += 'Please allow location access.';
+          else if (err.code === 2) msg += 'Location unavailable.';
+          else if (err.code === 3) msg += 'Request timed out.';
+          reject(new Error(msg));
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+      );
+    });
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`);
+    const data = await res.json().catch(() => ({}));
+    const displayName = data?.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    selectLocation({ display_name: displayName, lat: String(lat), lon: String(lng) });
+    ui.showToast('Location set from your device', 'success');
+  } catch (e) {
+    ui.showToast(e?.message || 'Failed to get location', 'danger');
+  } finally {
+    locationLoading.value = false;
+  }
 }
 
 function formatPrice(amount) {
@@ -1517,6 +1579,24 @@ watch(fullscreenCarousel, (isOpen) => {
           <div v-if="editMode && isOwner" class="item-card edit-card">
             <h2 class="section-title">{{ $t('listing.editListing') }}</h2>
             <div class="row g-3">
+              <!-- Listing Type Choice -->
+              <div class="col-12">
+                <label class="form-label small fw-bold">{{ $t('listing.listingType') }} <span class="text-danger">*</span></label>
+                <div class="listing-type-choices">
+                  <button
+                    v-for="lt in LISTING_TYPES"
+                    :key="lt"
+                    type="button"
+                    class="listing-type-btn"
+                    :class="{ active: editForm.listingType === lt }"
+                    :disabled="saving"
+                    @click="editForm.listingType = lt"
+                  >
+                    <i class="bi" :class="lt === 'rent' ? 'bi-calendar-check' : lt === 'sale' ? 'bi-cash' : 'bi-gift'"></i>
+                    <span>{{ $t(`listing.type.${lt}`) }}</span>
+                  </button>
+                </div>
+              </div>
               <div class="col-12">
                 <label class="form-label small fw-bold">{{ $t('item.title') }}</label>
                 <input
@@ -1616,8 +1696,16 @@ watch(fullscreenCarousel, (isOpen) => {
                 </label>
                 <div class="position-relative">
                   <div class="input-group">
-                    <span class="input-group-text">
-                      <i class="bi bi-geo-alt"></i>
+                    <span
+                      class="input-group-text location-icon-clickable"
+                      role="button"
+                      :title="$t('search.useMyLocation')"
+                      @click="getCurrentLocation"
+                      :aria-label="$t('search.useMyLocation')"
+                      :class="{ 'opacity-50': saving }"
+                    >
+                      <span v-if="locationLoading" class="spinner-border spinner-border-sm" role="status"></span>
+                      <i v-else class="bi bi-geo-alt"></i>
                     </span>
                     <input
                       v-model="locationSearchQuery"
@@ -1645,45 +1733,93 @@ watch(fullscreenCarousel, (isOpen) => {
                       </div>
                     </div>
                   </div>
+                  <div class="mt-2">
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      @click="getCurrentLocation"
+                      :disabled="locationLoading || saving"
+                    >
+                      <span v-if="locationLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                      <i v-else class="bi bi-geo-alt me-1"></i>
+                      {{ locationLoading ? $t('search.gettingLocation') : $t('search.useMyLocation') }}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div class="col-md-4">
-                <label class="form-label small fw-bold">{{ $t('item.price') }}</label>
-                <input
-                  v-model.number="editForm.pricePerDay"
-                  type="number"
-                  min="0"
-                  step="1"
-                  class="form-control"
-                  :disabled="saving"
-                />
+              <!-- Price Fields (conditional by listing type) -->
+              <template v-if="editForm.listingType === 'rent'">
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">{{ $t('listing.pricePerDay') }} <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <input
+                      v-model.number="editForm.pricePerDay"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="form-control"
+                      :disabled="saving"
+                      placeholder="0.00"
+                    />
+                    <span class="input-group-text">{{ editForm.currency }}</span>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">{{ $t('item.initial') }}</label>
+                  <div class="input-group">
+                    <input
+                      v-model.number="editForm.initialPrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="form-control"
+                      :disabled="saving"
+                      placeholder="0"
+                    />
+                    <span class="input-group-text">{{ editForm.currency }}</span>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small fw-bold">{{ $t('item.deposit') }}</label>
+                  <div class="input-group">
+                    <input
+                      v-model.number="editForm.deposit"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="form-control"
+                      :disabled="saving"
+                      placeholder="0"
+                    />
+                    <span class="input-group-text">{{ editForm.currency }}</span>
+                  </div>
+                </div>
+              </template>
+              <template v-else-if="editForm.listingType === 'sale'">
+                <div class="col-md-6">
+                  <label class="form-label small fw-bold">{{ $t('listing.sellPrice') }} <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <input
+                      v-model.number="editForm.sellPrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="form-control"
+                      :disabled="saving"
+                      placeholder="0.00"
+                    />
+                    <span class="input-group-text">{{ editForm.currency }}</span>
+                  </div>
+                </div>
+              </template>
+              <div v-else-if="editForm.listingType === 'giveaway'" class="col-12">
+                <div class="alert alert-info mb-0 py-2">
+                  <i class="bi bi-gift me-2"></i>
+                  {{ $t('listing.giveawayNote') }}
+                </div>
               </div>
-              <div class="col-md-4">
-                <label class="form-label small fw-bold">{{ $t('item.initial') }}</label>
-                <input
-                  v-model.number="editForm.initialPrice"
-                  type="number"
-                  min="0"
-                  step="1"
-                  class="form-control"
-                  :disabled="saving"
-                  placeholder="0"
-                />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small fw-bold">{{ $t('item.deposit') }}</label>
-                <input
-                  v-model.number="editForm.deposit"
-                  type="number"
-                  min="0"
-                  step="1"
-                  class="form-control"
-                  :disabled="saving"
-                  placeholder="0"
-                />
-              </div>
-              <div class="col-12">
+              <div v-if="editForm.listingType !== 'giveaway'" class="col-12">
                 <label class="form-label small fw-bold">{{ $t('item.currency') }}</label>
                 <select v-model="editForm.currency" class="form-select" :disabled="saving">
                   <option value="ILS">ILS (₪)</option>
@@ -2329,6 +2465,49 @@ watch(fullscreenCarousel, (isOpen) => {
   margin-bottom: 1rem;
 }
 
+/* Listing type choice buttons (edit form) */
+.listing-type-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.listing-type-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid #dee2e6;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #6c757d;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listing-type-btn:hover:not(:disabled) {
+  border-color: #0d6efd;
+  color: #0d6efd;
+  background: rgba(13, 110, 253, 0.05);
+}
+
+.listing-type-btn.active {
+  border-color: #0d6efd;
+  background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+  color: white;
+}
+
+.listing-type-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.listing-type-btn i {
+  font-size: 1.1em;
+}
+
 .section-text {
   color: #475569;
   line-height: 1.7;
@@ -2831,6 +3010,14 @@ watch(fullscreenCarousel, (isOpen) => {
   padding: 0.75rem;
   color: #6c757d;
   font-size: 0.875rem;
+}
+
+/* Location: clickable geo icon */
+.location-icon-clickable {
+  cursor: pointer;
+}
+.location-icon-clickable:hover {
+  background-color: #e9ecef;
 }
 
 /* Location Suggestions */

@@ -119,6 +119,7 @@ const locationSearchQuery = ref('');
 const locationSuggestions = ref([]);
 const showingSuggestions = ref(false);
 const isSelectingLocation = ref(false); // Track if user is clicking on a suggestion
+const locationLoading = ref(false);
 
 // Fetch popular tags when modal opens
 watch(
@@ -272,6 +273,41 @@ function handleLocationBlur() {
       showingSuggestions.value = false;
     }
   }, 200);
+}
+
+async function getCurrentLocation() {
+  if (submitting.value || locationLoading.value) return;
+  if (!navigator.geolocation) {
+    ui.showToast('Geolocation is not supported by your browser', 'danger');
+    return;
+  }
+  locationLoading.value = true;
+  try {
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        resolve,
+        (err) => {
+          let msg = 'Failed to get location. ';
+          if (err.code === 1) msg += 'Please allow location access.';
+          else if (err.code === 2) msg += 'Location unavailable.';
+          else if (err.code === 3) msg += 'Request timed out.';
+          reject(new Error(msg));
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+      );
+    });
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`);
+    const data = await res.json().catch(() => ({}));
+    const displayName = data?.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    selectLocation({ display_name: displayName, lat: String(lat), lon: String(lng) });
+    ui.showToast('Location set from your device', 'success');
+  } catch (e) {
+    ui.showToast(e?.message || 'Failed to get location', 'danger');
+  } finally {
+    locationLoading.value = false;
+  }
 }
 
 // Photo upload functions
@@ -600,8 +636,16 @@ async function submit() {
               </label>
               <div class="position-relative">
                 <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="bi bi-geo-alt"></i>
+                  <span
+                    class="input-group-text location-icon-clickable"
+                    role="button"
+                    :title="$t('search.useMyLocation')"
+                    @click="getCurrentLocation"
+                    :aria-label="$t('search.useMyLocation')"
+                    :class="{ 'opacity-50': submitting }"
+                  >
+                    <span v-if="locationLoading" class="spinner-border spinner-border-sm" role="status"></span>
+                    <i v-else class="bi bi-geo-alt"></i>
                   </span>
                   <input
                     v-model="locationSearchQuery"
@@ -627,6 +671,18 @@ async function submit() {
                       <div class="text-muted" style="font-size: 0.75rem;">{{ suggestion.display_name || '' }}</div>
                     </div>
                   </div>
+                </div>
+                <div class="mt-2">
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary btn-sm"
+                    @click="getCurrentLocation"
+                    :disabled="locationLoading || submitting"
+                  >
+                    <span v-if="locationLoading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    <i v-else class="bi bi-geo-alt me-1"></i>
+                    {{ locationLoading ? $t('search.gettingLocation') : $t('search.useMyLocation') }}
+                  </button>
                 </div>
               </div>
             </div>
@@ -1059,6 +1115,14 @@ async function submit() {
 
 .tag-suggestion-item:hover {
   background: #f8f9fa;
+}
+
+/* Location: clickable geo icon */
+.location-icon-clickable {
+  cursor: pointer;
+}
+.location-icon-clickable:hover {
+  background-color: #e9ecef;
 }
 
 /* Location Suggestions */
