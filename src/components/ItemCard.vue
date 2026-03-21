@@ -44,9 +44,9 @@ function formatPrice(amount) {
 }
 
 function getDisplayPrice() {
-  const t = props.item?.type || (props.item?.sellPrice > 0 ? 'forSale' : props.item?.pricePerDay > 0 ? 'forRent' : 'giveaway')
-  if (t === 'giveaway') return t('item.free')
-  if (t === 'forSale') return formatPrice(props.item.sellPrice || props.item.sell_price || 0)
+  const itemType = props.item?.type || (props.item?.sellPrice > 0 ? 'forSale' : props.item?.pricePerDay > 0 ? 'forRent' : 'giveaway')
+  if (itemType === 'giveaway') return t('item.free')
+  if (itemType === 'forSale') return formatPrice(props.item.sellPrice || props.item.sell_price || 0)
   return `${formatPrice(props.item.pricePerDay || props.item.price_per_day)}/${t('item.day')}`
 }
 </script>
