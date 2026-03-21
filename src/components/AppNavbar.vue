@@ -30,8 +30,18 @@
       >
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item ms-3">
-            <router-link class="nav-link" to="/search" active-class="active" exact-active-class="active">
-              <i class="bi bi-search"></i> {{ $t('nav.search') }}
+            <router-link class="nav-link" to="/search" active-class="active" :class="{ active: route.path === '/' || route.path === '/search' }">
+              <i class="bi bi-calendar-check"></i> {{ $t('nav.forRent') }}
+            </router-link>
+          </li>
+          <li class="nav-item ms-3">
+            <router-link class="nav-link" to="/sell" active-class="active" exact-active-class="active">
+              <i class="bi bi-cash"></i> {{ $t('nav.sell') }}
+            </router-link>
+          </li>
+          <li class="nav-item ms-3">
+            <router-link class="nav-link" to="/giveaway" active-class="active" exact-active-class="active">
+              <i class="bi bi-gift"></i> {{ $t('nav.giveaway') }}
             </router-link>
           </li>
           <li v-if="auth.isAuthed" class="nav-item ms-3">

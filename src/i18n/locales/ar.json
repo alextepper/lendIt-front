@@ -11,6 +11,9 @@
   "nav": {
     "home": "الرئيسية",
     "search": "البحث",
+    "forRent": "للإيجار",
+    "sell": "بيع",
+    "giveaway": "مجاني",
     "listMyItem": "أضف عنصري",
     "messages": "الرسائل",
     "dashboard": "لوحة التحكم",

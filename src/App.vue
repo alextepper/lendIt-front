@@ -23,7 +23,7 @@
 
       <!-- Actual routed content -->
       <ErrorBoundary v-else>
-        <router-view />
+        <router-view :key="$route.path" />
       </ErrorBoundary>
     </div>
   </main>

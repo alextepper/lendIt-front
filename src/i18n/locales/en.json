@@ -11,6 +11,9 @@
   "nav": {
     "home": "Home",
     "search": "Search",
+    "forRent": "For Rent",
+    "sell": "Sell",
+    "giveaway": "Giveaway",
     "listMyItem": "List my item",
     "messages": "Messages",
     "dashboard": "Dashboard",

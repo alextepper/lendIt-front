@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
+
+const route = useRoute();
 import { fetchListings } from '../services/listingsService';
 import ItemCard from '../components/ItemCard.vue';
 import PaginationBar from '../components/PaginationBar.vue';
@@ -13,10 +16,19 @@ import { getItemPhotoUrl } from '../utils/imageUtils';
 const { t } = useI18n();
 const ui = useUiStore();
 
-// URL-synced search state (?type=forRent | forSale | giveaway)
+// Default type from route: /search|/ -> forRent, /sell -> forSale, /giveaway -> giveaway
+const getDefaultType = () => (route.path === '/sell' ? 'forSale' : route.path === '/giveaway' ? 'giveaway' : 'forRent');
+
+const pageTitle = computed(() => {
+  if (route.path === '/sell') return t('nav.sell');
+  if (route.path === '/giveaway') return t('nav.giveaway');
+  return t('nav.forRent');
+});
+
+// URL-synced search state
 const { state, setPatch, setPage, reset } = useQuerySync({
   q: '',
-  type: '',
+  type: getDefaultType(),
   category: '',
   location: '',
   price_min: '',
@@ -31,13 +43,6 @@ const { state, setPatch, setPage, reset } = useQuerySync({
   lng: '',
   radiusKm: '',
 });
-
-const LISTING_TYPES = [
-  { value: '', labelKey: 'search.typeAll' },
-  { value: 'forRent', labelKey: 'search.typeRent' },
-  { value: 'forSale', labelKey: 'search.typeSale' },
-  { value: 'giveaway', labelKey: 'search.typeGiveaway' },
-];
 
 const data = ref({ items: [], page: 1, per_page: 12, total: 0, total_pages: 1 });
 const loading = ref(false);
@@ -552,7 +557,7 @@ function formatItemPrice(item) {
   <div class="search-page">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div class="d-flex align-items-center gap-2">
-        <h1 class="h4 mb-0">{{ $t('search.title') }}</h1>
+        <h1 class="h4 mb-0">{{ pageTitle }}</h1>
         <!-- <button
           class="btn btn-outline-secondary btn-sm"
           @click="toggleFilters"
@@ -625,19 +630,6 @@ function formatItemPrice(item) {
         <div class="mb-3">
           <label class="form-label">{{ $t('search.keyword') }}</label>
           <input v-model="state.q" class="form-control" :placeholder="$t('search.placeholder')" />
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">{{ $t('search.type') }}</label>
-          <select v-model="state.type" class="form-select">
-            <option
-              v-for="opt in LISTING_TYPES"
-              :key="opt.value"
-              :value="opt.value"
-            >
-              {{ $t(opt.labelKey) }}
-            </option>
-          </select>
         </div>
 
         <!-- <div class="mb-3">

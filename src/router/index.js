@@ -71,6 +71,8 @@ const router = createRouter({
     },
     { path: "/home", name: "home-old", component: Home },
     { path: "/search", name: "search", component: Search },
+    { path: "/sell", name: "sell", component: Search },
+    { path: "/giveaway", name: "giveaway", component: Search },
     { path: "/item/:id", name: "item", component: Item, props: true },
     {
       path: "/users/:id",
