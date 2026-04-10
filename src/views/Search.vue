@@ -848,7 +848,6 @@ function formatItemPrice(item) {
       <!-- Map View -->
       <div v-show="viewMode === 'map'" class="map-container">
         <SearchMap
-          :key="`map-${viewMode}`"
           :user-location="currentLocation"
           :items="data.items"
           :radius-km="state.radiusKm || 15"

@@ -16,7 +16,7 @@ export default defineConfig(async () => {
       staticDir: path.resolve(__dirname, "dist"),
       outputDir: path.resolve(__dirname, "dist"),
       indexPath: path.resolve(__dirname, "dist", "index.html"),
-      routes: ["/", "/home", "/search", "/terms", "/privacy"],
+      routes: ["/", "/home", "/search", "/sell", "/giveaway", "/create", "/terms", "/privacy"],
       renderer: new vitePrerender.PuppeteerRenderer({
         maxConcurrentRoutes: 4,
         renderAfterDocumentEvent: "prerender-ready",
@@ -36,6 +36,8 @@ export default defineConfig(async () => {
 
   return {
     plugins: [vue(), ...(prerenderPlugin ? [prerenderPlugin] : [])],
+    // Ensure correct asset + router base handling on hosts/subpaths.
+    base: process.env.VITE_BASE_PATH || "/",
     build: {
     sourcemap: false,
       chunkSizeWarningLimit: 900,

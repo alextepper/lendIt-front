@@ -29,6 +29,10 @@ let userMarker = null;
 let radiusCircle = null;
 let itemMarkers = [];
 let isInitializing = true; // Track if map is initializing
+let isDestroyed = false;
+let initRetryTimeout = null;
+let initDelayTimeout = null;
+let invalidateTimeout = null;
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -45,30 +49,33 @@ onMounted(async () => {
   await nextTick();
   // Wait for DOM to be fully ready and visible
   const init = () => {
+    if (isDestroyed) return;
     if (mapContainer.value) {
       if (mapContainer.value.offsetParent !== null || mapContainer.value.offsetWidth > 0) {
         initMap();
       } else {
         // Retry if container is not visible yet
-        setTimeout(init, 100);
+        initRetryTimeout = window.setTimeout(init, 100);
       }
     }
   };
-  setTimeout(init, 200);
+  initDelayTimeout = window.setTimeout(init, 200);
 
   // Set up IntersectionObserver to reinitialize when map becomes visible
   nextTick(() => {
     if (mapContainer.value && typeof IntersectionObserver !== 'undefined') {
       observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
+          if (isDestroyed) return;
           if (entry.isIntersecting && !map && mapContainer.value) {
             setTimeout(() => {
-              initMap();
+              if (!isDestroyed) initMap();
             }, 100);
           } else if (entry.isIntersecting && map) {
             // Invalidate size when map becomes visible
             setTimeout(() => {
-              if (map) {
+              if (map && !isDestroyed) {
+                try { map.closePopup(); } catch {}
                 map.invalidateSize();
               }
             }, 100);
@@ -88,6 +95,7 @@ function initMap() {
 
   // Check if map already exists
   if (map) {
+    try { map.closePopup(); } catch {}
     map.remove();
     map = null;
   }
@@ -111,11 +119,12 @@ function initMap() {
     }).addTo(map);
 
     // Invalidate size to ensure map renders correctly after container is visible
-    setTimeout(() => {
-      if (map) {
+    invalidateTimeout = window.setTimeout(() => {
+      if (map && !isDestroyed) {
+        try { map.closePopup(); } catch {}
         map.invalidateSize();
         // Force a resize event
-        window.dispatchEvent(new Event('resize'));
+        try { window.dispatchEvent(new Event('resize')); } catch {}
       }
     }, 300);
 
@@ -509,11 +518,27 @@ watch(() => mapContainer.value, (newVal) => {
 });
 
 onUnmounted(() => {
+  isDestroyed = true;
+
+  if (initRetryTimeout) {
+    clearTimeout(initRetryTimeout);
+    initRetryTimeout = null;
+  }
+  if (initDelayTimeout) {
+    clearTimeout(initDelayTimeout);
+    initDelayTimeout = null;
+  }
+  if (invalidateTimeout) {
+    clearTimeout(invalidateTimeout);
+    invalidateTimeout = null;
+  }
+
   if (observer && mapContainer.value) {
     observer.unobserve(mapContainer.value);
     observer = null;
   }
   if (map) {
+    try { map.closePopup(); } catch {}
     map.remove();
     map = null;
   }

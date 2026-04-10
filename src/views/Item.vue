@@ -3936,7 +3936,6 @@ watch(fullscreenCarousel, (isOpen) => {
 
 /* Mobile Content */
 .mobile-content {
-  padding: 1.25rem;
   padding-bottom: 120px;
   max-width: 28rem;
   margin: 0 auto;

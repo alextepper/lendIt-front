@@ -30,7 +30,7 @@ const Terms = () => import("../views/Terms.vue");
 const Privacy = () => import("../views/Privacy.vue");
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: "/", name: "home", component: Search },
     {
