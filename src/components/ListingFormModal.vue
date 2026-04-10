@@ -56,6 +56,23 @@ const availableTagsForDropdown = computed(() => {
   return popularTagsFromApi.value.filter(t => !selected.has(String(t).toLowerCase()));
 });
 
+const tagQueryNormalized = computed(() => (tagInputQuery.value || '').trim());
+const tagSuggestions = computed(() => {
+  const selected = new Set(form.tags.map(t => String(t).toLowerCase()));
+  const q = tagQueryNormalized.value;
+  const qLower = q.toLowerCase();
+
+  const base = availableTagsForDropdown.value
+    .filter(t => String(t).toLowerCase() !== qLower)
+    .map(t => ({ tag: t, isQuery: false }));
+
+  // Always show what the user typed as the first option (if non-empty and not already selected).
+  if (q && !selected.has(qLower)) {
+    return [{ tag: q, isQuery: true }, ...base];
+  }
+  return base;
+});
+
 let tagSearchTimeout = null;
 async function loadPopularTags(q = '') {
   loadingTags.value = true;
@@ -105,6 +122,14 @@ function handleTagInputKeydown(e) {
   } else if (e.key === 'Backspace' && !tagInputQuery.value && form.tags.length) {
     form.tags.pop();
   }
+}
+
+function addTagSuggestion(suggestion) {
+  const tag = suggestion?.tag;
+  if (!tag) return;
+  isSelectingTag.value = true;
+  addTag(tag);
+  isSelectingTag.value = false;
 }
 
 function handleTagDropdownBlur() {
@@ -616,15 +641,19 @@ async function submit() {
                 @blur="handleTagDropdownBlur"
               >
                 <button
-                  v-for="tag in availableTagsForDropdown"
-                  :key="tag"
+                  v-for="s in tagSuggestions"
+                  :key="`${s.isQuery ? 'q:' : 't:'}${s.tag}`"
                   type="button"
                   class="tag-suggestion-item"
-                  @mousedown.prevent="isSelectingTag = true; addTag(tag); isSelectingTag = false"
+                  @mousedown.prevent="addTagSuggestion(s)"
                 >
-                  {{ tag }}
+                  <span class="tag-suggestion-text">
+                    <span v-if="s.isQuery" class="tag-suggestion-add-prefix">+</span>
+                    {{ s.tag }}
+                  </span>
+                  <span class="tag-suggestion-plus" aria-hidden="true">+</span>
                 </button>
-                <div v-if="!availableTagsForDropdown.length" class="tag-dropdown-empty">
+                <div v-if="!tagSuggestions.length" class="tag-dropdown-empty">
                   {{ $t('listing.allTagsAdded') }}
                 </div>
               </div>
@@ -1115,6 +1144,40 @@ async function submit() {
 
 .tag-suggestion-item:hover {
   background: #f8f9fa;
+}
+
+.tag-suggestion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tag-suggestion-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-suggestion-add-prefix {
+  display: inline-block;
+  width: 1rem;
+  font-weight: 800;
+  color: #0d6efd;
+}
+
+.tag-suggestion-plus {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #0d6efd;
+  color: #fff;
+  font-weight: 800;
+  line-height: 1;
 }
 
 /* Location: clickable geo icon */
