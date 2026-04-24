@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/auth';
 import { useI18n } from 'vue-i18n'; 
 import UserHistory from './UserHistory.vue';
 import UserItems from './UserItems.vue';
+import { compressImageBeforeUpload } from '../utils/imageCompression';
 
 const ui = useUiStore();
 const auth = useAuthStore();
@@ -99,15 +100,23 @@ async function onAvatarChange(ev) {
     return;
   }
   
-  // Validate file size (5MB limit)
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  if (file.size > maxSize) {
+  // Best-effort client-side compression before upload (10MB cap).
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  let fileToUse = file;
+  try {
+    const compressed = await compressImageBeforeUpload(file, { maxSizeBytes: maxSize });
+    fileToUse = compressed.file;
+  } catch (e) {
+    console.warn('Avatar compression failed, using original.', e);
+  }
+
+  if (fileToUse.size > maxSize) {
     ui.showToast(t('dashboard.fileTooLarge'), 'danger');
     return;
   }
   
   try {
-    const result = await uploadAvatar(file);
+    const result = await uploadAvatar(fileToUse);
     const profilePictureUrl = result.profilePicture || result.avatar;
     form.value.avatar = profilePictureUrl;
     form.value.profilePicture = profilePictureUrl;

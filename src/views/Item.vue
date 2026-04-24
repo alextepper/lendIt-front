@@ -15,6 +15,7 @@ import AvailabilityCalendar from '../components/AvailabilityCalendar.vue';
 import BookingCalendar from '../components/BookingCalendar.vue';
 import { Modal } from 'bootstrap';
 import { getItemPhotoUrl } from '../utils/imageUtils';
+import { compressImageBeforeUpload } from '../utils/imageCompression';
 import http from '../lib/http';
 import { useAuthModal } from '../composables/useAuthModal';
 import { requireAuth, resumePendingAction } from '../auth/requireAuth';
@@ -514,7 +515,7 @@ function cancelEdit() {
 async function handlePhotoUpload(event) {
   const files = Array.from(event.target.files || []);
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxSize = 10 * 1024 * 1024; // 10MB
   const maxPhotos = 10;
 
   for (const file of files) {
@@ -528,7 +529,16 @@ async function handlePhotoUpload(event) {
       continue;
     }
     
-    if (file.size > maxSize) {
+    // Best-effort client-side compression before upload (still enforce 10MB cap).
+    let fileToUpload = file;
+    try {
+      const compressed = await compressImageBeforeUpload(file, { maxSizeBytes: maxSize });
+      fileToUpload = compressed.file;
+    } catch (e) {
+      console.warn('Image compression failed, uploading original.', e);
+    }
+
+    if (fileToUpload.size > maxSize) {
       ui.showToast(t('item.fileTooLarge'), 'danger');
       continue;
     }
@@ -537,7 +547,7 @@ async function handlePhotoUpload(event) {
     uploadingPhotos.value = true;
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', fileToUpload);
 
       const { data } = await http.post('/uploads/image?folder=items', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -552,7 +562,7 @@ async function handlePhotoUpload(event) {
         publicUrl: data.publicUrl || data.url,
         position: position,
         preview: data.url || data.publicUrl,
-        file: file,
+        file: fileToUpload,
         isNew: true
       });
     } catch (error) {

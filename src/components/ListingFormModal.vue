@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
 import { fetchPopularTags } from '../services/listingsService';
 import http from '../lib/http';
+import { compressImageBeforeUpload } from '../utils/imageCompression';
 
 const { t } = useI18n();
 const ui = useUiStore();
@@ -336,32 +337,37 @@ async function getCurrentLocation() {
 }
 
 // Photo upload functions
-function handlePhotoUpload(event) {
+async function handlePhotoUpload(event) {
   const files = Array.from(event.target.files || []);
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxSize = 10 * 1024 * 1024; // 10MB
 
-  files.forEach(file => {
+  for (const file of files) {
     if (!validTypes.includes(file.type)) {
       ui.showToast(t('listing.invalidFileType'), 'danger');
-      return;
+      continue;
     }
     
-    if (file.size > maxSize) {
-      ui.showToast(t('listing.fileTooLarge'), 'danger');
-      return;
+    let fileToUse = file;
+    try {
+      const compressed = await compressImageBeforeUpload(file, { maxSizeBytes: maxSize });
+      fileToUse = compressed.file;
+    } catch (e) {
+      console.warn('Image compression failed, using original.', e);
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      form.photos.push({
-        file: file,
-        preview: e.target.result,
-        url: null // Will be set after upload
-      });
-    };
-    reader.readAsDataURL(file);
-  });
+    if (fileToUse.size > maxSize) {
+      ui.showToast(t('listing.fileTooLarge'), 'danger');
+      continue;
+    }
+
+    const preview = URL.createObjectURL(fileToUse);
+    form.photos.push({
+      file: fileToUse,
+      preview,
+      url: null // Will be set after upload
+    });
+  }
 
   // Reset input
   if (photoInput.value) {
@@ -370,6 +376,10 @@ function handlePhotoUpload(event) {
 }
 
 function removePhoto(index) {
+  const p = form.photos[index];
+  if (p?.preview && typeof p.preview === 'string' && p.preview.startsWith('blob:')) {
+    URL.revokeObjectURL(p.preview);
+  }
   form.photos.splice(index, 1);
 }
 
