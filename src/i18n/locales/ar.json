@@ -148,7 +148,8 @@
     "gettingLocation": "جاري الحصول على الموقع...",
     "clearLocation": "مسح الموقع",
     "searchRadius": "نطاق البحث",
-    "km": "كم"
+    "km": "كم",
+    "loadingMap": "جاري تحميل الخريطة..."
   },
   "searchMap": {
     "drag": "اسحب",

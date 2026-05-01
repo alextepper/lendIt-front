@@ -39,6 +39,24 @@ export function useSeo(options = {}) {
   }
 
   /**
+   * Update or create the canonical link tag
+   */
+  function updateCanonical(href) {
+    if (!href) return
+    let link = document.querySelector('link[rel="canonical"]')
+    const isPreExisting = !!link
+    if (!link) {
+      link = document.createElement('link')
+      link.setAttribute('rel', 'canonical')
+      document.head.appendChild(link)
+      addedElements.push(link)
+    } else if (!isPreExisting) {
+      // Already added by us in a prior call within this view
+    }
+    link.setAttribute('href', href)
+  }
+
+  /**
    * Add JSON-LD structured data
    */
   function addStructuredData(data) {
@@ -105,24 +123,23 @@ export function useSeo(options = {}) {
     ogDescription,
     ogImage,
     ogUrl,
-    productSchema
+    ogType,
+    canonical,
+    productSchema,
+    structuredData,
   }) {
-    // Update title
     if (title) {
       updateTitle(title)
     }
 
-    // Update meta description
     if (description) {
       updateMetaTag('description', description)
     }
 
-    // Update keywords
     if (keywords) {
       updateMetaTag('keywords', keywords)
     }
 
-    // Update Open Graph tags
     if (ogTitle) {
       updateMetaTag('og:title', ogTitle, true)
       updateMetaTag('twitter:title', ogTitle)
@@ -143,9 +160,20 @@ export function useSeo(options = {}) {
       updateMetaTag('twitter:url', ogUrl)
     }
 
-    // Add product schema if provided
+    if (ogType) {
+      updateMetaTag('og:type', ogType, true)
+    }
+
+    if (canonical) {
+      updateCanonical(canonical)
+    }
+
     if (productSchema) {
       updateProductSchema(productSchema)
+    }
+
+    if (structuredData) {
+      addStructuredData(structuredData)
     }
   }
 
@@ -185,10 +213,24 @@ export function useSeo(options = {}) {
     updateSeo,
     updateTitle,
     updateMetaTag,
+    updateCanonical,
     updateProductSchema,
     addStructuredData,
     cleanup
   }
+}
+
+/**
+ * Build a fully-qualified canonical URL for the current site.
+ * Uses window.location.origin in the browser; falls back to the production
+ * host so prerendered HTML still gets a sensible canonical.
+ */
+export function buildCanonical(path = '/') {
+  const origin =
+    (typeof window !== 'undefined' && window.location && window.location.origin) ||
+    'https://www.sharo-app.com'
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  return `${origin}${cleanPath}`
 }
 
 /**

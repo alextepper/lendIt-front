@@ -148,7 +148,8 @@
     "gettingLocation": "מביא מיקום...",
     "clearLocation": "נקה מיקום",
     "searchRadius": "רדיוס חיפוש",
-    "km": "ק\"מ"
+    "km": "ק\"מ",
+    "loadingMap": "טוען מפה..."
   },
   "searchMap": {
     "drag": "גרור",

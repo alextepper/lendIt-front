@@ -90,10 +90,17 @@ watch(
 router.isReady().then(() => {
   app.mount("#app");
 
-  // Signal prerenderer that the initial route is ready to snapshot.
+  // Safety-net for the prerenderer: if no view explicitly fires
+  // `prerender-ready` (because of an unexpected error or an unsupported
+  // route), fire it after a delay so the build never hangs. Views that
+  // need to wait for async data fire it earlier via `markPrerendered`.
   if (typeof document !== "undefined") {
-    requestAnimationFrame(() => {
-      document.dispatchEvent(new Event("prerender-ready"));
-    });
+    setTimeout(() => {
+      try {
+        document.dispatchEvent(new Event("prerender-ready"));
+      } catch {
+        // ignore
+      }
+    }, 8000);
   }
 });

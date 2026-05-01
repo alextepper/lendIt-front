@@ -9,12 +9,15 @@ import { fetchUserListings, fetchListings } from '../services/listingsService';
 import { fetchItemReviews } from '../services/reviewsService';
 import ItemCard from '../components/ItemCard.vue';
 import StarRating from '../components/StarRating.vue';
+import { useSeo, buildCanonical } from '../composables/useSeo';
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const ui = useUiStore();
 const auth = useAuthStore();
+
+const { updateSeo } = useSeo();
 
 // State
 const user = ref(null);
@@ -252,6 +255,36 @@ watch(targetUserId, (userId) => {
     loadUserProfile(userId);
   }
 }, { immediate: true });
+
+// Update SEO whenever the user profile finishes loading. Only public profiles
+// (when the URL has an :id) get indexable canonicals; the /dashboard alias
+// keeps a generic title to avoid duplicate-content competing with /users/:id.
+watch(user, (u) => {
+  if (!u) return;
+  const isPublicProfile = !!route.params.id;
+  if (isPublicProfile) {
+    const displayName = u.name || u.username || 'משתמש';
+    const title = `${displayName} - השכרת מוצרים בישראל | Sharo`;
+    const description = u.bio
+      ? `${displayName} ב-Sharo. ${String(u.bio).slice(0, 140)}`
+      : `הפרופיל של ${displayName} ב-Sharo. צפו במוצרים שזמינים להשכרה ובדירוגים.`;
+    updateSeo({
+      title,
+      description,
+      ogTitle: title,
+      ogDescription: description,
+      ogType: 'profile',
+      ogImage: u.avatarUrl || u.avatar || 'https://www.sharo-app.com/logo.png',
+      canonical: buildCanonical(`/users/${u.id}`),
+    });
+  } else {
+    updateSeo({
+      title: 'הדשבורד שלי | Sharo',
+      description: 'נהלו את המוצרים שלכם, הזמנות והפרופיל שלכם ב-Sharo.',
+      canonical: buildCanonical('/dashboard'),
+    });
+  }
+}, { immediate: false });
 </script>
 
 <template>

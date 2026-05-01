@@ -8,18 +8,72 @@ const __dirname = path.dirname(__filename);
 
 const isPrerender = process.env.PRERENDER === "true";
 
+// Cap how many item pages we prerender at build time. Top-N items get a real
+// static HTML snapshot for instant SEO; the long tail is still discoverable
+// via the sitemap and rendered client-side.
+const PRERENDER_ITEM_LIMIT = Number(process.env.PRERENDER_ITEM_LIMIT || 50);
+
+async function buildPrerenderRoutes() {
+  const baseRoutes = [
+    "/",
+    "/home",
+    "/search",
+    "/sell",
+    "/giveaway",
+    "/terms",
+    "/privacy",
+  ];
+
+  try {
+    const { fetchAllItems, fetchCategories, categoryRoute, itemRoute } =
+      await import("./scripts/seo-helpers.mjs");
+
+    const categories = await fetchCategories();
+    const categoryRoutes = categories.map((c) => categoryRoute(c));
+
+    const items = await fetchAllItems({ limit: PRERENDER_ITEM_LIMIT });
+    const itemRoutes = items
+      .filter(
+        (i) =>
+          i &&
+          i.id &&
+          !i.deletedAt &&
+          !i.deleted_at &&
+          i.isDeleted !== true &&
+          i.isActive !== false
+      )
+      .map((i) => itemRoute(i.id));
+
+    const all = Array.from(
+      new Set([...baseRoutes, ...categoryRoutes, ...itemRoutes])
+    );
+    console.log(
+      `[prerender] Will snapshot ${all.length} routes ` +
+        `(${baseRoutes.length} static, ${categoryRoutes.length} categories, ${itemRoutes.length} items).`
+    );
+    return all;
+  } catch (err) {
+    console.warn(
+      `[prerender] Failed to expand dynamic routes: ${err.message}. Falling back to static routes only.`
+    );
+    return baseRoutes;
+  }
+}
+
 export default defineConfig(async () => {
   let prerenderPlugin = null;
   if (isPrerender) {
     const vitePrerender = (await import("vite-plugin-prerender")).default;
+    const routes = await buildPrerenderRoutes();
     prerenderPlugin = vitePrerender({
       staticDir: path.resolve(__dirname, "dist"),
       outputDir: path.resolve(__dirname, "dist"),
       indexPath: path.resolve(__dirname, "dist", "index.html"),
-      routes: ["/", "/home", "/search", "/sell", "/giveaway", "/create", "/terms", "/privacy"],
+      routes,
       renderer: new vitePrerender.PuppeteerRenderer({
         maxConcurrentRoutes: 4,
         renderAfterDocumentEvent: "prerender-ready",
+        renderAfterTime: 12000,
         headless: true,
       }),
       postProcess(renderedRoute) {
@@ -39,8 +93,35 @@ export default defineConfig(async () => {
     // Ensure correct asset + router base handling on hosts/subpaths.
     base: process.env.VITE_BASE_PATH || "/",
     build: {
-    sourcemap: false,
+      sourcemap: false,
       chunkSizeWarningLimit: 900,
+      rollupOptions: {
+        output: {
+          // Split heavy 3rd-party libs into their own chunks so the entry
+          // chunk that the main page needs stays small. Leaflet is loaded
+          // lazily by the SearchMap async component, so it lands on its
+          // own chunk and isn't pulled into the initial paint.
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return undefined;
+            if (id.includes("leaflet")) return "leaflet";
+            if (id.includes("bootstrap-icons")) return "bootstrap-icons";
+            if (id.includes("/bootstrap/")) return "bootstrap";
+            if (id.includes("socket.io-client")) return "socketio";
+            if (id.includes("@stripe/stripe-js")) return "stripe";
+            if (id.includes("vue-datepicker-next")) return "datepicker";
+            if (
+              id.includes("/vue/") ||
+              id.includes("/vue-router/") ||
+              id.includes("/vue-i18n/") ||
+              id.includes("/pinia/") ||
+              id.includes("/@vue/")
+            ) {
+              return "vue-vendor";
+            }
+            return "vendor";
+          },
+        },
+      },
     },
     server: {
       proxy: {

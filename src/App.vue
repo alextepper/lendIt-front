@@ -15,8 +15,11 @@
         </div>
       </ErrorBoundary>
 
-      <!-- Show loading during auth initialization -->
-      <div v-if="auth.status === 'initializing'" class="text-center py-5">
+      <!-- Show loading during auth initialization, but ONLY when the
+           current route actually needs an authenticated user. Public
+           routes (e.g. `/`, `/search`, `/item/:id`) should paint
+           immediately so users + crawlers don't wait on auth. -->
+      <div v-if="auth.status === 'initializing' && $route.meta.requiresAuth" class="text-center py-5">
         <div class="spinner-border" role="status"></div>
         <div class="small text-secondary mt-2">{{ $t('app.initializing') }}</div>
       </div>

@@ -1,3 +1,21 @@
+<script setup>
+import { onMounted } from 'vue';
+import { useSeo, buildCanonical } from '../composables/useSeo';
+import { notifyPrerenderReady } from '../composables/usePrerender';
+
+useSeo({
+  title: 'מדיניות פרטיות והסכם משתמש | Sharo',
+  description:
+    'מדיניות הפרטיות והסכם המשתמש של Sharo. למדו כיצד אנו מגנים על הנתונים האישיים שלכם וכיצד הפלטפורמה פועלת.',
+  ogTitle: 'מדיניות פרטיות - Sharo',
+  ogDescription: 'מדיניות הפרטיות והסכם המשתמש של פלטפורמת Sharo.',
+  ogType: 'article',
+  canonical: buildCanonical('/privacy'),
+});
+
+onMounted(() => notifyPrerenderReady());
+</script>
+
 <template>
   <div class="container py-4">
     <div class="row justify-content-center">

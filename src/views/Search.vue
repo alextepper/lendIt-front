@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
@@ -8,9 +8,19 @@ const route = useRoute();
 import { fetchListings } from '../services/listingsService';
 import ItemCard from '../components/ItemCard.vue';
 import PaginationBar from '../components/PaginationBar.vue';
-import SearchMap from '../components/SearchMap.vue';
+import SearchMapSkeleton from '../components/SearchMapSkeleton.vue';
+// Lazy-load Leaflet + SearchMap as a separate chunk so the main page paints
+// instantly with the skeleton instead of waiting for ~150kB of map JS/CSS.
+const SearchMap = defineAsyncComponent({
+  loader: () => import('../components/SearchMap.vue'),
+  loadingComponent: SearchMapSkeleton,
+  delay: 0,
+  timeout: 30000,
+});
 import { useQuerySync } from '../composables/useQuerySync';
 import { getItemPhotoUrl } from '../utils/imageUtils';
+import { useSeo, buildCanonical } from '../composables/useSeo';
+import { markPrerendered, notifyPrerenderReady } from '../composables/usePrerender';
 // import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel.vue' // if you prefer infinite scroll
 
 const { t } = useI18n();
@@ -24,6 +34,60 @@ const pageTitle = computed(() => {
   if (route.path === '/giveaway') return t('nav.giveaway');
   return t('nav.forRent');
 });
+
+// Per-route SEO (title / description / canonical / OG tags).
+// Defaults are tuned for the Hebrew-Israel market since `/` is the default landing.
+const seoConfig = computed(() => {
+  const base = {
+    title: 'Sharo | השכרת מוצרים וציוד בין אנשים בישראל',
+    description:
+      'חפשו אלפי מוצרים זמינים להשכרה באזור שלכם בישראל - כלי עבודה, ציוד קמפינג, מצלמות, אלקטרוניקה, ספורט ועוד. השכירו מהשכנים בקלות.',
+    ogType: 'website',
+    canonical: buildCanonical(route.path === '/' ? '/' : route.path),
+  };
+  if (route.path === '/sell') {
+    return {
+      ...base,
+      title: 'מוצרים יד שנייה למכירה בישראל | Sharo',
+      description:
+        'מצאו מוצרים יד שנייה במצב מצוין למכירה בישראל - אלקטרוניקה, ריהוט, כלי עבודה ועוד. תחפשו לפי אזור ותחסכו כסף.',
+    };
+  }
+  if (route.path === '/giveaway') {
+    return {
+      ...base,
+      title: 'מוצרים בחינם להעברה בישראל | Sharo',
+      description:
+        'קבלו מוצרים בחינם משכנים באזור שלכם בישראל. רהיטים, ספרים, ציוד לתינוק ועוד - הכל בחינם, על בסיס כל הקודם זוכה.',
+    };
+  }
+  if (route.path === '/search' || route.path === '/') {
+    return base;
+  }
+  return base;
+});
+
+// Re-apply SEO when route or category query changes (e.g. category filter
+// from a sitemap-indexed URL like /search?category=Tools).
+const { updateSeo } = useSeo();
+watch(() => [route.path, route.query.category], () => {
+  const cfg = seoConfig.value;
+  const categoryQuery = route.query.category;
+  const finalTitle = categoryQuery
+    ? `${categoryQuery} להשכרה בישראל | Sharo`
+    : cfg.title;
+  const finalDescription = categoryQuery
+    ? `מצאו ${categoryQuery} להשכרה באזור שלכם בישראל. השוו מחירים, קראו ביקורות והשכירו מהשכנים בקלות.`
+    : cfg.description;
+  updateSeo({
+    title: finalTitle,
+    description: finalDescription,
+    ogTitle: finalTitle,
+    ogDescription: finalDescription,
+    ogType: cfg.ogType,
+    canonical: cfg.canonical,
+  });
+}, { immediate: true });
 
 // URL-synced search state
 const { state, setPatch, setPage, reset } = useQuerySync({
@@ -71,6 +135,28 @@ const radiusValue = computed({
 
 // Fetch meta and initialize location
 onMounted(async () => {
+  // Geolocation is blocked in headless Puppeteer (used by the prerenderer)
+  // and can take many seconds to fail. Don't make the prerender snapshot
+  // wait on it - fire prerender-ready as soon as we have either listings
+  // or a 4-second budget elapsed, whichever comes first.
+  markPrerendered(
+    new Promise((resolve) => {
+      const done = () => resolve();
+      const timer = setTimeout(done, 4000);
+      const stopWatch = watch(
+        () => data.value.items.length,
+        (n) => {
+          if (n > 0) {
+            clearTimeout(timer);
+            stopWatch();
+            done();
+          }
+        }
+      );
+    }),
+    { timeoutMs: 6000 }
+  );
+
   // If URL already has lat/lng (e.g. shared link), respect that
   if (state.value.lat && state.value.lng) {
     isInitialLoad = true;
@@ -79,7 +165,7 @@ onMounted(async () => {
     isInitialLoad = false;
     return;
   }
-  
+
   // Otherwise, try to get user's current location
   // If location isn't available, show all items
   isInitialLoad = true;
@@ -90,7 +176,10 @@ onMounted(async () => {
     console.log('Location not available, showing all items');
     isInitialLoad = false;
     await runSearch();
+    return;
   }
+  // Snapshot is already covered above; nothing else to do here.
+  notifyPrerenderReady();
 });
 
 // Derived label

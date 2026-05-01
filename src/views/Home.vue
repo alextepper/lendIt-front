@@ -5,10 +5,24 @@ import { useI18n } from 'vue-i18n'
 import { fetchListings } from '../services/listingsService'
 import { useUiStore } from '../stores/ui'
 import { getItemPhotoUrl } from '../utils/imageUtils'
+import { useSeo, buildCanonical } from '../composables/useSeo'
+import { markPrerendered } from '../composables/usePrerender'
 
 const router = useRouter()
 const { t } = useI18n()
 const ui = useUiStore()
+
+useSeo({
+  title: 'בית | Sharo - השכרת מוצרים וציוד בין אנשים בישראל',
+  description:
+    'הפלטפורמה המובילה להשכרת מוצרים וציוד בין שכנים בישראל. כלי עבודה, ציוד קמפינג, מצלמות, אלקטרוניקה - חסכו כסף והשכירו מהאנשים שסביבכם.',
+  ogTitle: 'Sharo - פשוט לשכור, קל להרוויח',
+  ogDescription:
+    'גלו אלפי מוצרים וציוד להשכרה בישראל. השכירו את הציוד שלכם והרוויחו כסף מהדברים שאתם לא משתמשים בהם.',
+  ogType: 'website',
+  ogImage: 'https://www.sharo-app.com/logo.png',
+  canonical: buildCanonical('/home'),
+})
 
 // Search state
 const searchQuery = ref('')
@@ -209,7 +223,7 @@ function formatPriceForBackend(amount) {
 }
 
 onMounted(() => {
-  loadFeaturedItems()
+  markPrerendered(loadFeaturedItems())
 })
 </script>
 

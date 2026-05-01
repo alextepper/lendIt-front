@@ -19,7 +19,8 @@ import { compressImageBeforeUpload } from '../utils/imageCompression';
 import http from '../lib/http';
 import { useAuthModal } from '../composables/useAuthModal';
 import { requireAuth, resumePendingAction } from '../auth/requireAuth';
-import { useSeo, generateIsraelTitle } from '../composables/useSeo';
+import { useSeo, generateIsraelTitle, buildCanonical } from '../composables/useSeo';
+import { notifyPrerenderReady } from '../composables/usePrerender';
 
 const route = useRoute();
 const router = useRouter();
@@ -338,8 +339,9 @@ function updateItemSeo() {
     'השכרת מוצרים'
   ].filter(Boolean).join(', ');
   
-  const currentUrl = window.location.href;
-  
+  const currentUrl = (typeof window !== 'undefined' && window.location?.href) || buildCanonical(`/item/${item.value.id}`);
+  const canonicalUrl = buildCanonical(`/item/${item.value.id}`);
+
   updateSeo({
     title: seoTitle,
     description: seoDescription,
@@ -348,6 +350,8 @@ function updateItemSeo() {
     ogDescription: seoDescription,
     ogImage: itemImage,
     ogUrl: currentUrl,
+    ogType: 'product',
+    canonical: canonicalUrl,
     productSchema: {
       title: itemTitle,
       description: itemDescription,
@@ -359,14 +363,18 @@ function updateItemSeo() {
       available: item.value.status === 'active',
       rating: item.value.rating,
       reviewCount: item.value.reviews_count || item.value.reviewsCount,
-      url: currentUrl
+      url: canonicalUrl
     }
   });
 }
 
 onMounted(async () => {
   await load();
-  
+
+  // Now that the item details (title, description, structured data) are in
+  // the DOM, tell the prerenderer the page is safe to snapshot.
+  notifyPrerenderReady();
+
   // Resume pending action after auth completes
   // Watch for auth state changes - use a flag to prevent multiple executions
   let hasResumed = false;

@@ -155,7 +155,8 @@
     "gettingLocation": "Getting location...",
     "clearLocation": "Clear Location",
     "searchRadius": "Search Radius",
-    "km": "km"
+    "km": "km",
+    "loadingMap": "Loading map..."
   },
   "searchMap": {
     "drag": "Drag",

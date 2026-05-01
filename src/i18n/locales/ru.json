@@ -148,7 +148,8 @@
     "gettingLocation": "Получение местоположения...",
     "clearLocation": "Очистить местоположение",
     "searchRadius": "Радиус поиска",
-    "km": "км"
+    "km": "км",
+    "loadingMap": "Загрузка карты..."
   },
   "searchMap": {
     "drag": "Перетащите",

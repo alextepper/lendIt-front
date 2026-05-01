@@ -1,0 +1,34 @@
+# Sharo - https://www.sharo-app.com
+# Allow general crawling, disallow user-private routes & checkout flows.
+
+User-agent: *
+Allow: /
+Allow: /search
+Allow: /sell
+Allow: /giveaway
+Allow: /item/
+Allow: /users/
+Allow: /terms
+Allow: /privacy
+
+Disallow: /checkout
+Disallow: /checkout-old
+Disallow: /checkout/
+Disallow: /bookings/
+Disallow: /my/
+Disallow: /messages
+Disallow: /settings
+Disallow: /notifications
+Disallow: /dashboard
+Disallow: /auth/
+Disallow: /login
+Disallow: /register
+
+# Don't index search-result pages with arbitrary URL params (only category-filtered ones).
+Disallow: /search?*q=*
+Disallow: /search?*page=*
+
+# Sensitive APIs
+Disallow: /api/
+
+Sitemap: https://www.sharo-app.com/sitemap.xml
