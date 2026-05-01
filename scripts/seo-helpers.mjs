@@ -46,39 +46,50 @@ async function fetchJson(url, { timeoutMs = 8000 } = {}) {
   }
 }
 
+// A single sitemap.xml is allowed up to 50,000 URLs by the sitemap protocol
+// (https://www.sitemaps.org/protocol.html). Past that we have to switch to a
+// sitemap index. Default the cap to that protocol limit so we ship as many
+// items as possible by default.
+const SITEMAP_PROTOCOL_MAX = 50000;
+
 /**
  * Fetch active items from the backend for inclusion in the sitemap +
- * prerender list. Returns at most `limit` items, paginated as needed.
- * Returns an empty array if the backend is unreachable so the build still
- * succeeds.
+ * prerender list. Paginates through every page (no artificial cap by
+ * default) and returns up to `limit` items. Tolerates API failure: if the
+ * backend is unreachable we return whatever we already paged in (or `[]`)
+ * so the build still succeeds.
+ *
+ * Override the default limit with the SITEMAP_ITEM_LIMIT env var.
  */
 export async function fetchAllItems({
   apiBase = DEFAULT_API,
-  limit = 5000,
-  pageSize = 100,
+  limit = Number(process.env.SITEMAP_ITEM_LIMIT) || SITEMAP_PROTOCOL_MAX,
+  pageSize = 200,
+  maxPages = 1000,
 } = {}) {
   const items = [];
   let page = 1;
   try {
-    while (items.length < limit) {
+    while (items.length < limit && page <= maxPages) {
       const url = joinUrl(apiBase, `/items?page=${page}&pageSize=${pageSize}`);
       const data = await fetchJson(url);
       const batch = (data && (data.data || data.items)) || [];
       if (!Array.isArray(batch) || batch.length === 0) break;
       items.push(...batch);
-      const total =
+      const totalPages =
         (data.pagination &&
           (data.pagination.total_pages || data.pagination.totalPages)) ||
         Math.ceil(((data.pagination && data.pagination.total) || 0) / pageSize);
-      if (total && page >= total) break;
+      if (totalPages && page >= totalPages) break;
       if (batch.length < pageSize) break;
       page += 1;
     }
   } catch (err) {
     console.warn(
-      `[seo] Failed to fetch items from ${apiBase}: ${err.message}. Continuing without dynamic item URLs.`
+      `[seo] Failed to fetch items from ${apiBase} (page ${page}): ${err.message}. ` +
+        `Returning ${items.length} items collected so far.`
     );
-    return [];
+    return items.slice(0, limit);
   }
   return items.slice(0, limit);
 }
