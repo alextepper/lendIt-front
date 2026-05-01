@@ -24,7 +24,12 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const distDir = path.resolve(__dirname, "..", "dist");
+// Allow the output directory to be overridden via env so the script can run
+// at runtime (e.g. inside the nginx container) and write directly into the
+// served-static directory instead of the build-time `dist/`.
+const distDir = process.env.SITEMAP_OUTPUT_DIR
+  ? path.resolve(process.env.SITEMAP_OUTPUT_DIR)
+  : path.resolve(__dirname, "..", "dist");
 const outputPath = path.join(distDir, "sitemap.xml");
 
 const URLS_PER_SITEMAP = 45000; // some headroom under the 50k protocol max

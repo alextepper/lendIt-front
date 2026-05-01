@@ -8,7 +8,14 @@ RUN npm run build
 
 # --- run ---
 FROM nginx:1.27-alpine
+
+# Install Node.js so the sitemap can be regenerated at container startup
+# (with the real BACKEND_URL injected by the platform), then served as a
+# static file by nginx alongside the SPA.
+RUN apk add --no-cache nodejs
+
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/scripts /app/scripts
 
 # Create config.js endpoint that serves runtime API URL
 RUN echo '#!/bin/sh' > /generate-config.sh && \
@@ -21,6 +28,24 @@ RUN echo '#!/bin/sh' > /generate-config.sh && \
     echo 'echo "window.__WS_URL__ = window.location.origin;" >> /usr/share/nginx/html/config.js' >> /generate-config.sh && \
     chmod +x /generate-config.sh
 
+# Generate the sitemap AND per-item static HTML pages at container startup
+# with the real backend URL. Runs in the background so a slow/unreachable API
+# never blocks nginx from starting. Per-item pages are what makes Google show
+# the right title (e.g. "Action camera") in search results for /item/:id —
+# nginx's `try_files $uri $uri/ /index.html` serves the matching file when
+# present, falling back to the SPA shell otherwise.
+RUN echo '#!/bin/sh' > /generate-seo.sh && \
+    echo 'API_URL="${VITE_API_BASE_URL:-${BACKEND_URL}}"' >> /generate-seo.sh && \
+    echo 'export VITE_API_BASE_URL="$API_URL"' >> /generate-seo.sh && \
+    echo 'export SITEMAP_API_BASE_URL="$API_URL"' >> /generate-seo.sh && \
+    echo 'export SITE_URL="${SITE_URL:-https://www.sharo-app.com}"' >> /generate-seo.sh && \
+    echo 'export SITEMAP_OUTPUT_DIR="/usr/share/nginx/html"' >> /generate-seo.sh && \
+    echo 'echo "🗺️  Generating sitemap (API: $API_URL, SITE: $SITE_URL)..."' >> /generate-seo.sh && \
+    echo 'node /app/scripts/generate-sitemap.mjs || echo "⚠️  Sitemap generation reported issues."' >> /generate-seo.sh && \
+    echo 'echo "📄 Generating per-item static HTML pages..."' >> /generate-seo.sh && \
+    echo 'node /app/scripts/generate-static-pages.mjs || echo "⚠️  Per-item page generation reported issues."' >> /generate-seo.sh && \
+    chmod +x /generate-seo.sh
+
 # Create startup script that generates nginx config with Railway PORT support
 RUN echo '#!/bin/sh' > /start.sh && \
     echo 'set -e' >> /start.sh && \
@@ -29,6 +54,9 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo '' >> /start.sh && \
     echo '# Generate runtime config.js with API URL' >> /start.sh && \
     echo '/generate-config.sh' >> /start.sh && \
+    echo '' >> /start.sh && \
+    echo '# Refresh sitemap.xml + per-item HTML in the background with the real backend URL' >> /start.sh && \
+    echo '/generate-seo.sh &' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🔧 Frontend startup configuration:"' >> /start.sh && \
     echo 'echo "   PORT: $PORT"' >> /start.sh && \
