@@ -70,6 +70,10 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo 'echo "    server_name _;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "    root /usr/share/nginx/html;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "    index index.html;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "    # Never emit absolute redirects (would leak Railway internal hostname/port)" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "    absolute_redirect off;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "    server_name_in_redirect off;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "    port_in_redirect off;" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "    location /health { return 200 \"OK\"; add_header Content-Type text/plain; }" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
@@ -108,7 +112,8 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo 'echo "    }" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "    # Static files - MUST come last (catch-all)" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
-    echo 'echo "    location / { try_files \$uri \$uri/ /index.html; }" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "    # \$uri.html serves per-item SEO pages (item/{id}.html) without a redirect." >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
+    echo 'echo "    location / { try_files \$uri \$uri.html \$uri/ /index.html; }" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo 'echo "}" >> /etc/nginx/conf.d/default.conf' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "✅ Nginx configuration generated" >> /start.sh && \

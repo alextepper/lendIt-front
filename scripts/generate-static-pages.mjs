@@ -1,14 +1,20 @@
 #!/usr/bin/env node
-// Generate per-item static HTML files (e.g. dist/item/123/index.html) by
+// Generate per-item static HTML files (e.g. dist/item/123.html) by
 // rewriting the SEO-critical tags of the built index.html with each item's
 // real title, description, image, canonical URL, and JSON-LD Product schema.
 //
 // Why: the SPA only sets these tags on the client via `useSeo`, which means
 // crawlers and OpenGraph scrapers (Google's classic indexer, Facebook,
 // WhatsApp, Slack, X, LinkedIn) often see the generic Sharo title instead
-// of the real item title. Writing per-item index.html files lets nginx's
-// `try_files $uri $uri/ /index.html` fallback serve the correct meta tags
-// to crawlers without any runtime server logic.
+// of the real item title. Writing per-item .html files lets nginx's
+// `try_files $uri $uri.html $uri/ /index.html` fallback serve the correct
+// meta tags to crawlers without any runtime server logic.
+//
+// We deliberately write FLAT files (`item/{id}.html`) rather than
+// `item/{id}/index.html` because the directory variant triggers nginx's
+// "missing trailing slash → 301" behavior, which on Railway leaks the
+// internal hostname (e.g. http://lendit-front-production.up.railway.app:8080/…).
+// A flat file matched via `$uri.html` serves with no redirect at all.
 //
 // Output dir is configurable via SITEMAP_OUTPUT_DIR (same env as the sitemap
 // script) so it can run at build time (writes into ./dist) or at container
@@ -303,6 +309,26 @@ async function main() {
     return;
   }
 
+  const itemsDir = path.join(distDir, "item");
+  await fs.mkdir(itemsDir, { recursive: true });
+
+  // Clean up legacy directory-style pages from earlier deploys
+  // (item/{id}/index.html). These cause nginx to issue trailing-slash
+  // 301 redirects, which on Railway leak the internal hostname.
+  try {
+    const entries = await fs.readdir(itemsDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        await fs.rm(path.join(itemsDir, entry.name), {
+          recursive: true,
+          force: true,
+        });
+      }
+    }
+  } catch {
+    // First run, nothing to clean up
+  }
+
   let written = 0;
   for (const item of items) {
     if (!item || !item.id) continue;
@@ -317,14 +343,16 @@ async function main() {
     }
     const seo = buildSeoForItem(item, siteUrl, apiBase);
     const html = rewriteHead(template, seo, item);
-    const dir = path.join(distDir, "item", String(item.id));
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(path.join(dir, "index.html"), html, "utf8");
+    await fs.writeFile(
+      path.join(itemsDir, `${String(item.id)}.html`),
+      html,
+      "utf8"
+    );
     written += 1;
   }
 
   console.log(
-    `[seo] Wrote ${written} per-item static HTML pages under ${path.join(distDir, "item")}/`
+    `[seo] Wrote ${written} per-item static HTML pages as ${itemsDir}/{id}.html`
   );
 }
 
