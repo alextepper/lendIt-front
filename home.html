@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Warm up connections to map / geocoding services so the lazy map chunk
+         renders faster once it's downloaded. -->
+    <link rel="preconnect" href="https://a.tile.openstreetmap.org" crossorigin />
+    <link rel="preconnect" href="https://b.tile.openstreetmap.org" crossorigin />
+    <link rel="preconnect" href="https://c.tile.openstreetmap.org" crossorigin />
+    <link rel="preconnect" href="https://nominatim.openstreetmap.org" crossorigin />
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
+
+    <!-- SEO Meta Tags -->
+    <title>Sharo | השכרת מוצרים וציוד בין אנשים - להרוויח כסף מהציוד שלך</title>
+    <meta name="description" content="Sharo היא פלטפורמת שיתוף בישראל להשכרת ציוד ומוצרים בין אנשים: שכירות אופניים בישראל, השכרת מצלמות, השכרת ציוד קמפינג, כלי עבודה ואלקטרוניקה." />
+    <meta name="keywords" content="שכירות אופניים בישראל, השכרת אופניים, שכירות ציוד, השכרת ציוד, השכרת מוצרים, השכרת מצלמות, שבירות מצלמות, השכרת ציוד קמפינג, השכרת כלי עבודה, כלכלה שיתופית" />
+    <meta name="author" content="Sharo" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://www.sharo-app.com/" />
+    
+    <!-- Multilingual SEO (Hreflang) -->
+    <link rel="alternate" hreflang="he-il" href="https://www.sharo-app.com/he" />
+    <link rel="alternate" hreflang="x-default" href="https://www.sharo-app.com/" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.sharo-app.com/" />
+    <meta property="og:title" content="Sharo - פשוט לשכור, קל להרוויח" />
+    <meta property="og:description" content="הפלטפורמה הגדולה בישראל להשכרת ציוד ומוצרים בין אנשים: שכירות אופניים בישראל, השכרת מצלמות, ציוד קמפינג ועוד." />
+    <meta property="og:image" content="https://www.sharo-app.com/logo.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="he_IL" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="ar_AR" />
+    <meta property="og:locale:alternate" content="ru_RU" />
+    <meta property="og:site_name" content="Sharo" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://www.sharo-app.com/" />
+    <meta name="twitter:title" content="Sharo - פשוט לשכור, קל להרוויח" />
+    <meta name="twitter:description" content="הפלטפורמה הגדולה בישראל להשכרת ציוד ומוצרים בין אנשים: שכירות אופניים בישראל, השכרת מצלמות, ציוד קמפינג ועוד." />
+    <meta name="twitter:image" content="https://www.sharo-app.com/logo.png" />
+    
+    <!-- JSON-LD Structured Data for Marketplace -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Sharo",
+      "alternateName": "שארו - פלטפורמת שיתוף והשכרה",
+      "url": "https://www.sharo-app.com",
+      "description": "פלטפורמת השיתוף המובילה בישראל להשכרת ציוד, כלי עבודה, אלקטרוניקה ומוצרים בין אנשים",
+      "inLanguage": "he-IL",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://www.sharo-app.com/search?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    
+    <!-- Additional Marketplace Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Sharo",
+      "url": "https://www.sharo-app.com",
+      "logo": "https://www.sharo-app.com/logo.png",
+      "description": "פלטפורמת השיתוף המובילה בישראל להשכרת ציוד ומוצרים בין אנשים",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "IL"
+      },
+      "sameAs": []
+    }
+    </script>
+    
+    <script src="/config.js"></script>
+    <script type="module" crossorigin src="/assets/index-D9EEx4wX.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-CfgeeTj0.js">
+    <link rel="modulepreload" crossorigin href="/assets/vue-vendor-CKdXBdB6.js">
+    <link rel="modulepreload" crossorigin href="/assets/bootstrap-uQPqwdEw.js">
+    <link rel="modulepreload" crossorigin href="/assets/socketio-CzSsg6wU.js">
+    <link rel="stylesheet" crossorigin href="/assets/bootstrap-C11chwFa.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-C42PkjH8.css">
+    <link rel="stylesheet" crossorigin href="/assets/bootstrap-icons-BnwqsTiD.css">
+  </head>
+  <body>
+    <div id="app">
+      <noscript>
+        <header>
+          <h1>Sharo - השכרת ציוד ומוצרים בישראל</h1>
+          <p>שכירות אופניים בישראל, השכרת מצלמות, השכרת ציוד קמפינג, כלי עבודה ואלקטרוניקה בין אנשים.</p>
+        </header>
+        <main>
+          <section>
+            <h2>קטגוריות פופולריות להשכרה</h2>
+            <ul>
+              <li><a href="/search?category=Tools">כלי עבודה להשכרה</a></li>
+              <li><a href="/search?category=Electronics">אלקטרוניקה להשכרה</a></li>
+              <li><a href="/search?category=Outdoors">ציוד קמפינג ופנאי להשכרה</a></li>
+              <li><a href="/search?category=Games">משחקים וקונסולות להשכרה</a></li>
+            </ul>
+          </section>
+          <section>
+            <h2>סוגי מודעות</h2>
+            <ul>
+              <li><a href="/search">פריטים להשכרה בישראל</a></li>
+              <li><a href="/sell">פריטים יד שנייה למכירה</a></li>
+              <li><a href="/giveaway">פריטים בחינם להעברה</a></li>
+            </ul>
+          </section>
+          <section>
+            <h2>על Sharo</h2>
+            <p>
+              Sharo היא פלטפורמת שיתוף מובילה בישראל שמחברת בין אנשים שרוצים להשכיר את הציוד שלהם
+              לבין אנשים שצריכים אותו לשימוש קצר. חסכו כסף, הרוויחו מהדברים שלא בשימוש ושמרו על הסביבה.
+            </p>
+            <p><a href="/terms">תנאי שימוש</a> | <a href="/privacy">מדיניות פרטיות</a></p>
+          </section>
+          <p>על מנת להשתמש בפלטפורמה במלואה, אנא הפעילו JavaScript בדפדפן שלכם.</p>
+        </main>
+      </noscript>
+    </div>
+  </body>
+</html>
