@@ -40,10 +40,48 @@ async function fetchJson(url, { timeoutMs = 8000 } = {}) {
     if (!response.ok) {
       throw new Error(`${response.status} ${response.statusText}`);
     }
-    return await response.json();
+    const contentType = response.headers.get("content-type") || "";
+    const body = await response.text();
+    if (
+      !contentType.includes("application/json") &&
+      !body.trim().startsWith("{") &&
+      !body.trim().startsWith("[")
+    ) {
+      // Looks like an HTML page (e.g. the SPA shell, an error page).
+      // Throw a clearer error so the caller can try a different path.
+      const preview = body.slice(0, 80).replace(/\s+/g, " ");
+      throw new Error(
+        `Non-JSON response (content-type=${contentType || "?"}): "${preview}…"`
+      );
+    }
+    return JSON.parse(body);
   } finally {
     clearTimeout(timer);
   }
+}
+
+// Some deployments expose the API directly at the root (`/items`), others
+// proxy it through `/api/items` (e.g. when the frontend and backend share
+// the same hostname). We auto-detect by trying both paths the first time
+// and caching the prefix that works.
+let cachedApiPrefix = null;
+
+async function fetchJsonAuto(apiBase, pathSuffix) {
+  const candidates = cachedApiPrefix
+    ? [cachedApiPrefix]
+    : ["", "/api"];
+  let lastErr = null;
+  for (const prefix of candidates) {
+    const url = joinUrl(apiBase, `${prefix}${pathSuffix}`);
+    try {
+      const data = await fetchJson(url);
+      cachedApiPrefix = prefix;
+      return data;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("All API path candidates failed");
 }
 
 // A single sitemap.xml is allowed up to 50,000 URLs by the sitemap protocol
@@ -71,8 +109,10 @@ export async function fetchAllItems({
   let page = 1;
   try {
     while (items.length < limit && page <= maxPages) {
-      const url = joinUrl(apiBase, `/items?page=${page}&pageSize=${pageSize}`);
-      const data = await fetchJson(url);
+      const data = await fetchJsonAuto(
+        apiBase,
+        `/items?page=${page}&pageSize=${pageSize}`
+      );
       const batch = (data && (data.data || data.items)) || [];
       if (!Array.isArray(batch) || batch.length === 0) break;
       items.push(...batch);
@@ -86,8 +126,9 @@ export async function fetchAllItems({
     }
   } catch (err) {
     console.warn(
-      `[seo] Failed to fetch items from ${apiBase} (page ${page}): ${err.message}. ` +
-        `Returning ${items.length} items collected so far.`
+      `[seo] Failed to fetch items from ${apiBase} (page ${page}, tried prefixes: ${
+        cachedApiPrefix !== null ? `"${cachedApiPrefix}"` : '"" and "/api"'
+      }): ${err.message}. Returning ${items.length} items collected so far.`
     );
     return items.slice(0, limit);
   }
@@ -96,8 +137,7 @@ export async function fetchAllItems({
 
 export async function fetchCategories({ apiBase = DEFAULT_API } = {}) {
   try {
-    const url = joinUrl(apiBase, "/meta/categories");
-    const data = await fetchJson(url);
+    const data = await fetchJsonAuto(apiBase, "/meta/categories");
     if (Array.isArray(data) && data.length > 0) return data;
     if (Array.isArray(data?.data) && data.data.length > 0) return data.data;
   } catch (err) {
