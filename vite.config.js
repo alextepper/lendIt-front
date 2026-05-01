@@ -2,9 +2,15 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createRequire } from "module";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// vite-plugin-prerender@1.0.8 ships a broken ESM build (its `.mjs` uses
+// `require()` at module load), so we always load the CJS entry via Node's
+// createRequire helper instead of `await import("vite-plugin-prerender")`.
+const requireCjs = createRequire(import.meta.url);
 
 const isPrerender = process.env.PRERENDER === "true";
 
@@ -63,7 +69,8 @@ async function buildPrerenderRoutes() {
 export default defineConfig(async () => {
   let prerenderPlugin = null;
   if (isPrerender) {
-    const vitePrerender = (await import("vite-plugin-prerender")).default;
+    const vitePrerenderModule = requireCjs("vite-plugin-prerender");
+    const vitePrerender = vitePrerenderModule.default || vitePrerenderModule;
     const routes = await buildPrerenderRoutes();
     prerenderPlugin = vitePrerender({
       staticDir: path.resolve(__dirname, "dist"),
