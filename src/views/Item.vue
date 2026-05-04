@@ -344,11 +344,27 @@ function updateItemSeo() {
   const currentUrl = (typeof window !== 'undefined' && window.location?.href) || buildCanonical(`/item/${item.value.id}`);
   const canonicalUrl = buildCanonical(`/item/${item.value.id}`);
 
+  const listingKind =
+    itemType.value === 'forRent' ? 'rent' : itemType.value === 'forSale' ? 'sell' : 'giveaway';
+  let priceForOg = '';
+  if (itemType.value === 'forRent') {
+    const cents = item.value.pricePerDay ?? item.value.price_per_day;
+    if (cents != null && cents > 0) priceForOg = formatPrice(cents);
+  } else if (itemType.value === 'forSale') {
+    const cents = item.value.sellPrice ?? item.value.sell_price;
+    if (cents != null && cents > 0) priceForOg = formatPrice(cents);
+  }
+
+  const ogTitleParts = [itemTitle, listingKind, itemLocation || null, priceForOg || null].filter(
+    Boolean
+  );
+  const ogTitle = ogTitleParts.join(' | ');
+
   updateSeo({
     title: seoTitle,
     description: seoDescription,
     keywords: keywords,
-    ogTitle: `${itemTitle} - להשכרה ב-Sharo`,
+    ogTitle,
     ogDescription: seoDescription,
     ogImage: itemImage,
     ogUrl: currentUrl,

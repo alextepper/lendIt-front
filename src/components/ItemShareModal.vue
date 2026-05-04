@@ -144,31 +144,18 @@ function shareTextWithUrl() {
   return title ? `${title}\n${props.itemUrl}` : props.itemUrl;
 }
 
-/**
- * Generate the card PNG, then (1) Web Share with file + link + text,
- * (2) else clipboard image + plain text, (3) else copy link + download image.
- */
+/** Opens the system share sheet with the listing URL (or copies the link if sharing is unavailable). */
 async function shareImageAndLink() {
   generating.value = true;
   try {
-    const blob = await captureWithFallback();
-    if (!blob) {
-      ui.showToast(t('item.shareImageFailed'), 'danger');
-      return;
-    }
-    if (hidePhotoForExport.value) {
-      ui.showToast(t('item.shareImageFailed'), 'warning');
-    }
-
-    const file = new File([blob], `sharo-item-${props.itemId}.png`, { type: 'image/png' });
     const title = props.title || t('item.share');
     const text = shareTextWithUrl();
 
     if (typeof navigator.share === 'function') {
       const attempts = [
-        { files: [file], title, text, url: props.itemUrl },
-        { files: [file], title, text },
-        { files: [file], text },
+        { title, text, url: props.itemUrl },
+        { title, url: props.itemUrl },
+        { url: props.itemUrl },
       ];
       for (const payload of attempts) {
         try {
@@ -183,34 +170,9 @@ async function shareImageAndLink() {
       }
     }
 
-    if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
-      try {
-        const textBlob = new Blob([text], { type: 'text/plain' });
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'image/png': Promise.resolve(blob),
-            'text/plain': Promise.resolve(textBlob),
-          }),
-        ]);
-        ui.showToast(t('item.shareImageAndLinkCopied'), 'success');
-        return;
-      } catch {
-        /* continue */
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(text);
-      triggerDownload(blob);
-      ui.showToast(t('item.shareLinkCopiedImageDownloaded'), 'info');
-    } catch {
-      triggerDownload(blob);
-      ui.showToast(t('item.shareClipboardFailed'), 'danger');
-    }
+    await copyLink();
   } finally {
     generating.value = false;
-    hidePhotoForExport.value = false;
-    await nextTick();
   }
 }
 </script>
