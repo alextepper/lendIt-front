@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, reactive, watch } from 'vue';
+import { onMounted, ref, computed, reactive, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
@@ -9,6 +9,7 @@ import { updateListing, deleteListing, toggleListingActive, fetchPopularTags } f
 import { fetchBookingCalendarData } from '../services/bookingCalendarService';
 import BookingCard from '../components/BookingCard.vue';
 import BookingFlow from '../components/BookingFlow.vue';
+import ItemShareModal from '../components/ItemShareModal.vue';
 import OwnerPanel from '../components/OwnerPanel.vue';
 import ReviewsSection from '../components/ReviewsSection.vue';
 import AvailabilityCalendar from '../components/AvailabilityCalendar.vue';
@@ -1118,6 +1119,36 @@ const displayPhotos = computed(() => {
   return editMode.value ? editPhotos.value : (item.value?.photos || []);
 });
 
+const itemShareModalRef = ref(null);
+
+const shareCanonicalUrl = computed(() =>
+  item.value ? buildCanonical(`/item/${item.value.id}`) : ''
+);
+
+const shareImageUrl = computed(() => {
+  const photos = item.value?.photos || [];
+  if (!photos.length) return null;
+  return getCarouselPhotoUrl(photos[0]);
+});
+
+const sharePriceLine = computed(() => {
+  if (!item.value) return '';
+  const price = getDisplayPrice();
+  if (isForRent.value) return `${price} / ${t('item.perDay')}`;
+  return price;
+});
+
+const shareLocationText = computed(() => {
+  if (!item.value) return '';
+  return item.value.location || item.value.address || '';
+});
+
+function openShareModal() {
+  nextTick(() => {
+    itemShareModalRef.value?.open();
+  });
+}
+
 // Helper function to get photo URL for carousel
 function getCarouselPhotoUrl(photo) {
   if (!photo) return null;
@@ -1255,7 +1286,7 @@ watch(fullscreenCarousel, (isOpen) => {
             <button class="mobile-nav-btn">
               <i class="bi bi-heart"></i>
             </button>
-            <button class="mobile-nav-btn" @click="navigator.clipboard.writeText(location.href)">
+            <button type="button" class="mobile-nav-btn" @click="openShareModal" :aria-label="$t('item.share')">
               <i class="bi bi-share"></i>
             </button>
           </div>
@@ -2049,18 +2080,18 @@ watch(fullscreenCarousel, (isOpen) => {
               </div>
             </div>
             <div class="sidebar-actions">
+              <button type="button" class="btn btn-outline-secondary w-100" @click="openShareModal">
+                <i class="bi bi-share me-2"></i>
+                {{ $t('item.share') }}
+              </button>
               <template v-if="!isOwner">
-                <button class="btn btn-primary w-100" @click="handlePrimaryCta">
+                <button type="button" class="btn btn-primary w-100" @click="handlePrimaryCta">
                   <i class="bi me-2" :class="isForRent ? 'bi-calendar-check' : 'bi-chat-dots'"></i>
                   {{ getPrimaryCtaLabel() }}
                 </button>
-                <button class="btn btn-outline-primary w-100" @click="showOwnerModal">
+                <button type="button" class="btn btn-outline-primary w-100" @click="showOwnerModal">
                   <i class="bi bi-chat-dots me-2"></i>
                   {{ $t('item.message') }}
-                </button>
-                <button class="btn btn-outline-secondary w-100" @click="navigator.clipboard.writeText(location.href)">
-                  <i class="bi bi-share me-2"></i>
-                  {{ $t('item.share') }}
                 </button>
               </template>
               <div v-else class="text-muted small">
@@ -2071,6 +2102,17 @@ watch(fullscreenCarousel, (isOpen) => {
         </div>
       </div>
     </div>
+
+    <ItemShareModal
+      v-if="item"
+      ref="itemShareModalRef"
+      :image-url="shareImageUrl"
+      :title="item.title"
+      :price-line="sharePriceLine"
+      :location-text="shareLocationText"
+      :item-url="shareCanonicalUrl"
+      :item-id="item.id"
+    />
 
     <!-- Booking Modal -->
     <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
