@@ -1,7 +1,7 @@
 /**
  * Shorten a free-text address (e.g. Nominatim display_name) for public UI:
- * keep region/state, city, and street-level parts; drop country, postcodes, etc.
- * Output order: state, city, street (street omitted if empty).
+ * drop country, postcodes, and district-level admin (e.g. "Tel Aviv District", מחוז).
+ * Output: street (up to two comma segments), then city — no district line.
  */
 
 const COUNTRY_NAMES = new Set(
@@ -89,6 +89,17 @@ function looksLikePostcodeOnly(token) {
   return false;
 }
 
+/** OSM-style admin line (e.g. "Tel Aviv District", "Center District", Hebrew מחוז …). */
+function isDistrictLevelToken(token) {
+  const t = String(token).trim();
+  if (!t) return false;
+  const n = normalizeToken(t);
+  if (/\bdistrict\b/.test(n) || /\bsubdistrict\b/.test(n)) return true;
+  if (/מחוז/.test(t)) return true;
+  if (/محافظة|منطقة\s+إدارية/.test(t)) return true;
+  return false;
+}
+
 /**
  * @param {string|null|undefined} raw
  * @returns {string}
@@ -115,16 +126,20 @@ export function formatPublicLocation(raw) {
 
   if (parts.length === 0) return str;
 
+  while (parts.length > 0 && isDistrictLevelToken(parts[parts.length - 1])) {
+    parts.pop();
+  }
+  if (parts.length === 0) return str;
+
   if (parts.length <= 2) {
     return parts.join(', ');
   }
 
-  const state = parts[parts.length - 1];
-  const city = parts[parts.length - 2];
-  let streetParts = parts.slice(0, parts.length - 2);
+  const city = parts[parts.length - 1];
+  let streetParts = parts.slice(0, parts.length - 1);
   if (streetParts.length > 2) {
     streetParts = streetParts.slice(0, 2);
   }
   const street = streetParts.join(', ').trim();
-  return [state, city, street].filter(Boolean).join(', ');
+  return [street, city].filter(Boolean).join(', ');
 }

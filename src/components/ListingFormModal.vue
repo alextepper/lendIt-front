@@ -336,14 +336,20 @@ async function getCurrentLocation() {
   }
 }
 
+function isLikelyImageFile(file) {
+  if (!file) return false;
+  if (file.type && file.type.startsWith('image/')) return true;
+  const n = (file.name || '').toLowerCase();
+  return /\.(jpe?g|png|gif|webp)$/i.test(n);
+}
+
 // Photo upload functions
 async function handlePhotoUpload(event) {
   const files = Array.from(event.target.files || []);
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
   const maxSize = 10 * 1024 * 1024; // 10MB
 
   for (const file of files) {
-    if (!validTypes.includes(file.type)) {
+    if (!isLikelyImageFile(file)) {
       ui.showToast(t('listing.invalidFileType'), 'danger');
       continue;
     }
@@ -844,23 +850,25 @@ async function submit() {
               {{ $t('listing.photos') }}
             </label>
             <div class="photo-upload-section">
-              <input 
+              <input
+                id="listing-form-photo-upload"
                 ref="photoInput"
-                type="file" 
+                type="file"
                 @change="handlePhotoUpload"
                 multiple
-                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-                class="d-none"
+                accept="image/*,image/jpeg,image/png,image/webp,image/gif"
+                class="visually-hidden"
+                tabindex="-1"
               />
-              <button 
-                type="button" 
-                class="btn btn-outline-primary w-100"
-                @click="photoInput?.click()"
-                :disabled="uploadingPhotos"
+              <label
+                class="btn btn-outline-primary w-100 mb-0"
+                :class="{ disabled: uploadingPhotos }"
+                :for="uploadingPhotos ? undefined : 'listing-form-photo-upload'"
+                :aria-disabled="uploadingPhotos ? 'true' : 'false'"
               >
                 <i class="bi bi-camera me-2"></i>
                 {{ uploadingPhotos ? $t('listing.uploading') : $t('listing.addPhotos') }}
-              </button>
+              </label>
               <small class="text-muted d-block mt-1">
                 <i class="bi bi-info-circle me-1"></i>
                 {{ $t('listing.photoUploadInfo') }}

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { toBlob } from 'html-to-image';
 import { Modal } from 'bootstrap';
 import { useUiStore } from '../stores/ui';
+import { fetchImageAsObjectUrl } from '../utils/imageUtils';
 
 const props = defineProps({
   imageUrl: { type: String, default: null },
@@ -25,16 +26,36 @@ const hidePhotoForExport = ref(false);
 const imgLoadError = ref(false);
 const generating = ref(false);
 
+/** Same-origin blob URL when fetch succeeds — avoids CORS tainting html-to-image. */
+const shareResolvedObjectUrl = ref(null);
+let revokeShareObjectUrl = () => {};
+
+const displayShareSrc = computed(() => shareResolvedObjectUrl.value || props.imageUrl || null);
+
+/** Omit crossorigin for blob: URLs (same-origin); anonymous helps CDN when still using raw URL. */
+const shareImgAttrs = computed(() => {
+  if (shareResolvedObjectUrl.value) return {};
+  return { crossorigin: 'anonymous' };
+});
+
 const showPhoto = computed(
-  () => !!(props.imageUrl && !imgLoadError.value && !hidePhotoForExport.value)
+  () => !!(displayShareSrc.value && !imgLoadError.value && !hidePhotoForExport.value)
 );
 
 watch(
   () => props.imageUrl,
-  () => {
+  async (url) => {
+    revokeShareObjectUrl();
+    revokeShareObjectUrl = () => {};
+    shareResolvedObjectUrl.value = null;
     imgLoadError.value = false;
     hidePhotoForExport.value = false;
-  }
+    if (!url) return;
+    const { objectUrl, revoke } = await fetchImageAsObjectUrl(url);
+    revokeShareObjectUrl = revoke;
+    shareResolvedObjectUrl.value = objectUrl;
+  },
+  { immediate: true }
 );
 
 function getModal() {
@@ -60,6 +81,7 @@ function close() {
 defineExpose({ open, close });
 
 onBeforeUnmount(() => {
+  revokeShareObjectUrl();
   Modal.getInstance(modalEl.value)?.dispose();
   bsModal = null;
 });
@@ -68,9 +90,23 @@ function onImgError() {
   imgLoadError.value = true;
 }
 
+async function waitForShareCardImage() {
+  await nextTick();
+  const img = cardRef.value?.querySelector('.share-card__img');
+  if (!img) return;
+  if (img.complete && img.naturalWidth > 0) return;
+  await new Promise((resolve) => {
+    const done = () => resolve();
+    img.addEventListener('load', done, { once: true });
+    img.addEventListener('error', done, { once: true });
+    setTimeout(done, 5000);
+  });
+}
+
 async function captureBlob() {
   const el = cardRef.value;
   if (!el) return null;
+  await waitForShareCardImage();
   return toBlob(el, {
     cacheBust: true,
     pixelRatio: 2,
@@ -238,11 +274,11 @@ async function shareImageAndLink() {
               <div class="share-card__media">
                 <img
                   v-if="showPhoto"
-                  :src="imageUrl"
+                  :src="displayShareSrc"
                   alt=""
                   class="share-card__img"
-                  crossorigin="anonymous"
                   draggable="false"
+                  v-bind="shareImgAttrs"
                   @error="onImgError"
                 />
                 <div v-else class="share-card__placeholder" aria-hidden="true">

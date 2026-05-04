@@ -14,6 +14,7 @@ describe('formatPublicLocation', () => {
     expect(out).toContain('Tel Aviv-Yafo');
     expect(out).not.toMatch(/6688103/);
     expect(out.toLowerCase()).not.toContain('israel');
+    expect(out).not.toMatch(/district/i);
   });
 
   it('keeps short addresses as-is', () => {
@@ -21,10 +22,12 @@ describe('formatPublicLocation', () => {
     expect(formatPublicLocation('Haifa, Israel')).toBe('Haifa');
   });
 
-  it('reorders to state, city, street for comma-heavy OSM strings', () => {
+  it('drops district and uses street then city', () => {
     const s = 'Dizengoff Street 5, Old North, Tel Aviv-Yafo, Tel Aviv District, Israel';
     const out = formatPublicLocation(s);
-    expect(out).toMatch(/^Tel Aviv District, Tel Aviv-Yafo,/);
+    expect(out).not.toMatch(/district/i);
+    expect(out).toContain('Tel Aviv-Yafo');
     expect(out).toContain('Dizengoff');
+    expect(out.startsWith('Dizengoff')).toBe(true);
   });
 });

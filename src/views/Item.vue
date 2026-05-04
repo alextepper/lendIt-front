@@ -521,10 +521,16 @@ function cancelEdit() {
   ui.showToast(t('item.changesDiscarded'), 'info');
 }
 
+function isLikelyImageFile(file) {
+  if (!file) return false;
+  if (file.type && file.type.startsWith('image/')) return true;
+  const n = (file.name || '').toLowerCase();
+  return /\.(jpe?g|png|gif|webp)$/i.test(n);
+}
+
 // Photo management functions
 async function handlePhotoUpload(event) {
   const files = Array.from(event.target.files || []);
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
   const maxSize = 10 * 1024 * 1024; // 10MB
   const maxPhotos = 10;
 
@@ -534,7 +540,7 @@ async function handlePhotoUpload(event) {
       break;
     }
     
-    if (!validTypes.includes(file.type)) {
+    if (!isLikelyImageFile(file)) {
       ui.showToast(t('item.invalidFileType'), 'danger');
       continue;
     }
@@ -1913,23 +1919,25 @@ watch(fullscreenCarousel, (isOpen) => {
           <div v-if="editMode && isOwner" class="item-card">
             <h2 class="section-title">{{ $t('item.managePhotos') }}</h2>
             <input
+              id="item-edit-photo-upload"
               ref="photoInput"
               type="file"
               @change="handlePhotoUpload"
               multiple
-              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-              class="d-none"
+              accept="image/*,image/jpeg,image/png,image/webp,image/gif"
+              class="visually-hidden"
+              tabindex="-1"
             />
             <div class="mb-3">
-              <button
-                type="button"
-                class="btn btn-outline-primary w-100"
-                @click="photoInput?.click()"
-                :disabled="uploadingPhotos || editPhotos.length >= 10"
+              <label
+                class="btn btn-outline-primary w-100 mb-0"
+                :class="{ disabled: uploadingPhotos || editPhotos.length >= 10 }"
+                :for="uploadingPhotos || editPhotos.length >= 10 ? undefined : 'item-edit-photo-upload'"
+                :aria-disabled="uploadingPhotos || editPhotos.length >= 10 ? 'true' : 'false'"
               >
                 <i class="bi bi-camera me-2"></i>
                 {{ uploadingPhotos ? $t('item.uploading') : $t('item.addPhotos') }}
-              </button>
+              </label>
               <small class="text-muted d-block mt-2">
                 <i class="bi bi-info-circle me-1"></i>
                 {{ $t('item.photoUploadInfo') }}
