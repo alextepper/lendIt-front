@@ -19,6 +19,7 @@ const SearchMap = defineAsyncComponent({
 });
 import { useQuerySync } from '../composables/useQuerySync';
 import { getItemPhotoUrl } from '../utils/imageUtils';
+import { formatPublicLocation } from '../utils/formatPublicLocation';
 import { useSeo, buildCanonical } from '../composables/useSeo';
 import { markPrerendered, notifyPrerenderReady } from '../composables/usePrerender';
 // import InfiniteScrollSentinel from '../components/InfiniteScrollSentinel.vue' // if you prefer infinite scroll
@@ -986,7 +987,9 @@ function formatItemPrice(item) {
                   <div class="mobile-list-item-meta">
                     <div class="mobile-list-item-location">
                       <i class="bi bi-geo-alt-fill"></i>
-                      <span>{{ item.location || item.address || 'Location not specified' }}</span>
+                      <span>{{
+                        formatPublicLocation(item.location || item.address || '') || 'Location not specified'
+                      }}</span>
                     </div>
                     <div v-if="item.distance" class="mobile-list-item-distance">
                       <i class="bi bi-arrow-right"></i>

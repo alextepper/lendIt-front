@@ -139,20 +139,16 @@ async function downloadImage() {
   }
 }
 
-const canNativeShare = computed(
-  () => typeof navigator !== 'undefined' && typeof navigator.share === 'function'
-);
-
-function nativeSharePayload(file) {
-  return {
-    files: [file],
-    url: props.itemUrl,
-    title: props.title || t('item.share'),
-    text: `${props.title}\n${props.itemUrl}`,
-  };
+function shareTextWithUrl() {
+  const title = (props.title || '').trim();
+  return title ? `${title}\n${props.itemUrl}` : props.itemUrl;
 }
 
-async function systemShare() {
+/**
+ * Generate the card PNG, then (1) Web Share with file + link + text,
+ * (2) else clipboard image + plain text, (3) else copy link + download image.
+ */
+async function shareImageAndLink() {
   generating.value = true;
   try {
     const blob = await captureWithFallback();
@@ -160,27 +156,63 @@ async function systemShare() {
       ui.showToast(t('item.shareImageFailed'), 'danger');
       return;
     }
-    const file = new File([blob], `sharo-item-${props.itemId}.png`, { type: 'image/png' });
-    const payload = nativeSharePayload(file);
-    if (!navigator.canShare?.(payload)) {
-      ui.showToast(t('item.shareNativeUnavailable'), 'info');
-      return;
-    }
     if (hidePhotoForExport.value) {
       ui.showToast(t('item.shareImageFailed'), 'warning');
     }
-    await navigator.share(payload);
-  } catch (e) {
-    if (e?.name === 'AbortError') return;
-    ui.showToast(t('item.shareNativeUnavailable'), 'warning');
+
+    const file = new File([blob], `sharo-item-${props.itemId}.png`, { type: 'image/png' });
+    const title = props.title || t('item.share');
+    const text = shareTextWithUrl();
+
+    if (typeof navigator.share === 'function') {
+      const attempts = [
+        { files: [file], title, text, url: props.itemUrl },
+        { files: [file], title, text },
+        { files: [file], text },
+      ];
+      for (const payload of attempts) {
+        try {
+          if (typeof navigator.canShare === 'function' && !navigator.canShare(payload)) {
+            continue;
+          }
+          await navigator.share(payload);
+          return;
+        } catch (e) {
+          if (e?.name === 'AbortError') return;
+        }
+      }
+    }
+
+    if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+      try {
+        const textBlob = new Blob([text], { type: 'text/plain' });
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'image/png': Promise.resolve(blob),
+            'text/plain': Promise.resolve(textBlob),
+          }),
+        ]);
+        ui.showToast(t('item.shareImageAndLinkCopied'), 'success');
+        return;
+      } catch {
+        /* continue */
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      triggerDownload(blob);
+      ui.showToast(t('item.shareLinkCopiedImageDownloaded'), 'info');
+    } catch {
+      triggerDownload(blob);
+      ui.showToast(t('item.shareClipboardFailed'), 'danger');
+    }
   } finally {
     generating.value = false;
     hidePhotoForExport.value = false;
     await nextTick();
   }
 }
-
-const showSystemShareButton = computed(() => canNativeShare.value);
 </script>
 
 <template>
@@ -199,7 +231,7 @@ const showSystemShareButton = computed(() => canNativeShare.value);
           <button type="button" class="btn-close" data-bs-dismiss="modal" :aria-label="t('common.close')"></button>
         </div>
         <div class="modal-body">
-          <p class="text-muted small mb-3">{{ t('item.shareWhatsAppHint') }}</p>
+          <p class="text-muted small mb-3">{{ t('item.shareImageAndLinkHint') }}</p>
 
           <div class="d-flex justify-content-center mb-3 overflow-auto">
             <div ref="cardRef" class="share-card" dir="ltr">
@@ -232,29 +264,23 @@ const showSystemShareButton = computed(() => canNativeShare.value);
           </div>
 
           <div class="d-grid gap-2">
-            <button type="button" class="btn btn-outline-primary" :disabled="generating" @click="copyLink">
-              <i class="bi bi-link-45deg me-2" aria-hidden="true"></i>
-              {{ t('item.shareCopyLink') }}
-            </button>
-            <button type="button" class="btn btn-primary" :disabled="generating" @click="downloadImage">
+            <button type="button" class="btn btn-primary" :disabled="generating" @click="shareImageAndLink">
               <span
                 v-if="generating"
                 class="spinner-border spinner-border-sm me-2"
                 role="status"
                 aria-hidden="true"
               ></span>
-              <i v-else class="bi bi-download me-2" aria-hidden="true"></i>
-              {{ generating ? t('item.shareGenerating') : t('item.shareDownloadImage') }}
+              <i v-else class="bi bi-share me-2" aria-hidden="true"></i>
+              {{ generating ? t('item.shareGenerating') : t('item.shareImageAndLink') }}
             </button>
-            <button
-              v-if="showSystemShareButton"
-              type="button"
-              class="btn btn-outline-secondary"
-              :disabled="generating"
-              @click="systemShare"
-            >
-              <i class="bi bi-box-arrow-up me-2" aria-hidden="true"></i>
-              {{ t('item.shareSystemShare') }}
+            <button type="button" class="btn btn-outline-primary" :disabled="generating" @click="copyLink">
+              <i class="bi bi-link-45deg me-2" aria-hidden="true"></i>
+              {{ t('item.shareCopyLink') }}
+            </button>
+            <button type="button" class="btn btn-outline-secondary" :disabled="generating" @click="downloadImage">
+              <i class="bi bi-download me-2" aria-hidden="true"></i>
+              {{ t('item.shareDownloadImage') }}
             </button>
           </div>
         </div>

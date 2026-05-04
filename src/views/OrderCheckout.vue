@@ -1,5 +1,6 @@
 <script setup>
 import { getImageUrl } from '../utils/imageUtils';
+import { formatPublicLocation } from '../utils/formatPublicLocation';
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
@@ -167,7 +168,7 @@ function formatDate(dateString) {
                 <div class="text-muted small">{{ item.category }}</div>
                 <div class="text-muted small mt-2">
                   <i class="bi bi-geo-alt me-1"></i>
-                  {{ item.address || item.location }}
+                  {{ formatPublicLocation(item.address || item.location || '') }}
                 </div>
               </div>
             </div>

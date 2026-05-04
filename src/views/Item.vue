@@ -16,6 +16,7 @@ import AvailabilityCalendar from '../components/AvailabilityCalendar.vue';
 import BookingCalendar from '../components/BookingCalendar.vue';
 import { Modal } from 'bootstrap';
 import { getItemPhotoUrl } from '../utils/imageUtils';
+import { formatPublicLocation } from '../utils/formatPublicLocation';
 import { compressImageBeforeUpload } from '../utils/imageCompression';
 import http from '../lib/http';
 import { useAuthModal } from '../composables/useAuthModal';
@@ -315,7 +316,7 @@ function updateItemSeo() {
   
   const itemTitle = item.value.title || '';
   const itemDescription = item.value.description || '';
-  const itemLocation = item.value.location || item.value.address || '';
+  const itemLocation = formatPublicLocation(item.value.location || item.value.address || '');
   const itemPrice = item.value.pricePerDay ? (item.value.pricePerDay / 100).toFixed(0) : '';
   const itemCategory = item.value.category || '';
   
@@ -1138,9 +1139,9 @@ const sharePriceLine = computed(() => {
   return price;
 });
 
-const shareLocationText = computed(() => {
+const formattedItemLocation = computed(() => {
   if (!item.value) return '';
-  return item.value.location || item.value.address || '';
+  return formatPublicLocation(item.value.location || item.value.address || '');
 });
 
 function openShareModal() {
@@ -1387,7 +1388,7 @@ watch(fullscreenCarousel, (isOpen) => {
             <h1 class="mobile-title">{{ item.title }}</h1>
             <p class="mobile-location">
               <i class="bi bi-geo-alt"></i>
-              <span>{{ item.location || item.address }}</span>
+              <span>{{ formattedItemLocation }}</span>
             </p>
           </div>
 
@@ -1571,7 +1572,7 @@ watch(fullscreenCarousel, (isOpen) => {
             <h1 class="hero-title">{{ item.title }}</h1>
             <p class="hero-location">
               <i class="bi bi-geo-alt"></i>
-              <span>{{ item.location || item.address }}</span>
+              <span>{{ formattedItemLocation }}</span>
             </p>
             <div class="hero-price">
               <span class="hero-price-value">{{ getDisplayPrice() }}</span>
@@ -2109,7 +2110,7 @@ watch(fullscreenCarousel, (isOpen) => {
       :image-url="shareImageUrl"
       :title="item.title"
       :price-line="sharePriceLine"
-      :location-text="shareLocationText"
+      :location-text="formattedItemLocation"
       :item-url="shareCanonicalUrl"
       :item-id="item.id"
     />

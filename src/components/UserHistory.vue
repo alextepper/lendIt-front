@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { fetchRentals } from '../services/rentalsService';
 import { useI18n } from 'vue-i18n';
+import { formatPublicLocation } from '../utils/formatPublicLocation';
 
 const { t } = useI18n();
 const history = ref([]);
@@ -221,7 +222,7 @@ function getRoleText(role, isRental) {
                 <h6 class="mb-1">{{ item.item?.title || t('item.item') }}</h6>
                 <p class="small text-muted mb-1">
                   <i class="bi bi-geo-alt me-1"></i>
-                  {{ item.item?.location || t('item.location') }}
+                  {{ formatPublicLocation(item.item?.location || item.item?.address || '') || t('item.location') }}
                 </p>
                 <div class="d-flex flex-wrap gap-3 small text-secondary">
                   <div>

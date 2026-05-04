@@ -41,7 +41,11 @@
                     <h6 class="mb-1">{{ booking.item?.title || 'Item' }}</h6>
                     <p class="small text-muted mb-0">
                       <i class="bi bi-geo-alt me-1"></i>
-                      {{ booking.item?.location || 'Location' }}
+                      {{
+                        formatPublicLocation(
+                          booking.item?.location || booking.item?.address || ''
+                        ) || 'Location'
+                      }}
                     </p>
                   </div>
                 </div>
@@ -188,6 +192,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '../stores/ui'
 import { getBooking } from '../services/bookingService'
 import { createBookingCheckoutIntent } from '../services/bookingRequestService'
+import { formatPublicLocation } from '../utils/formatPublicLocation'
 
 const route = useRoute()
 const router = useRouter()

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { getItemPhotoUrl } from '../utils/imageUtils';
+import { formatPublicLocation } from '../utils/formatPublicLocation';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();  
@@ -21,7 +22,7 @@ const thumbnailUrl = computed(() => {
 });
 
 const locationText = computed(() => {
-  return props.item.location || props.item.address || '';
+  return formatPublicLocation(props.item.location || props.item.address || '');
 });
 
 const shouldShowExpand = computed(() => {

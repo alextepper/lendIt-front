@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { fetchListings } from '../services/listingsService'
 import { useUiStore } from '../stores/ui'
 import { getItemPhotoUrl } from '../utils/imageUtils'
+import { formatPublicLocation } from '../utils/formatPublicLocation'
 import { useSeo, buildCanonical } from '../composables/useSeo'
 import { markPrerendered } from '../composables/usePrerender'
 
@@ -379,7 +380,7 @@ onMounted(() => {
                   <h5 class="card-title h6 mb-2">{{ item.title }}</h5>
                   <div class="d-flex align-items-center mb-2">
                     <i class="bi bi-geo-alt text-muted me-1"></i>
-                    <small class="text-muted">{{ item.location }}</small>
+                    <small class="text-muted">{{ formatPublicLocation(item.location || '') }}</small>
                   </div>
                   <div class="d-flex align-items-center mb-2">
                     <i class="bi bi-star-fill text-warning me-1"></i>
