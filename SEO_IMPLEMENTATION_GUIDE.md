@@ -159,26 +159,54 @@ A reusable Vue composable for managing SEO metadata dynamically:
 - **updateSeo()**: Update all SEO elements at once
 
 ### Helper Functions
-- `generateIsraelTitle()`: Creates consistent Hebrew titles
+- `generateIsraelTitle(pageTitle, marketplaceTagline?)`: Page title in the form `מוצר | Sharo - {tagline}`. The second argument should match the listing or page type (rent, sale, giveaway—not always “for rent”). Defaults to the rental marketplace line if omitted.
 - `generateIsraelDescription()`: Generates default Hebrew descriptions
 
-### Usage Example
+### Usage Example (listing-type–aware)
+
+Descriptions, titles, and OG copy should follow the listing type (rent / sale / giveaway). In the app, item pages use i18n keys under `item.seo.*` and `updateItemSeo()` in `Item.vue`; the pattern below shows the same idea in isolation:
 
 ```vue
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { useSeo, generateIsraelTitle } from '@/composables/useSeo'
 
+const { t } = useI18n()
 const { updateSeo } = useSeo()
 
-// Update SEO for a specific page
+// Example: derive from API item.type or price fields
+const listingType = 'forRent' // or 'forSale' | 'giveaway'
+
+const brandLine =
+  listingType === 'forRent'
+    ? t('item.seo.titleBrandRent')
+    : listingType === 'forSale'
+      ? t('item.seo.titleBrandSale')
+      : t('item.seo.titleBrandGiveaway')
+
+// Meta description: use the template that matches the type (each mentions rent / sale / free appropriately)
+const description =
+  listingType === 'giveaway'
+    ? t('item.seo.metaGiveaway', { snippet: '…', location: '…' })
+    : listingType === 'forSale'
+      ? t('item.seo.metaSale', { snippet: '…', location: '…', price: '₪…' })
+      : t('item.seo.metaRent', { snippet: '…', location: '…', price: '…' })
+
+const ogTitle =
+  listingType === 'forRent'
+    ? 'שם המוצר | rent | Tel Aviv | ₪50'
+    : listingType === 'forSale'
+      ? 'שם המוצר | sell | Tel Aviv | ₪100'
+      : 'שם המוצר | giveaway | Tel Aviv'
+
 updateSeo({
-  title: generateIsraelTitle('שם המוצר'),
-  description: 'תיאור המוצר בעברית',
-  ogTitle: 'שם המוצר - להשכרה ב-Sharo',
+  title: generateIsraelTitle('שם המוצר', brandLine),
+  description,
+  ogTitle,
   ogImage: 'https://example.com/image.jpg',
   productSchema: {
     title: 'שם המוצר',
-    price: '50',
+    price: listingType === 'giveaway' ? '0' : '50',
     available: true,
     rating: 4.5,
     reviewCount: 12
@@ -187,6 +215,8 @@ updateSeo({
 </script>
 ```
 
+For non-item pages, pass the tagline that fits the page (e.g. sale-focused copy on `/sell`).
+
 ---
 
 ## 8. Item Page SEO Integration (Item.vue)
@@ -194,16 +224,17 @@ updateSeo({
 ### Features
 Automatically generates SEO metadata for each item:
 
-- **Dynamic Title**: "מוצר | Sharo - השכרת מוצרים וציוד בישראל"
-- **Dynamic Description**: Includes item description, location, and price
-- **Dynamic Keywords**: Generated from item title, category, and location
-- **Product Schema**: Complete structured data for each item
-- **Open Graph Tags**: Dynamic OG tags with item image and details
+- **Dynamic Title**: `generateIsraelTitle(title, brandLine)` where `brandLine` is one of `item.seo.titleBrandRent` / `titleBrandSale` / `titleBrandGiveaway` based on listing type (not always rental).
+- **Dynamic Description**: Locale strings `item.seo.metaRent`, `metaSale`, `metaGiveaway`, and no-price variants—copy matches rent vs sale vs giveaway.
+- **Dynamic Keywords**: Type-specific keyword sets (`kwRent*`, `kwSale*`, `kwGift*`) plus title, category, and location where relevant.
+- **Product Schema**: Structured data including a `price` string aligned with rent/sale/giveaway.
+- **Open Graph Tags**: `og:title` built from title, listing kind, location, and optional price; descriptions follow the same rules as the meta description.
 
 ### Implementation
 The `updateItemSeo()` function runs automatically when an item loads, extracting:
 - Item title and description
-- Price and location
+- Listing type (`forRent` / `forSale` / `giveaway`) and appropriate price fields
+- Location and category
 - Photos for OG images
 - Category and tags
 - Rating and reviews

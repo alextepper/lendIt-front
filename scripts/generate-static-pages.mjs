@@ -67,10 +67,91 @@ function getItemPhotoUrl(item, apiBase) {
 }
 
 function getItemType(item) {
-  if (item.type) return item.type;
+  const raw = String(item.type || "")
+    .toLowerCase()
+    .replace(/\s+/g, "");
+  if (raw === "forsale") return "forSale";
+  if (raw === "forrent") return "forRent";
+  if (raw === "giveaway") return "giveaway";
   if ((item.sellPrice ?? item.sell_price) > 0) return "forSale";
   if ((item.pricePerDay ?? item.price_per_day) > 0) return "forRent";
   return "giveaway";
+}
+
+const TITLE_BRAND = {
+  forRent: "השכרת מוצרים וציוד בישראל",
+  forSale: "קנייה ומכירת מוצרים בישראל",
+  giveaway: "מתן חינם והעברת מוצרים בישראל",
+};
+
+/**
+ * When the API omits `description`, build a Hebrew blurb that matches the
+ * listing type (rent / sale / giveaway), mirroring `item.seo.*` in the app.
+ */
+function buildFallbackDescription(
+  itemType,
+  title,
+  location,
+  tags,
+  priceShekel,
+  symbol,
+) {
+  const loc = (location && String(location).trim()) || "ישראל";
+  const tagSuffix = tags.length ? ` – ${tags.join(", ")}` : "";
+  if (itemType === "giveaway") {
+    return `${title} — מתנה חינם ב${loc}${tagSuffix}. צרו קשר ב-Sharo.`;
+  }
+  if (itemType === "forSale") {
+    if (priceShekel > 0) {
+      return `${title} — למכירה ב${loc} במחיר ${symbol}${priceShekel}${tagSuffix}. קנו עכשיו ב-Sharo.`;
+    }
+    return `${title} — למכירה ב${loc}${tagSuffix}. קנו עכשיו ב-Sharo.`;
+  }
+  if (priceShekel > 0) {
+    return `${title} — להשכרה ב${loc} ב-${symbol}${priceShekel} ליום${tagSuffix}. השכירו עכשיו ב-Sharo.`;
+  }
+  return `${title} — להשכרה ב${loc}${tagSuffix}. השכירו עכשיו ב-Sharo.`;
+}
+
+function buildKeywordsForItemType(itemType, title, category, location, tags) {
+  if (itemType === "giveaway") {
+    return [
+      ...tags,
+      `מתנת ${title}`,
+      `${title} בחינם`,
+      category && `${category} בחינם`,
+      location && `מתנה ב${location}`,
+      "שיתוף מוצרים",
+      "מתן חינם",
+    ]
+      .filter(Boolean)
+      .join(", ");
+  }
+  if (itemType === "forSale") {
+    return [
+      ...tags,
+      `מכירת ${title}`,
+      `${title} למכירה`,
+      category && `קניית ${category}`,
+      location && `מכירה ב${location}`,
+      "קנייה ומכירה",
+      "מוצרים יד שנייה",
+    ]
+      .filter(Boolean)
+      .join(", ");
+  }
+  return [
+    ...tags,
+    ...tags.map((t) => `${t} להשכרה`),
+    `השכרת ${title}`,
+    `${title} להשכרה`,
+    category && `השכרת ${category}`,
+    location && `השכרה ב${location}`,
+    "השכרת ציוד",
+    "השכרת מוצרים",
+  ]
+    .filter(Boolean)
+    .join(", ");
 }
 
 function normalizeTags(rawTags) {
@@ -93,38 +174,56 @@ export function buildSeoForItem(item, siteUrl, apiBase) {
   const symbol = CURRENCY_SYMBOLS[currency] || currency;
   const priceCents =
     itemType === "forSale"
-      ? item.sellPrice ?? item.sell_price ?? 0
-      : item.pricePerDay ?? item.price_per_day ?? 0;
+      ? (item.sellPrice ?? item.sell_price ?? 0)
+      : (item.pricePerDay ?? item.price_per_day ?? 0);
   const priceShekel = Math.round((priceCents || 0) / 100);
   const location = item.address || item.location || "";
   const category = item.category || "";
   const tags = normalizeTags(item.tags);
 
-  const seoTitle = `${title} – להשכרה ב-Sharo`;
-  const fullTitle = `${seoTitle} | השכרת מוצרים בישראל`;
+  const brandLine = TITLE_BRAND[itemType] || TITLE_BRAND.forRent;
+  const fullTitle = `${title} | Sharo - ${brandLine}`;
   const description = truncate(
     item.description ||
-      `${title} להשכרה ב-Sharo${location ? ` באזור ${location}` : ""}${tags.length ? ` – ${tags.join(", ")}` : ""}. שכרו מהשכנים בישראל וחסכו כסף.`,
-    160
+      buildFallbackDescription(
+        itemType,
+        title,
+        location,
+        tags,
+        priceShekel,
+        symbol,
+      ),
+    160,
   );
-  const ogTitle = `${title} - להשכרה ב-Sharo`;
+
+  const listingKindOg =
+    itemType === "forRent"
+      ? "rent"
+      : itemType === "forSale"
+        ? "sell"
+        : "giveaway";
+  let priceForOg = "";
+  if (itemType === "forRent" && priceShekel > 0) {
+    priceForOg = `${symbol}${priceShekel}`;
+  } else if (itemType === "forSale" && priceShekel > 0) {
+    priceForOg = `${symbol}${priceShekel}`;
+  }
+  const ogTitle = [title, listingKindOg, location || null, priceForOg || null]
+    .filter(Boolean)
+    .join(" | ");
+
   const canonical = `${siteUrl}/item/${item.id}`;
   const image = getItemPhotoUrl(item, apiBase) || `${siteUrl}/logo.png`;
 
   // Tags get the highest weight here because they are user-curated synonyms
   // for the item (e.g. brand names like "Meta Quest 3", "מטה קווסט", "vr").
-  const keywords = [
-    ...tags,
-    ...tags.map((t) => `${t} להשכרה`),
-    `השכרת ${title}`,
-    `${title} להשכרה`,
-    category && `השכרת ${category}`,
-    location && `השכרה ב${location}`,
-    "השכרת ציוד",
-    "השכרת מוצרים",
-  ]
-    .filter(Boolean)
-    .join(", ");
+  const keywords = buildKeywordsForItemType(
+    itemType,
+    title,
+    category,
+    location,
+    tags,
+  );
 
   // JSON-LD Product schema for rich results in Google.
   const productSchema = {
@@ -149,7 +248,11 @@ export function buildSeoForItem(item, siteUrl, apiBase) {
               price: priceShekel,
               priceCurrency: currency,
               unitCode: "DAY",
-              referenceQuantity: { "@type": "QuantitativeValue", value: 1, unitCode: "DAY" },
+              referenceQuantity: {
+                "@type": "QuantitativeValue",
+                value: 1,
+                unitCode: "DAY",
+              },
             }
           : undefined,
       availability:
@@ -159,7 +262,11 @@ export function buildSeoForItem(item, siteUrl, apiBase) {
       availableAtOrFrom: location
         ? {
             "@type": "Place",
-            address: { "@type": "PostalAddress", addressLocality: location, addressCountry: "IL" },
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: location,
+              addressCountry: "IL",
+            },
           }
         : undefined,
     },
@@ -185,6 +292,7 @@ export function buildSeoForItem(item, siteUrl, apiBase) {
     symbol,
     location,
     tags,
+    itemType,
     schema: cleanSchema,
   };
 }
@@ -199,9 +307,16 @@ function buildCrawlerVisibleBody(item, seo) {
   const safeLocation = escapeHtml(seo.location);
   const safeImage = escapeAttr(seo.image);
   const safeAlt = escapeAttr(item.title || "פריט");
-  const priceLine = seo.priceShekel
-    ? `<p><strong>מחיר:</strong> ${seo.symbol}${seo.priceShekel} ליום</p>`
-    : "";
+  const kind = seo.itemType || "forRent";
+  let priceLine = "";
+  if (kind === "giveaway") {
+    priceLine = "<p><strong>מחיר:</strong> חינם</p>";
+  } else if (seo.priceShekel) {
+    priceLine =
+      kind === "forRent"
+        ? `<p><strong>מחיר:</strong> ${seo.symbol}${seo.priceShekel} ליום</p>`
+        : `<p><strong>מחיר:</strong> ${seo.symbol}${seo.priceShekel}</p>`;
+  }
   const locationLine = safeLocation
     ? `<p><strong>מיקום:</strong> ${safeLocation}</p>`
     : "";
@@ -230,25 +345,25 @@ export function rewriteHead(html, seo, item) {
   // <title>
   out = out.replace(
     /<title>[\s\S]*?<\/title>/,
-    `<title>${escapeHtml(seo.fullTitle)}</title>`
+    `<title>${escapeHtml(seo.fullTitle)}</title>`,
   );
 
   // <meta name="description">
   out = out.replace(
     /<meta\s+name=["']description["'][^>]*>/i,
-    `<meta name="description" content="${escapeAttr(seo.description)}" />`
+    `<meta name="description" content="${escapeAttr(seo.description)}" />`,
   );
 
   // <meta name="keywords">
   if (/<meta\s+name=["']keywords["'][^>]*>/i.test(out)) {
     out = out.replace(
       /<meta\s+name=["']keywords["'][^>]*>/i,
-      `<meta name="keywords" content="${escapeAttr(seo.keywords)}" />`
+      `<meta name="keywords" content="${escapeAttr(seo.keywords)}" />`,
     );
   } else {
     out = out.replace(
       "</head>",
-      `  <meta name="keywords" content="${escapeAttr(seo.keywords)}" />\n  </head>`
+      `  <meta name="keywords" content="${escapeAttr(seo.keywords)}" />\n  </head>`,
     );
   }
 
@@ -256,12 +371,12 @@ export function rewriteHead(html, seo, item) {
   if (/<link\s+rel=["']canonical["'][^>]*>/i.test(out)) {
     out = out.replace(
       /<link\s+rel=["']canonical["'][^>]*>/i,
-      `<link rel="canonical" href="${escapeAttr(seo.canonical)}" />`
+      `<link rel="canonical" href="${escapeAttr(seo.canonical)}" />`,
     );
   } else {
     out = out.replace(
       "</head>",
-      `  <link rel="canonical" href="${escapeAttr(seo.canonical)}" />\n  </head>`
+      `  <link rel="canonical" href="${escapeAttr(seo.canonical)}" />\n  </head>`,
     );
   }
 
@@ -289,7 +404,7 @@ export function rewriteHead(html, seo, item) {
   } else {
     out = out.replace(
       '<div id="app">',
-      `<div id="app">\n      ${crawlerBody}\n      `
+      `<div id="app">\n      ${crawlerBody}\n      `,
     );
   }
 
@@ -298,7 +413,10 @@ export function rewriteHead(html, seo, item) {
 
 function replaceOrInsertMeta(html, name, content, isProperty) {
   const attr = isProperty ? "property" : "name";
-  const re = new RegExp(`<meta\\s+${attr}=["']${escapeRegex(name)}["'][^>]*>`, "i");
+  const re = new RegExp(
+    `<meta\\s+${attr}=["']${escapeRegex(name)}["'][^>]*>`,
+    "i",
+  );
   const tag = `<meta ${attr}="${name}" content="${escapeAttr(content)}" />`;
   if (re.test(html)) return html.replace(re, tag);
   return html.replace("</head>", `  ${tag}\n  </head>`);
@@ -331,7 +449,7 @@ function stripBetween(html, beginMarker, endMarker) {
   // shifts the section right by 10 spaces each time.
   const re = new RegExp(
     `[ \\t]*${escapeRegex(beginMarker)}[\\s\\S]*?${escapeRegex(endMarker)}[ \\t]*\\n?`,
-    "g"
+    "g",
   );
   return html.replace(re, "");
 }
@@ -373,17 +491,17 @@ export function injectFeaturedItemsIntoHome(template, items, siteUrl, apiBase) {
   if (out.includes("        </main>\n      </noscript>")) {
     out = out.replace(
       "        </main>\n      </noscript>",
-      `${featuredSection}\n        </main>\n      </noscript>`
+      `${featuredSection}\n        </main>\n      </noscript>`,
     );
   } else if (out.includes("</noscript>")) {
     out = out.replace(
       "</noscript>",
-      `<noscript>\n${featuredSection}\n      </noscript>\n`
+      `<noscript>\n${featuredSection}\n      </noscript>\n`,
     );
   } else {
     out = out.replace(
       "</body>",
-      `<noscript>\n${featuredSection}\n      </noscript>\n  </body>`
+      `<noscript>\n${featuredSection}\n      </noscript>\n  </body>`,
     );
   }
 
@@ -392,7 +510,7 @@ export function injectFeaturedItemsIntoHome(template, items, siteUrl, apiBase) {
   const itemList = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "פריטים אחרונים להשכרה ב-Sharo",
+    name: `${seo.itemType === "forRent" ? "להשכרה" : seo.itemType === "forSale" ? "למכירה" : "למסירה"} ב-Sharo`,
     itemListElement: safeItems.map((it, idx) => ({
       "@type": "ListItem",
       position: idx + 1,
@@ -416,22 +534,20 @@ async function main() {
     template = await fs.readFile(indexPath, "utf8");
   } catch (err) {
     console.warn(
-      `[seo] Cannot read template at ${indexPath}: ${err.message}. Skipping per-item HTML generation.`
+      `[seo] Cannot read template at ${indexPath}: ${err.message}. Skipping per-item HTML generation.`,
     );
     process.exit(0);
   }
 
   const siteUrl = getSiteUrl();
   const apiBase =
-    process.env.SITEMAP_API_BASE_URL ||
-    process.env.VITE_API_BASE_URL ||
-    "";
+    process.env.SITEMAP_API_BASE_URL || process.env.VITE_API_BASE_URL || "";
 
   const items = await fetchAllItems({ limit: PAGE_LIMIT });
   if (!items.length) {
     console.warn(
       "[seo] No items fetched; not writing any per-item static pages. " +
-        "(Check VITE_API_BASE_URL / network access from this container.)"
+        "(Check VITE_API_BASE_URL / network access from this container.)",
     );
     return;
   }
@@ -473,13 +589,13 @@ async function main() {
     await fs.writeFile(
       path.join(itemsDir, `${String(item.id)}.html`),
       html,
-      "utf8"
+      "utf8",
     );
     written += 1;
   }
 
   console.log(
-    `[seo] Wrote ${written} per-item static HTML pages as ${itemsDir}/{id}.html`
+    `[seo] Wrote ${written} per-item static HTML pages as ${itemsDir}/{id}.html`,
   );
 
   // Now also enrich the homepage so Googlebot can discover these items by
@@ -487,19 +603,19 @@ async function main() {
   try {
     const featuredCount = Math.min(
       Number(process.env.HOME_FEATURED_LIMIT) || 24,
-      items.length
+      items.length,
     );
     const featured = items.slice(0, featuredCount);
     const enrichedHome = injectFeaturedItemsIntoHome(
       template,
       featured,
       siteUrl,
-      apiBase
+      apiBase,
     );
     if (enrichedHome !== template) {
       await fs.writeFile(indexPath, enrichedHome, "utf8");
       console.log(
-        `[seo] Injected ${featured.length} featured-item links + ItemList schema into homepage (${indexPath}).`
+        `[seo] Injected ${featured.length} featured-item links + ItemList schema into homepage (${indexPath}).`,
       );
     }
   } catch (err) {
