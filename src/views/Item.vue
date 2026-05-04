@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, reactive, watch } from 'vue';
+import { onMounted, ref, computed, reactive, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
@@ -9,6 +9,7 @@ import { updateListing, deleteListing, toggleListingActive, fetchPopularTags } f
 import { fetchBookingCalendarData } from '../services/bookingCalendarService';
 import BookingCard from '../components/BookingCard.vue';
 import BookingFlow from '../components/BookingFlow.vue';
+import ItemShareModal from '../components/ItemShareModal.vue';
 import OwnerPanel from '../components/OwnerPanel.vue';
 import ReviewsSection from '../components/ReviewsSection.vue';
 import AvailabilityCalendar from '../components/AvailabilityCalendar.vue';
@@ -196,32 +197,6 @@ function handlePrimaryCta() {
   else showOwnerModal();
 }
 
-/** Title · listing type · price (when relevant) · city — og:title and native share preview. */
-function buildItemRichTitle() {
-  const it = item.value;
-  if (!it) return '';
-  const title = (it.title || '').trim();
-  const parts = [];
-  if (title) parts.push(title);
-
-  if (isForRent.value) parts.push(t('listing.type.rent'));
-  else if (isForSale.value) parts.push(t('listing.type.sale'));
-  else parts.push(t('listing.type.giveaway'));
-
-  if (isForRent.value || isForSale.value) {
-    const p = getDisplayPrice();
-    if (p) {
-      if (isForRent.value) parts.push(`${p} / ${t('item.perDay')}`);
-      else parts.push(p);
-    }
-  }
-
-  const city = formatPublicLocation(it.location || it.address || '');
-  if (city) parts.push(city);
-
-  return parts.join(' · ');
-}
-
 async function load() {
   loading.value = true;
   error.value = null;
@@ -350,8 +325,8 @@ function updateItemSeo() {
     ? getItemPhotoUrl(item.value.photos[0])
     : 'https://www.sharo-app.com/logo.png';
   
-  const richTitle = buildItemRichTitle();
-  const seoTitle = generateIsraelTitle(richTitle);
+  // Generate SEO-friendly title
+  const seoTitle = generateIsraelTitle(itemTitle);
   
   // Generate description with location and price
   const seoDescription = `${itemDescription.substring(0, 150)}... - להשכרה ב${itemLocation} ב-₪${itemPrice} ליום. השכירו עכשיו ב-Sharo.`;
@@ -373,14 +348,14 @@ function updateItemSeo() {
     title: seoTitle,
     description: seoDescription,
     keywords: keywords,
-    ogTitle: richTitle,
+    ogTitle: `${itemTitle} - להשכרה ב-Sharo`,
     ogDescription: seoDescription,
     ogImage: itemImage,
     ogUrl: currentUrl,
     ogType: 'product',
     canonical: canonicalUrl,
     productSchema: {
-      title: richTitle || itemTitle,
+      title: itemTitle,
       description: itemDescription,
       image: itemImage,
       images: item.value.photos ? item.value.photos.map(p => getItemPhotoUrl(p)) : [],
@@ -1151,28 +1126,34 @@ const displayPhotos = computed(() => {
   return editMode.value ? editPhotos.value : (item.value?.photos || []);
 });
 
+const itemShareModalRef = ref(null);
+
+const shareCanonicalUrl = computed(() =>
+  item.value ? buildCanonical(`/item/${item.value.id}`) : ''
+);
+
+const shareImageUrl = computed(() => {
+  const photos = item.value?.photos || [];
+  if (!photos.length) return null;
+  return getCarouselPhotoUrl(photos[0]);
+});
+
+const sharePriceLine = computed(() => {
+  if (!item.value) return '';
+  const price = getDisplayPrice();
+  if (isForRent.value) return `${price} / ${t('item.perDay')}`;
+  return price;
+});
+
 const formattedItemLocation = computed(() => {
   if (!item.value) return '';
   return formatPublicLocation(item.value.location || item.value.address || '');
 });
 
-async function shareItemLink() {
-  if (!item.value) return;
-  const url = buildCanonical(`/item/${item.value.id}`);
-  try {
-    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-      await navigator.share({ url });
-      return;
-    }
-  } catch (e) {
-    if (e?.name === 'AbortError') return;
-  }
-  try {
-    await navigator.clipboard.writeText(url);
-    ui.showToast(t('item.shareLinkCopied'), 'success');
-  } catch {
-    ui.showToast(t('item.shareClipboardFailed'), 'danger');
-  }
+function openShareModal() {
+  nextTick(() => {
+    itemShareModalRef.value?.open();
+  });
 }
 
 // Helper function to get photo URL for carousel
@@ -1312,7 +1293,7 @@ watch(fullscreenCarousel, (isOpen) => {
             <button class="mobile-nav-btn">
               <i class="bi bi-heart"></i>
             </button>
-            <button type="button" class="mobile-nav-btn" @click="shareItemLink" :aria-label="$t('item.share')">
+            <button type="button" class="mobile-nav-btn" @click="openShareModal" :aria-label="$t('item.share')">
               <i class="bi bi-share"></i>
             </button>
           </div>
@@ -2108,7 +2089,7 @@ watch(fullscreenCarousel, (isOpen) => {
               </div>
             </div>
             <div class="sidebar-actions">
-              <button type="button" class="btn btn-outline-secondary w-100" @click="shareItemLink">
+              <button type="button" class="btn btn-outline-secondary w-100" @click="openShareModal">
                 <i class="bi bi-share me-2"></i>
                 {{ $t('item.share') }}
               </button>
@@ -2130,6 +2111,17 @@ watch(fullscreenCarousel, (isOpen) => {
         </div>
       </div>
     </div>
+
+    <ItemShareModal
+      v-if="item"
+      ref="itemShareModalRef"
+      :image-url="shareImageUrl"
+      :title="item.title"
+      :price-line="sharePriceLine"
+      :location-text="formattedItemLocation"
+      :item-url="shareCanonicalUrl"
+      :item-id="item.id"
+    />
 
     <!-- Booking Modal -->
     <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">

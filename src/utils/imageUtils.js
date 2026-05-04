@@ -53,3 +53,141 @@ export function getItemPhotoUrl(photos) {
   const url = typeof photos === "string" ? photos : photos.url;
   return getImageUrl(url);
 }
+
+/**
+ * If media is hosted on the API origin, return the same path on the current page origin
+ * so fetch() is same-origin (requires nginx or similar to serve /uploads on the app host).
+ */
+export function rewriteMediaUrlToSiteOrigin(imageUrl) {
+  if (typeof window === "undefined" || !imageUrl) return null;
+  try {
+    const u = new URL(imageUrl, window.location.href);
+    const base =
+      (typeof window !== "undefined" && window.__API_BASE_URL__) ||
+      import.meta.env.VITE_API_BASE_URL ||
+      "";
+    if (!base) return null;
+    const apiOrigin = new URL(base, window.location.href).origin;
+    if (u.origin === apiOrigin && u.pathname) {
+      return `${window.location.origin}${u.pathname}${u.search}`;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = () => reject(fr.error || new Error("readAsDataURL failed"));
+    fr.readAsDataURL(blob);
+  });
+}
+
+/**
+ * URLs to try when embedding listing photos for share/canvas (same-origin first).
+ */
+export function collectShareImageFetchCandidates(imageUrl) {
+  const list = [];
+  const seen = new Set();
+  function push(u) {
+    if (!u || typeof u !== "string") return;
+    const t = u.trim();
+    if (!t || seen.has(t)) return;
+    seen.add(t);
+    list.push(t);
+  }
+
+  if (typeof window !== "undefined" && imageUrl?.trim().startsWith("/")) {
+    try {
+      push(new URL(imageUrl.trim(), window.location.origin).href);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  push(imageUrl?.trim());
+  const alt = rewriteMediaUrlToSiteOrigin(imageUrl);
+  push(alt);
+
+  if (typeof window !== "undefined" && imageUrl?.trim()) {
+    try {
+      const u = new URL(imageUrl.trim(), window.location.href);
+      const base =
+        (typeof window !== "undefined" && window.__API_BASE_URL__) ||
+        import.meta.env.VITE_API_BASE_URL ||
+        "";
+      if (base && u.pathname.startsWith("/uploads")) {
+        const apiOrigin = new URL(base, window.location.href).origin;
+        if (u.origin === apiOrigin) {
+          push(`${window.location.origin}/api${u.pathname}${u.search}`);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return list;
+}
+
+/**
+ * Fetch listing photo bytes and return a data URL so html-to-image can paint it
+ * (avoids cross-origin img tainting and races with crossorigin=anonymous).
+ * @param {string} imageUrl
+ * @param {{ maxEdge?: number }} [opts]
+ * @returns {Promise<string|null>} data:image/... URL or null
+ */
+export async function fetchImageAsDataUrlForShare(imageUrl, opts = {}) {
+  if (!imageUrl) return null;
+  const maxEdge = opts.maxEdge ?? 1600;
+  const candidates = collectShareImageFetchCandidates(imageUrl);
+
+  let blob = null;
+  for (const url of candidates) {
+    try {
+      let sameOrigin = false;
+      try {
+        sameOrigin = new URL(url).origin === window.location.origin;
+      } catch {
+        sameOrigin = false;
+      }
+      const res = await fetch(url, {
+        mode: "cors",
+        credentials: sameOrigin ? "include" : "omit",
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      blob = await res.blob();
+      break;
+    } catch {
+      /* try next */
+    }
+  }
+  if (!blob) return null;
+
+  try {
+    if (typeof createImageBitmap === "function" && maxEdge > 0) {
+      const bmp = await createImageBitmap(blob, { resizeWidth: maxEdge });
+      const canvas = document.createElement("canvas");
+      canvas.width = bmp.width;
+      canvas.height = bmp.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return await blobToDataURL(blob);
+      ctx.drawImage(bmp, 0, 0);
+      bmp.close?.();
+      const jpeg = canvas.toDataURL("image/jpeg", 0.88);
+      if (jpeg && jpeg.length > 32) return jpeg;
+    }
+  } catch {
+    /* fall through to full blob */
+  }
+
+  try {
+    return await blobToDataURL(blob);
+  } catch {
+    return null;
+  }
+}
