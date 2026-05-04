@@ -1,5 +1,6 @@
 <script setup>
-import { onMounted, ref, computed, reactive, watch, nextTick } from 'vue';
+import { watch } from 'vue';
+import { onMounted, ref, computed, reactive, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '../stores/ui';
