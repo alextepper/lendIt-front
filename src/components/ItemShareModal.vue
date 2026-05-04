@@ -139,23 +139,15 @@ async function downloadImage() {
   }
 }
 
-function shareTextWithUrl() {
-  const title = (props.title || '').trim();
-  return title ? `${title}\n${props.itemUrl}` : props.itemUrl;
-}
-
-/** Opens the system share sheet with the listing URL (or copies the link if sharing is unavailable). */
+/** Opens the system share sheet with the listing URL only (or copies the link if sharing is unavailable).
+ * We pass only `url` — combining `text`/`title` with `url` makes many apps paste the link twice. */
 async function shareImageAndLink() {
   generating.value = true;
   try {
-    const title = props.title || t('item.share');
-    const text = shareTextWithUrl();
-
     if (typeof navigator.share === 'function') {
       const attempts = [
-        { title, text, url: props.itemUrl },
-        { title, url: props.itemUrl },
         { url: props.itemUrl },
+        { text: props.itemUrl },
       ];
       for (const payload of attempts) {
         try {

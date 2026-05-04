@@ -33,6 +33,7 @@ let isDestroyed = false;
 let initRetryTimeout = null;
 let initDelayTimeout = null;
 let invalidateTimeout = null;
+let propsWatchTimer = null;
 
 // Fix Leaflet default icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -50,6 +51,8 @@ onMounted(async () => {
   // Wait for DOM to be fully ready and visible
   const init = () => {
     if (isDestroyed) return;
+    // IntersectionObserver may have already created the map — avoid remove/recreate race.
+    if (map) return;
     if (mapContainer.value) {
       if (mapContainer.value.offsetParent !== null || mapContainer.value.offsetWidth > 0) {
         initMap();
@@ -69,14 +72,17 @@ onMounted(async () => {
           if (isDestroyed) return;
           if (entry.isIntersecting && !map && mapContainer.value) {
             setTimeout(() => {
-              if (!isDestroyed) initMap();
+              if (!isDestroyed && !map) initMap();
             }, 100);
           } else if (entry.isIntersecting && map) {
             // Invalidate size when map becomes visible
             setTimeout(() => {
-              if (map && !isDestroyed) {
-                try { map.closePopup(); } catch {}
+              if (!map || isDestroyed) return;
+              try {
+                map.closePopup();
                 map.invalidateSize();
+              } catch (e) {
+                console.warn('SearchMap: invalidateSize after visible', e);
               }
             }, 100);
           }
@@ -88,6 +94,7 @@ onMounted(async () => {
 });
 
 function initMap() {
+  if (isDestroyed) return;
   if (!mapContainer.value) {
     console.error('Map container element not found');
     return;
@@ -298,48 +305,46 @@ function updateMarkers() {
     // Handle marker drag
     let dragTimeout = null;
     userMarker.on('drag', () => {
-      // Update radius circle position while dragging
-      if (radiusCircle && userMarker) {
-        const newPos = userMarker.getLatLng();
+      if (isDestroyed || !map || !radiusCircle || !userMarker) return;
+      const newPos = userMarker.getLatLng();
+      try {
         radiusCircle.setLatLng(newPos);
+      } catch {
+        /* map teardown */
       }
     });
 
     userMarker.on('dragend', () => {
-      if (userMarker && !isInitializing) {
-        const newPos = userMarker.getLatLng();
-        const newLocation = {
-          lat: newPos.lat,
-          lng: newPos.lng,
-          address: null
-        };
-        
-        // Emit the new location (only if not initializing)
-        emit('location-changed', newLocation);
-        
-        // Update radius circle position
-        if (radiusCircle) {
+      if (isDestroyed || !map || !userMarker || isInitializing) return;
+      const newPos = userMarker.getLatLng();
+      const newLocation = {
+        lat: newPos.lat,
+        lng: newPos.lng,
+        address: null
+      };
+
+      emit('location-changed', newLocation);
+
+      if (radiusCircle) {
+        try {
           radiusCircle.setLatLng(newPos);
+        } catch {
+          /* */
         }
-        
-        // Try to get address for new location (non-blocking)
-        // Don't emit again - just update the address silently
-        // The parent component will handle address updates separately
-        fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${newPos.lat}&lon=${newPos.lng}&zoom=18&addressdetails=1&accept-language=en`
-        )
-          .then(response => response.json())
-          .then(data => {
-            if (data && data.display_name) {
-              newLocation.address = data.display_name;
-              // Only emit if address was successfully fetched, but parent should ignore duplicate coordinates
-              emit('location-changed', newLocation);
-            }
-          })
-          .catch(e => {
-            console.warn('Failed to get address for dragged location:', e);
-          });
       }
+
+      fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${newPos.lat}&lon=${newPos.lng}&zoom=18&addressdetails=1&accept-language=en`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          if (isDestroyed || !data?.display_name) return;
+          newLocation.address = data.display_name;
+          emit('location-changed', newLocation);
+        })
+        .catch((e) => {
+          console.warn('Failed to get address for dragged location:', e);
+        });
     });
 
     // Add radius circle
@@ -499,39 +504,41 @@ function updateMarkers() {
 
 // Watch for changes in props
 watch(() => [props.userLocation, props.items, props.radiusKm], (newVal, oldVal) => {
-  if (map) {
-    // Check if location actually changed
-    const locationChanged = props.userLocation && 
-      (!oldVal || !oldVal[0] || 
-       oldVal[0]?.lat !== props.userLocation.lat || 
-       oldVal[0]?.lng !== props.userLocation.lng);
-    
-    updateMarkers();
-    
-    // If location changed, center map on new location
-    if (locationChanged && props.userLocation && props.userLocation.lat && props.userLocation.lng) {
-      setTimeout(() => {
-        if (map) {
-          map.setView([props.userLocation.lat, props.userLocation.lng], 12);
-          map.invalidateSize();
-        }
-      }, 100);
-    } else {
-      // Just invalidate size when items change
-      setTimeout(() => {
-        if (map) {
-          map.invalidateSize();
-        }
-      }, 100);
+  if (!map || isDestroyed) return;
+
+  const locationChanged =
+    props.userLocation &&
+    (!oldVal ||
+      !oldVal[0] ||
+      oldVal[0]?.lat !== props.userLocation.lat ||
+      oldVal[0]?.lng !== props.userLocation.lng);
+
+  updateMarkers();
+
+  if (propsWatchTimer) clearTimeout(propsWatchTimer);
+  propsWatchTimer = window.setTimeout(() => {
+    propsWatchTimer = null;
+    if (!map || isDestroyed) return;
+    try {
+      if (
+        locationChanged &&
+        props.userLocation?.lat != null &&
+        props.userLocation?.lng != null
+      ) {
+        map.setView([props.userLocation.lat, props.userLocation.lng], 12);
+      }
+      map.invalidateSize();
+    } catch (e) {
+      console.warn('SearchMap: map update after props failed', e);
     }
-  }
+  }, 100);
 }, { deep: true });
 
 // Watch for map container visibility changes and reinitialize if needed
 watch(() => mapContainer.value, (newVal) => {
-  if (newVal && !map) {
-    setTimeout(() => {
-      initMap();
+  if (newVal && !map && !isDestroyed) {
+    window.setTimeout(() => {
+      if (!isDestroyed && !map) initMap();
     }, 200);
   }
 });
@@ -551,9 +558,17 @@ onUnmounted(() => {
     clearTimeout(invalidateTimeout);
     invalidateTimeout = null;
   }
+  if (propsWatchTimer) {
+    clearTimeout(propsWatchTimer);
+    propsWatchTimer = null;
+  }
 
-  if (observer && mapContainer.value) {
-    observer.unobserve(mapContainer.value);
+  if (observer) {
+    try {
+      observer.disconnect();
+    } catch {
+      /* */
+    }
     observer = null;
   }
   if (map) {
