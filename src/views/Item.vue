@@ -3822,17 +3822,17 @@ watch(fullscreenCarousel, (isOpen) => {
   }
 }
 
-/* Mobile Top Navigation */
+/* Mobile Top Navigation — sit below sticky AppNavbar (z-index 1040), not underneath it */
 .mobile-top-nav {
   position: fixed;
-  top: 0;
+  top: calc(env(safe-area-inset-top, 0px) + 4rem);
   left: 0;
   right: 0;
-  z-index: 50;
+  z-index: 1020;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   pointer-events: none;
 }
 
