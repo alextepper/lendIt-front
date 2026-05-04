@@ -310,6 +310,47 @@ async function load() {
   }
 }
 
+/** Normalize rent/sale/giveaway for OG/meta (API may send forrent / camelCase). */
+function normalizeItemListingTypeForMeta(it) {
+  if (!it) return 'forRent';
+  const raw = String(it.type || '').toLowerCase();
+  if (raw === 'forsale' || raw === 'sale') return 'forSale';
+  if (raw === 'giveaway') return 'giveaway';
+  if (raw === 'forrent' || raw === 'rent') return 'forRent';
+  if ((it.sellPrice ?? it.sell_price) != null && (it.sellPrice ?? it.sell_price) > 0) return 'forSale';
+  if ((it.pricePerDay ?? it.price_per_day) != null && (it.pricePerDay ?? it.price_per_day) > 0) return 'forRent';
+  return 'giveaway';
+}
+
+function buildItemOgTitle(it) {
+  const itemTitle = (it?.title || '').trim() || t('item.item');
+  const loc = formatPublicLocation(it?.location || it?.address || '').trim();
+  const lt = normalizeItemListingTypeForMeta(it);
+  const typeLabel =
+    lt === 'forSale'
+      ? t('listing.type.sale')
+      : lt === 'giveaway'
+        ? t('listing.type.giveaway')
+        : t('listing.type.rent');
+
+  const parts = [itemTitle, typeLabel];
+  if (loc) parts.push(loc);
+
+  if (lt === 'forRent') {
+    const ppd = it?.pricePerDay ?? it?.price_per_day;
+    if (ppd != null && ppd > 0) {
+      parts.push(`${formatPrice(ppd)} · ${t('item.perDay')}`);
+    }
+  } else if (lt === 'forSale') {
+    const sp = it?.sellPrice ?? it?.sell_price;
+    if (sp != null && sp > 0) {
+      parts.push(formatPrice(sp));
+    }
+  }
+
+  return parts.join(' · ');
+}
+
 // Function to update SEO metadata for item pages
 function updateItemSeo() {
   if (!item.value) return;
@@ -319,6 +360,7 @@ function updateItemSeo() {
   const itemLocation = formatPublicLocation(item.value.location || item.value.address || '');
   const itemPrice = item.value.pricePerDay ? (item.value.pricePerDay / 100).toFixed(0) : '';
   const itemCategory = item.value.category || '';
+  const ogTitle = buildItemOgTitle(item.value);
   
   // Get first photo URL
   const itemImage = item.value.photos && item.value.photos.length > 0 
@@ -326,7 +368,7 @@ function updateItemSeo() {
     : 'https://www.sharo-app.com/logo.png';
   
   // Generate SEO-friendly title
-  const seoTitle = generateIsraelTitle(itemTitle);
+  const seoTitle = generateIsraelTitle(ogTitle);
   
   // Generate description with location and price
   const seoDescription = `${itemDescription.substring(0, 150)}... - להשכרה ב${itemLocation} ב-₪${itemPrice} ליום. השכירו עכשיו ב-Sharo.`;
@@ -348,7 +390,7 @@ function updateItemSeo() {
     title: seoTitle,
     description: seoDescription,
     keywords: keywords,
-    ogTitle: `${itemTitle} - להשכרה ב-Sharo`,
+    ogTitle,
     ogDescription: seoDescription,
     ogImage: itemImage,
     ogUrl: currentUrl,
