@@ -55,8 +55,9 @@ RUN echo '#!/bin/sh' > /start.sh && \
     echo '# Generate runtime config.js with API URL' >> /start.sh && \
     echo '/generate-config.sh' >> /start.sh && \
     echo '' >> /start.sh && \
-    echo '# Refresh sitemap.xml + per-item HTML in the background with the real backend URL' >> /start.sh && \
-    echo '/generate-seo.sh &' >> /start.sh && \
+    echo '# Sitemap + per-item HTML MUST finish before nginx listens — otherwise crawlers' >> /start.sh && \
+    echo '# (WhatsApp/Telegram) hit /item/:id while only index.html exists and cache wrong OG.' >> /start.sh && \
+    echo '/generate-seo.sh' >> /start.sh && \
     echo '' >> /start.sh && \
     echo 'echo "🔧 Frontend startup configuration:"' >> /start.sh && \
     echo 'echo "   PORT: $PORT"' >> /start.sh && \

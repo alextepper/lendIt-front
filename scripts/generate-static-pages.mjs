@@ -23,7 +23,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { fetchAllItems, getSiteUrl } from "./seo-helpers.mjs";
+import {
+  fetchAllItems,
+  getSiteUrl,
+  SITEMAP_PROTOCOL_MAX,
+} from "./seo-helpers.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,7 +36,12 @@ const distDir = process.env.SITEMAP_OUTPUT_DIR
   : path.resolve(__dirname, "..", "dist");
 const indexPath = path.join(distDir, "index.html");
 
-const PAGE_LIMIT = Number(process.env.STATIC_PAGES_LIMIT) || 5000;
+// Match sitemap volume by default (was 5000, which omitted most listings from
+// item/{id}.html — WhatsApp/Telegram then fell back to index.html OG tags).
+const PAGE_LIMIT =
+  Number(process.env.STATIC_PAGES_LIMIT) ||
+  Number(process.env.SITEMAP_ITEM_LIMIT) ||
+  SITEMAP_PROTOCOL_MAX;
 
 const CURRENCY_SYMBOLS = { ILS: "₪", USD: "$", EUR: "€", GBP: "£" };
 
@@ -196,21 +205,23 @@ export function buildSeoForItem(item, siteUrl, apiBase) {
     160,
   );
 
-  const listingKindOg =
-    itemType === "forRent"
-      ? "rent"
-      : itemType === "forSale"
-        ? "sell"
-        : "giveaway";
-  let priceForOg = "";
-  if (itemType === "forRent" && priceShekel > 0) {
-    priceForOg = `${symbol}${priceShekel}`;
-  } else if (itemType === "forSale" && priceShekel > 0) {
-    priceForOg = `${symbol}${priceShekel}`;
-  }
-  const ogTitle = [title, listingKindOg, location || null, priceForOg || null]
-    .filter(Boolean)
-    .join(" | ");
+  // Hebrew-friendly OG title for chat apps (e.g. "ביגוד – חינם – יקנעם עילית")
+  const locTrim = (location && String(location).trim()) || "";
+  const ogTitle = (() => {
+    if (itemType === "giveaway") {
+      return [title, "חינם", locTrim || null].filter(Boolean).join(" – ");
+    }
+    if (itemType === "forSale") {
+      const mid =
+        priceShekel > 0 ? `למכירה ${symbol}${priceShekel}` : "למכירה";
+      return [title, mid, locTrim || null].filter(Boolean).join(" – ");
+    }
+    const mid =
+      priceShekel > 0
+        ? `להשכרה ${symbol}${priceShekel} ליום`
+        : "להשכרה";
+    return [title, mid, locTrim || null].filter(Boolean).join(" – ");
+  })();
 
   const canonical = `${siteUrl}/item/${item.id}`;
   const image = getItemPhotoUrl(item, apiBase) || `${siteUrl}/logo.png`;
@@ -477,7 +488,7 @@ export function injectFeaturedItemsIntoHome(template, items, siteUrl, apiBase) {
   const featuredSection = [
     `          ${FEATURED_BEGIN}`,
     "          <section>",
-    "            <h2>פריטים אחרונים להשכרה</h2>",
+    "            <h2>מודעות אחרונות</h2>",
     "            <ul>",
     links,
     "            </ul>",
@@ -510,7 +521,8 @@ export function injectFeaturedItemsIntoHome(template, items, siteUrl, apiBase) {
   const itemList = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: `${seo.itemType === "forRent" ? "להשכרה" : seo.itemType === "forSale" ? "למכירה" : "למסירה"} ב-Sharo`,
+    // Mixed listing types in `safeItems` — use a neutral label.
+    name: "מודעות ב-Sharo",
     itemListElement: safeItems.map((it, idx) => ({
       "@type": "ListItem",
       position: idx + 1,

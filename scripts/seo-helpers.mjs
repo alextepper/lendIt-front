@@ -88,7 +88,8 @@ async function fetchJsonAuto(apiBase, pathSuffix) {
 // (https://www.sitemaps.org/protocol.html). Past that we have to switch to a
 // sitemap index. Default the cap to that protocol limit so we ship as many
 // items as possible by default.
-const SITEMAP_PROTOCOL_MAX = 50000;
+/** Exported so static HTML generation uses the same cap as the sitemap by default. */
+export const SITEMAP_PROTOCOL_MAX = 50000;
 
 /**
  * Fetch active items from the backend for inclusion in the sitemap +
