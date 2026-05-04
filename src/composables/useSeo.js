@@ -236,8 +236,11 @@ export function buildCanonical(path = '/') {
 /**
  * Helper function to generate SEO-friendly title for Israel market
  */
-export function generateIsraelTitle(pageTitle) {
-  return `${pageTitle} | Sharo - השכרת מוצרים וציוד בישראל`
+export function generateIsraelTitle(
+  pageTitle,
+  marketplaceTagline = 'השכרת מוצרים וציוד בישראל'
+) {
+  return `${pageTitle} | Sharo - ${marketplaceTagline}`
 }
 
 /**

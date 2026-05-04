@@ -96,6 +96,11 @@ function initMap() {
   // Check if map already exists
   if (map) {
     try { map.closePopup(); } catch {}
+    // Drop layer refs before remove — stale markers on a new map cause Leaflet
+    // "_leaflet_pos" errors when removeLayer/update runs on the wrong map instance.
+    userMarker = null;
+    radiusCircle = null;
+    itemMarkers = [];
     map.remove();
     map = null;
   }
@@ -235,18 +240,32 @@ function calculateMarkerOffsets(items) {
 }
 
 function updateMarkers() {
-  if (!map) return;
+  if (!map || isDestroyed) return;
 
-  // Clear existing markers
+  // Clear existing markers (only remove if still on this map — avoids stale refs after reinit)
   if (userMarker) {
-    map.removeLayer(userMarker);
+    try {
+      if (map.hasLayer(userMarker)) map.removeLayer(userMarker);
+    } catch {
+      /* */
+    }
     userMarker = null;
   }
   if (radiusCircle) {
-    map.removeLayer(radiusCircle);
+    try {
+      if (map.hasLayer(radiusCircle)) map.removeLayer(radiusCircle);
+    } catch {
+      /* */
+    }
     radiusCircle = null;
   }
-  itemMarkers.forEach(marker => map.removeLayer(marker));
+  itemMarkers.forEach((marker) => {
+    try {
+      if (map.hasLayer(marker)) map.removeLayer(marker);
+    } catch {
+      /* */
+    }
+  });
   itemMarkers = [];
 
   // Add user location marker (draggable)
@@ -539,6 +558,9 @@ onUnmounted(() => {
   }
   if (map) {
     try { map.closePopup(); } catch {}
+    userMarker = null;
+    radiusCircle = null;
+    itemMarkers = [];
     map.remove();
     map = null;
   }

@@ -317,29 +317,106 @@ function updateItemSeo() {
   const itemTitle = item.value.title || '';
   const itemDescription = item.value.description || '';
   const itemLocation = formatPublicLocation(item.value.location || item.value.address || '');
-  const itemPrice = item.value.pricePerDay ? (item.value.pricePerDay / 100).toFixed(0) : '';
   const itemCategory = item.value.category || '';
+
+  const locOrFallback = itemLocation || t('item.seo.locationFallback');
+  const descSnippet = (() => {
+    const raw = itemDescription.trim();
+    if (!raw) return itemTitle;
+    return raw.length > 150 ? `${raw.substring(0, 147)}...` : raw;
+  })();
+
+  const seoDescription = (() => {
+    if (itemType.value === 'giveaway') {
+      return t('item.seo.metaGiveaway', { snippet: descSnippet, location: locOrFallback });
+    }
+    if (itemType.value === 'forSale') {
+      const cents = item.value.sellPrice ?? item.value.sell_price;
+      if (cents != null && cents > 0) {
+        return t('item.seo.metaSale', {
+          snippet: descSnippet,
+          location: locOrFallback,
+          price: formatPrice(cents),
+        });
+      }
+      return t('item.seo.metaSaleNoPrice', { snippet: descSnippet, location: locOrFallback });
+    }
+    const cents = item.value.pricePerDay ?? item.value.price_per_day;
+    if (cents != null && cents > 0) {
+      return t('item.seo.metaRent', {
+        snippet: descSnippet,
+        location: locOrFallback,
+        price: (cents / 100).toFixed(0),
+      });
+    }
+    return t('item.seo.metaRentNoPrice', { snippet: descSnippet, location: locOrFallback });
+  })();
+
+  const keywords = (() => {
+    const title = itemTitle;
+    const cat = itemCategory;
+    const loc = itemLocation;
+    if (itemType.value === 'giveaway') {
+      return [
+        t('item.seo.kwGift1', { title }),
+        t('item.seo.kwGift2', { title }),
+        cat ? t('item.seo.kwGiftCat', { cat }) : null,
+        loc ? t('item.seo.kwGiftLoc', { loc }) : null,
+        t('item.seo.kwGiftGeneric1'),
+        t('item.seo.kwGiftGeneric2'),
+      ]
+        .filter(Boolean)
+        .join(', ');
+    }
+    if (itemType.value === 'forSale') {
+      return [
+        t('item.seo.kwSale1', { title }),
+        t('item.seo.kwSale2', { title }),
+        cat ? t('item.seo.kwSaleCat', { cat }) : null,
+        loc ? t('item.seo.kwSaleLoc', { loc }) : null,
+        t('item.seo.kwSaleGeneric1'),
+        t('item.seo.kwSaleGeneric2'),
+      ]
+        .filter(Boolean)
+        .join(', ');
+    }
+    return [
+      t('item.seo.kwRent1', { title }),
+      t('item.seo.kwRent2', { title }),
+      cat ? t('item.seo.kwRentCat', { cat }) : null,
+      loc ? t('item.seo.kwRentLoc', { loc }) : null,
+      t('item.seo.kwRentGeneric1'),
+      t('item.seo.kwRentGeneric2'),
+    ]
+      .filter(Boolean)
+      .join(', ');
+  })();
+
+  const seoBrandLine =
+    itemType.value === 'forRent'
+      ? t('item.seo.titleBrandRent')
+      : itemType.value === 'forSale'
+        ? t('item.seo.titleBrandSale')
+        : t('item.seo.titleBrandGiveaway');
+  const seoTitle = generateIsraelTitle(itemTitle, seoBrandLine);
+
+  const schemaPrice =
+    itemType.value === 'forRent'
+      ? (() => {
+          const c = item.value.pricePerDay ?? item.value.price_per_day;
+          return c != null && c > 0 ? String(c / 100) : '0';
+        })()
+      : itemType.value === 'forSale'
+        ? (() => {
+            const c = item.value.sellPrice ?? item.value.sell_price;
+            return c != null && c > 0 ? String(c / 100) : '0';
+          })()
+        : '0';
   
   // Get first photo URL
   const itemImage = item.value.photos && item.value.photos.length > 0 
     ? getItemPhotoUrl(item.value.photos[0])
     : 'https://www.sharo-app.com/logo.png';
-  
-  // Generate SEO-friendly title
-  const seoTitle = generateIsraelTitle(itemTitle);
-  
-  // Generate description with location and price
-  const seoDescription = `${itemDescription.substring(0, 150)}... - להשכרה ב${itemLocation} ב-₪${itemPrice} ליום. השכירו עכשיו ב-Sharo.`;
-  
-  // Generate keywords
-  const keywords = [
-    `השכרת ${itemTitle}`,
-    `${itemTitle} להשכרה`,
-    itemCategory ? `השכרת ${itemCategory}` : null,
-    itemLocation ? `השכרה ב${itemLocation}` : null,
-    'השכרת ציוד',
-    'השכרת מוצרים'
-  ].filter(Boolean).join(', ');
   
   const currentUrl = (typeof window !== 'undefined' && window.location?.href) || buildCanonical(`/item/${item.value.id}`);
   const canonicalUrl = buildCanonical(`/item/${item.value.id}`);
@@ -375,7 +452,7 @@ function updateItemSeo() {
       description: itemDescription,
       image: itemImage,
       images: item.value.photos ? item.value.photos.map(p => getItemPhotoUrl(p)) : [],
-      price: itemPrice,
+      price: schemaPrice,
       category: itemCategory,
       location: itemLocation,
       available: item.value.status === 'active',
