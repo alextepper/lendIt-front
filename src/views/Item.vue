@@ -1132,17 +1132,17 @@ const shareCanonicalUrl = computed(() =>
   item.value ? buildCanonical(`/item/${item.value.id}`) : ''
 );
 
-const shareImageUrl = computed(() => {
-  const photos = item.value?.photos || [];
-  if (!photos.length) return null;
-  return getCarouselPhotoUrl(photos[0]);
-});
-
 const sharePriceLine = computed(() => {
   if (!item.value) return '';
   const price = getDisplayPrice();
   if (isForRent.value) return `${price} / ${t('item.perDay')}`;
   return price;
+});
+
+const shareListingTypeLabel = computed(() => {
+  if (isForSale.value) return t('listing.type.sale');
+  if (isGiveaway.value) return t('listing.type.giveaway');
+  return t('listing.type.rent');
 });
 
 const formattedItemLocation = computed(() => {
@@ -2115,12 +2115,11 @@ watch(fullscreenCarousel, (isOpen) => {
     <ItemShareModal
       v-if="item"
       ref="itemShareModalRef"
-      :image-url="shareImageUrl"
       :title="item.title"
       :price-line="sharePriceLine"
+      :listing-type-label="shareListingTypeLabel"
       :location-text="formattedItemLocation"
       :item-url="shareCanonicalUrl"
-      :item-id="item.id"
     />
 
     <!-- Booking Modal -->
